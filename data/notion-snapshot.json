@@ -1,5 +1,470 @@
 {
-  "lastScannedAt": null,
+  "lastScannedAt": "2026-04-12T22:08:08.234Z",
   "rootPage": "https://www.notion.so/26f1bb2bb3098084b279d2cbb304e795",
-  "pages": {}
+  "pages": {
+    "https://www.notion.so/26f1bb2bb3098084b279d2cbb304e795": {
+      "title": "플랫폼 본부",
+      "url": "https://www.notion.so/26f1bb2bb3098084b279d2cbb304e795",
+      "parent": null,
+      "section": "플랫폼 본부",
+      "contentHash": "1806a679433727f7012eaac505b16da85de3e3830e0404618ac915feb1ca4119",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb3098026994efacfb0686a6f": {
+      "title": "1.업무보고",
+      "url": "https://www.notion.so/2f61bb2bb3098026994efacfb0686a6f",
+      "parent": "플랫폼 본부",
+      "section": "1.업무보고",
+      "contentHash": "0c6050fcf421d6eb42e0d9849b03532897844745c491c95a4e53e198e905b5f9",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb30980109297e4e1817a8847": {
+      "title": "2.작업관리",
+      "url": "https://www.notion.so/2f61bb2bb30980109297e4e1817a8847",
+      "parent": "플랫폼 본부",
+      "section": "2.작업관리",
+      "contentHash": "23ace2db22ff52dd4b2b30fcf5980c187c6e5022ee4fe7b87a86369041439f01",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309818da716e52162b49d8a": {
+      "title": "3.정책 & 프로세스",
+      "url": "https://www.notion.so/26f1bb2bb309818da716e52162b49d8a",
+      "parent": "플랫폼 본부",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "9a20c6e48d50d90935b4a9e87d5f0daf206ef6bd1f5bba689654cc4638ef6861",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb309804abcb7c207fbef1fcc": {
+      "title": "4.산출물",
+      "url": "https://www.notion.so/2f61bb2bb309804abcb7c207fbef1fcc",
+      "parent": "플랫폼 본부",
+      "section": "4.산출물",
+      "contentHash": "d52ba228f84b27492b215144db99bf8cadbb51a5029a86d9d5c82e68fbf2e601",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb309807a9697d49ebb569e26": {
+      "title": "5.가이드 & OJT",
+      "url": "https://www.notion.so/2f61bb2bb309807a9697d49ebb569e26",
+      "parent": "플랫폼 본부",
+      "section": "5.가이드 & OJT",
+      "contentHash": "5725710e8387f8aafb2ce1a8a60347a1e8d4edc84bc51ddc59749cfbe53a70be",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb30980f98c29f59e730e4799": {
+      "title": "6.픽미툰 운영",
+      "url": "https://www.notion.so/2f61bb2bb30980f98c29f59e730e4799",
+      "parent": "플랫폼 본부",
+      "section": "6.픽미툰 운영",
+      "contentHash": "fcdb61b2e2fba31153e9da6a26c4bf5ff72c404ea273dc760fed8d7e186b1b36",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb309806e90bed1eb50c7be04": {
+      "title": "7.푸딩툰 운영",
+      "url": "https://www.notion.so/2f61bb2bb309806e90bed1eb50c7be04",
+      "parent": "플랫폼 본부",
+      "section": "7.푸딩툰 운영",
+      "contentHash": "39673917c8bfe313df2dfdd7911824ef27bcea09aa13e5c6e709bf924ca746e1",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/33d1bb2bb30980cbadc6c65a12a70437": {
+      "title": "8.보고팡 운영",
+      "url": "https://www.notion.so/33d1bb2bb30980cbadc6c65a12a70437",
+      "parent": "플랫폼 본부",
+      "section": "8.보고팡 운영",
+      "contentHash": "a3a3a0b8fc5e45d622e742b0cfc5d0b5597081c99975828511f10e1f3ebe4575",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb3098018a82cfc579d916cc3": {
+      "title": "9.덥라이트 운영",
+      "url": "https://www.notion.so/2f61bb2bb3098018a82cfc579d916cc3",
+      "parent": "플랫폼 본부",
+      "section": "9.덥라이트 운영",
+      "contentHash": "d70c5caaa506d8f4cc733418351ff168c8c446d2ac23c51e65106e7757d0eb64",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2f61bb2bb30980898b3edc1731640788": {
+      "title": "10.자료실",
+      "url": "https://www.notion.so/2f61bb2bb30980898b3edc1731640788",
+      "parent": "플랫폼 본부",
+      "section": "10.자료실",
+      "contentHash": "b45160ff804582b8384ae8943518ccd919c66ad0f3a9e778cee33c5bb50df71e",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2981bb2bb309803094fbfe4802c56620": {
+      "title": "2-2.일정 대시보드",
+      "url": "https://www.notion.so/2981bb2bb309803094fbfe4802c56620",
+      "parent": "2.작업관리",
+      "section": "2.작업관리",
+      "contentHash": "95209a0bced6cc8c21e4171f44b622c45000841f567eaf3921d213229ee2d552",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e11bb2bb309802d8b60e9ea60e99917": {
+      "title": "[공용] 프로젝트 개발 프로세스 구축 및 문서화",
+      "url": "https://www.notion.so/2e11bb2bb309802d8b60e9ea60e99917",
+      "parent": "2.작업관리",
+      "section": "2.작업관리",
+      "contentHash": "95e5cd6c2b6a01bd42d13bb1f9df445f6d3eaced7d6e22ab658e409bd49a6ce6",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2c61bb2bb3098028b37bf3f06e0ef2a3": {
+      "title": "애자일 업무 프로세스",
+      "url": "https://www.notion.so/2c61bb2bb3098028b37bf3f06e0ef2a3",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "8427e1d6d671a19ec70195627755327af86dedf699e45b673f7ba8bbefb72602",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e11bb2bb309806c9c56ef440c142d9b": {
+      "title": "프로젝트 개발 프로세스 가이드",
+      "url": "https://www.notion.so/2e11bb2bb309806c9c56ef440c142d9b",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "e99b408e5f9d889d78e3da44f3d345e2fe87da5747596f8fdf12645ff1d57b1a",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981ca97cffbc05fb81e8c": {
+      "title": "플랫폼 본부 서비스 배포 정책",
+      "url": "https://www.notion.so/26f1bb2bb30981ca97cffbc05fb81e8c",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "fa42862d4343aee5c5a20d93ed7803720687c237b004f674511db5a07e919fa0",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309817ebff9e4260f4fcdaa": {
+      "title": "채팅 배포 전 체크리스트 및 플로우 차트",
+      "url": "https://www.notion.so/26f1bb2bb309817ebff9e4260f4fcdaa",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "5c1aeaa6f4e59ecc3af368ac486a7bb4def223e7490013b4126341a585634e3a",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2801bb2bb30980b2b109c2ac4de01174": {
+      "title": "[Couponpolicy] 쿠폰 정책 메뉴얼",
+      "url": "https://www.notion.so/2801bb2bb30980b2b109c2ac4de01174",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "b4ae22b3b5b277cd6964760a4ee6f32ebc65ed47c8b4e482ea64b6fc63fe6d3d",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e91bb2bb3098081988cc826d913c0c2": {
+      "title": "피그마(두비덥 팀) 자산관리",
+      "url": "https://www.notion.so/2e91bb2bb3098081988cc826d913c0c2",
+      "parent": "3.정책 & 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "a1cc9b7435bdbf4ef57f104752ac95e1d89b29dd80078bf8dea1341d515c0737",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981d9b47edfa5e15ca981": {
+      "title": "백엔드 개발",
+      "url": "https://www.notion.so/26f1bb2bb30981d9b47edfa5e15ca981",
+      "parent": "4.산출물",
+      "section": "4.산출물",
+      "contentHash": "3a68f1ebe47e69f17ab011f5e5bf4bf1aef3b2cf2a830a54e85c59d66d14c6fc",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2a01bb2bb309807497d7ff40aedc7d28": {
+      "title": "[PUDDING] 도메인 (deprecated)",
+      "url": "https://www.notion.so/2a01bb2bb309807497d7ff40aedc7d28",
+      "parent": "4.산출물",
+      "section": "4.산출물",
+      "contentHash": "c0ef75299aa420635338c461be5cfc6fff6a132aa6700713dc0c1d1273d20961",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2a21bb2bb3098089a7c1e534da46f241": {
+      "title": "신규 개발자 입사자를 위한 문서",
+      "url": "https://www.notion.so/2a21bb2bb3098089a7c1e534da46f241",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "499f511c0ab9f488cae713b6429617a8032d7a19eb63e6971973411871a06931",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981b68ac3eb3a40a113b4": {
+      "title": "[PICKME] 프론트엔드 개발 가이드",
+      "url": "https://www.notion.so/26f1bb2bb30981b68ac3eb3a40a113b4",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "64f54374617984c4fc7646496412a358b1d0a47a9c03f05fb990781b5f6822a3",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981b0a29ad3956616663b": {
+      "title": "📋 Git 브랜치 전략 가이드",
+      "url": "https://www.notion.so/26f1bb2bb30981b0a29ad3956616663b",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "f532d341014ef5f1ff102b4ed9840d16859915e19a587179108fcc0141693ac8",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2a01bb2bb30980dea1aac0ea4190e789": {
+      "title": "[PUDDING] 프론트엔드 개발 가이드",
+      "url": "https://www.notion.so/2a01bb2bb30980dea1aac0ea4190e789",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "d7854e7e161726729bfd30d21497a47519a875720d989b06778997262ad20ff1",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/31e1bb2bb30980d2be8dd4d97a58f5df": {
+      "title": "프론트엔드 테크 모음",
+      "url": "https://www.notion.so/31e1bb2bb30980d2be8dd4d97a58f5df",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "38fb57d8545ad0877c79588e50a41be7f4ddc5de8cd278e6dbdbf8a965f46020",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/32e1bb2bb30980358299e714346d13fd": {
+      "title": "[임시] labeling 툴 로컬 실행방법",
+      "url": "https://www.notion.so/32e1bb2bb30980358299e714346d13fd",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "086f55ff4f668cec7953138157ab42129d5f0cf7a5f5698285100f88079c3344",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/3331bb2bb30980768b07f32d594152ec": {
+      "title": "새 페이지",
+      "url": "https://www.notion.so/3331bb2bb30980768b07f32d594152ec",
+      "parent": "5.가이드 & OJT",
+      "section": "5.가이드 & OJT",
+      "contentHash": "764ef3160764eea15b344c7718d3a975ee0da0f00a6c5c1132c548c803264556",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2fc1bb2bb30980039c5eedf349bc29e3": {
+      "title": "픽미툰 관리자 페이지 오류/개선 요청",
+      "url": "https://www.notion.so/2fc1bb2bb30980039c5eedf349bc29e3",
+      "parent": "6.픽미툰 운영",
+      "section": "6.픽미툰 운영",
+      "contentHash": "655055f13cd02afe77466ec5dd00c91e82df93f42a244975eaa6d221cf0f432c",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2bf1bb2bb30980cdbda5f247216d1faa": {
+      "title": "푸딩툰 리뉴얼 검수용 보너스코인 지급요청",
+      "url": "https://www.notion.so/2bf1bb2bb30980cdbda5f247216d1faa",
+      "parent": "7.푸딩툰 운영",
+      "section": "7.푸딩툰 운영",
+      "contentHash": "005a0d45df83b61c292f6c680dbb93a68ece3025232d6729328354bcdb8ea457",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/30c1bb2bb30980cc9f2bc6627fba739c": {
+      "title": "이미지, 음성 파일 용량 최적화",
+      "url": "https://www.notion.so/30c1bb2bb30980cc9f2bc6627fba739c",
+      "parent": "7.푸딩툰 운영",
+      "section": "7.푸딩툰 운영",
+      "contentHash": "6ec6a0e1ffa4ef8d10015f9e44b76035d284357c6e7b205022635a6a7981532e",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2fc1bb2bb309809794b7f2577dfd2d7a": {
+      "title": "덥라이트 인수인계",
+      "url": "https://www.notion.so/2fc1bb2bb309809794b7f2577dfd2d7a",
+      "parent": "9.덥라이트 운영",
+      "section": "9.덥라이트 운영",
+      "contentHash": "a7e91f6e6e79886d74b8cc2afec506205f37990a424758f720aad8e94ed21d4b",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/3201bb2bb3098094ba24c402fbd106ea": {
+      "title": "260311 프론트 및 운영 인수인계",
+      "url": "https://www.notion.so/3201bb2bb3098094ba24c402fbd106ea",
+      "parent": "9.덥라이트 운영",
+      "section": "9.덥라이트 운영",
+      "contentHash": "71d83343a1e74d7e8b52699bb51ecb21781d8eaa9f234a723e50c6bdcee59386",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/33e1bb2bb30980d0b2e2db1c7eb7d769": {
+      "title": "spoint 역할 분석",
+      "url": "https://www.notion.so/33e1bb2bb30980d0b2e2db1c7eb7d769",
+      "parent": "9.덥라이트 운영",
+      "section": "9.덥라이트 운영",
+      "contentHash": "77a81e969b3fb1e328b9e9891582207a8f84363992a457503817919e8f748096",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2ef1bb2bb3098034a73beee6c17ee461": {
+      "title": "두비덥 IP 관리 및 기타 유지보수",
+      "url": "https://www.notion.so/2ef1bb2bb3098034a73beee6c17ee461",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "e7147b232d730469c9412cb394e5d53197615f10d38aa6c6d295ed153ba8a9bc",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/28b1bb2bb3098080b8ffd89881af589a": {
+      "title": "인수인계 자료",
+      "url": "https://www.notion.so/28b1bb2bb3098080b8ffd89881af589a",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "92302f1a9db4eccdc736db8eacab044dcf52af81be6469349bfc4b99987d5788",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2da1bb2bb30980a39475f0161a492349": {
+      "title": "덥라이트 관련 쿼리",
+      "url": "https://www.notion.so/2da1bb2bb30980a39475f0161a492349",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "af47976820a422f06c913ecf70e8696e04ddcbd2917d3c1aacd4b4b43888d3ac",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2df1bb2bb3098080b727d484004853f0": {
+      "title": "픽미툰 정산용 쿼리",
+      "url": "https://www.notion.so/2df1bb2bb3098080b727d484004853f0",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "fa6dc574d297b07256c77378fec76b27fbea8802aa12f2b7e2144bd6af237fbd",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb3098163b426edd4634c1fd7": {
+      "title": "(픽미툰)대체 휴가 계획",
+      "url": "https://www.notion.so/26f1bb2bb3098163b426edd4634c1fd7",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "c2ff95e59e2d4e154447cd18a3ba1c3751172fa7427f6814b4873ab02557fa18",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2bd1bb2bb30980a493a7d052159e270f": {
+      "title": "(푸딩 리뉴얼)25년 12월 대체 휴가 계획",
+      "url": "https://www.notion.so/2bd1bb2bb30980a493a7d052159e270f",
+      "parent": "10.자료실",
+      "section": "10.자료실",
+      "contentHash": "2e50cfff5195762bf4efc46749cadaee77c043c4db19819de68e81f4f80dcc8a",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981f6acccd8733f965d7e": {
+      "title": "노션 + github 브랜치 네이밍 전략 논의",
+      "url": "https://www.notion.so/26f1bb2bb30981f6acccd8733f965d7e",
+      "parent": "2-3.프로젝트 관리",
+      "section": "2.작업관리",
+      "contentHash": "ee33565309060bd1826518228b62d2100e4703201d3f0daae28b4b0bf4ff1fb2",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/3331bb2bb309806baaacc4109b1155d4": {
+      "title": "dubright_label source mapping",
+      "url": "https://www.notion.so/3331bb2bb309806baaacc4109b1155d4",
+      "parent": "새 페이지",
+      "section": "5.가이드 & OJT",
+      "contentHash": "955ab2c465fdc9dc1f66a374c48665beaae95893f8cab55f0811b72a1b26721e",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e11bb2bb30980e890ded38719234ade": {
+      "title": "회의록",
+      "url": "https://www.notion.so/2e11bb2bb30980e890ded38719234ade",
+      "parent": "애자일 업무 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "8a71be74f63d7bfd1474f443bc8a9ad038060ecc8636ab7c7760daf01af61a29",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e21bb2bb3098067a124cb3440771ec1": {
+      "title": "김동훈 [양식 적용 사례]",
+      "url": "https://www.notion.so/2e21bb2bb3098067a124cb3440771ec1",
+      "parent": "애자일 업무 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "f0bc649b5a00de0fa99eda0f3a0936a7b513f3415ceee1c3452e075fcd701b38",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e11bb2bb309800ebfeafb5948f32beb": {
+      "title": "킥오프",
+      "url": "https://www.notion.so/2e11bb2bb309800ebfeafb5948f32beb",
+      "parent": "애자일 업무 프로세스",
+      "section": "3.정책 & 프로세스",
+      "contentHash": "7839c4c8b744e35ca2f1a2a3871c85bf0d4f6b3e867fa850b23adc2e237e7293",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981e0b96ad720bb1647dc": {
+      "title": "[PICKME] 로그 관리",
+      "url": "https://www.notion.so/26f1bb2bb30981e0b96ad720bb1647dc",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "97fdf2ff28add3de6bb0c98e635d9e1da976af7e74da801bcf5c40ae97e8a804",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309813a93e5fd869353c30a": {
+      "title": "[PICKME] 도메인",
+      "url": "https://www.notion.so/26f1bb2bb309813a93e5fd869353c30a",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "86001a325e6d84e32ea1ebcf3b0a0d2e2f33481f150cb374798d7b94249e348b",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981d3b34cc2c13338ace7": {
+      "title": "[PICKME] JOB",
+      "url": "https://www.notion.so/26f1bb2bb30981d3b34cc2c13338ace7",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "671f0e64a541bfa461c9dc242b6cd4f003f897c1244e0a3f2de5c3dfabc08635",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309815e9d64df4453d35c3a": {
+      "title": "[PICKME] 슬랙 에러 관리",
+      "url": "https://www.notion.so/26f1bb2bb309815e9d64df4453d35c3a",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "6106ecb0c4d5ed4342e0a926e87b4cfcdd6d857642433ec07cbdb73b7bc7114e",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309817bb990d264e46a9fa6": {
+      "title": "[PICKME] Redis 분산 락 시스템",
+      "url": "https://www.notion.so/26f1bb2bb309817bb990d264e46a9fa6",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "5ee30202e84054a977e9f727b69c7ca0af9eb3f6f47fb19fda4bec217da4f13b",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309816f9f54ce5f7ae0d06e": {
+      "title": "[PICKME] mobileOk-모바일 인증",
+      "url": "https://www.notion.so/26f1bb2bb309816f9f54ce5f7ae0d06e",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "1985fb96dde8ab5f27a178eb1d1fa7823863911b70ff79106c941ca6a235244e",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981cc9fe2d5ef26e8a482": {
+      "title": "[PICKME] Billgate-결제시스템",
+      "url": "https://www.notion.so/26f1bb2bb30981cc9fe2d5ef26e8a482",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "d95bb18721ecac185b69410abdddc39404633e259c12f6d414c9c04a8e429302",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30981e98223fd66289ae941": {
+      "title": "[PICKME] k8s 관련 정리(지금 안씀)",
+      "url": "https://www.notion.so/26f1bb2bb30981e98223fd66289ae941",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "a1e12f3da268221a96ce47313dd9bf3cc2f5303a9acb63b9c320ed50aa628735",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb309817383f8d83390c149fd": {
+      "title": "[PICKME] CI/CD 관련 정리",
+      "url": "https://www.notion.so/26f1bb2bb309817383f8d83390c149fd",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "1b648c849ff0a9e3b84cf1669b3e90eb269e4b994d824be9f1c945f9346e7515",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/26f1bb2bb30980968642cd4d79baea55": {
+      "title": "[PICKME] Git 전략",
+      "url": "https://www.notion.so/26f1bb2bb30980968642cd4d79baea55",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "d4f160fbe1b14b4c8adb5044d6e3ff4f9792ddb1053363a19f0c5698bcd4bfde",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2711bb2bb309806b8d8bf26ae7510a4d": {
+      "title": "[PICKME] 트러블 슈팅",
+      "url": "https://www.notion.so/2711bb2bb309806b8d8bf26ae7510a4d",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "393a4c5e2eadd5367d93ec724d8df553a77a52b90d2364c9231ef4018b66c20b",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/2e91bb2bb30980e18c8be9a5ef50fe66": {
+      "title": "컨텐츠 허브",
+      "url": "https://www.notion.so/2e91bb2bb30980e18c8be9a5ef50fe66",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "1e50e34dfaea482c755aba2e3f6d3b880bf6bd5fdc2e350201c0cc5449c8e00a",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    },
+    "https://www.notion.so/3061bb2bb3098014a781d15ca5102364": {
+      "title": "인프라 정리",
+      "url": "https://www.notion.so/3061bb2bb3098014a781d15ca5102364",
+      "parent": "백엔드 개발",
+      "section": "4.산출물",
+      "contentHash": "7d764134ba436d36863dbe940c02aab3bfbce03cd172089fca3624eaf9093144",
+      "fetchedAt": "2026-04-12T22:08:08.234Z"
+    }
+  }
 }

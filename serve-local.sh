@@ -2,4 +2,11 @@
 set -eu
 
 cd "$(dirname "$0")"
-python3 -m http.server 4173
+
+if [ -f .env.local ]; then
+  set -a
+  . ./.env.local
+  set +a
+fi
+
+node ./server.mjs
