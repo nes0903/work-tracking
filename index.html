@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Tracking Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>Executive</h1>
+        <p>WORK TRACKING SUITE</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item nav-item-active" type="button">Dashboard</button>
+        <button class="nav-item" type="button">Analytics</button>
+        <button class="nav-item" type="button">Reports</button>
+        <button class="nav-item" type="button">Archive</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a
+          class="sidebar-link"
+          href="https://dobedub.vogopang.com/library-hub"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Library Hub 열기
+        </a>
+        <button class="sidebar-cta" type="button">오늘 계획 정리</button>
+      </div>
+    </aside>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="업무, 메모, 카테고리 검색은 다음 단계에서 붙일 예정입니다." disabled />
+        </div>
+
+        <div class="topbar-right">
+          <div class="date-panel">
+            <label class="field-label" for="selected-date">기준 날짜</label>
+            <div class="date-row">
+              <button id="previous-day" class="icon-button" type="button" aria-label="이전 날짜">
+                ◀
+              </button>
+              <input id="selected-date" type="date" />
+              <button id="next-day" class="icon-button" type="button" aria-label="다음 날짜">
+                ▶
+              </button>
+            </div>
+            <p id="date-caption" class="date-caption"></p>
+          </div>
+
+          <div class="profile-chip">
+            <div class="profile-avatar">NY</div>
+            <div>
+              <strong>Noh Yusung</strong>
+              <p>Principal Operator</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="page-header">
+          <div>
+            <h2>Work Tracking Dashboard</h2>
+            <p>오늘 해야 할 일과 집중 시간을 고급 대시보드 형태로 관리합니다.</p>
+          </div>
+          <div class="page-header-actions">
+            <button id="clear-completed" class="secondary-button" type="button">완료 항목 정리</button>
+            <button class="primary-button" type="button" onclick="document.getElementById('task-title').focus()">
+              + 새 업무
+            </button>
+          </div>
+        </section>
+
+        <section class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon stat-icon-primary">▣</div>
+              <span class="stat-pill positive">오늘 기준</span>
+            </div>
+            <p class="stat-label">전체 할 일</p>
+            <strong id="metric-total" class="stat-value">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon stat-icon-warm">✓</div>
+              <span id="completion-rate" class="stat-pill positive">0%</span>
+            </div>
+            <p class="stat-label">완료</p>
+            <strong id="metric-done" class="stat-value">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon stat-icon-cool">↻</div>
+              <span class="stat-pill neutral">Live</span>
+            </div>
+            <p class="stat-label">진행 중</p>
+            <strong id="metric-doing" class="stat-value">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon stat-icon-alert">◔</div>
+              <span class="stat-pill alert">Focus</span>
+            </div>
+            <p class="stat-label">집중 시간</p>
+            <strong id="metric-focus" class="stat-value">0분</strong>
+          </article>
+        </section>
+
+        <section class="hero-grid">
+          <article class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Weekly Momentum</h3>
+                <p>최근 7일간 완료/집중 흐름을 요약합니다.</p>
+              </div>
+            </div>
+
+            <div class="chart-meta">
+              <span>완료율</span>
+              <div class="progress-track">
+                <div id="completion-bar" class="progress-bar"></div>
+              </div>
+            </div>
+
+            <div class="chart-wrap">
+              <svg id="weekly-chart" viewBox="0 0 640 260" role="img" aria-label="주간 업무 추이 차트">
+                <g class="chart-grid">
+                  <line x1="60" y1="30" x2="60" y2="220"></line>
+                  <line x1="60" y1="220" x2="600" y2="220"></line>
+                  <line x1="60" y1="180" x2="600" y2="180"></line>
+                  <line x1="60" y1="140" x2="600" y2="140"></line>
+                  <line x1="60" y1="100" x2="600" y2="100"></line>
+                  <line x1="60" y1="60" x2="600" y2="60"></line>
+                </g>
+                <polyline id="weekly-line" class="chart-line" points=""></polyline>
+                <g id="weekly-dots"></g>
+                <g id="weekly-labels"></g>
+              </svg>
+            </div>
+          </article>
+
+          <aside class="panel side-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Upcoming Priorities</h3>
+                <p>아직 끝나지 않은 중요한 업무를 상단에 보여줍니다.</p>
+              </div>
+              <a class="mini-link" href="https://dobedub.vogopang.com/library-hub" target="_blank" rel="noreferrer">
+                View Hub
+              </a>
+            </div>
+            <div id="upcoming-list" class="stack-list"></div>
+
+            <div class="focus-card">
+              <div class="panel-heading compact">
+                <div>
+                  <h3>Focus Session</h3>
+                  <p>한 세션이 끝나면 집중 시간이 누적됩니다.</p>
+                </div>
+              </div>
+              <strong id="timer-clock" class="focus-clock">25:00</strong>
+              <div class="timer-controls">
+                <button id="timer-start" class="primary-button" type="button">시작</button>
+                <button id="timer-pause" class="secondary-button" type="button">일시정지</button>
+                <button id="timer-reset" class="secondary-button" type="button">리셋</button>
+              </div>
+              <label class="timer-duration-wrap">
+                <span class="field-label">세션 길이(분)</span>
+                <input id="timer-duration" type="number" min="1" max="180" step="1" value="25" />
+              </label>
+            </div>
+          </aside>
+        </section>
+
+        <section class="lower-grid">
+          <section class="panel board-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Task Board</h3>
+                <p>오늘 업무를 할 일, 진행 중, 완료 상태로 관리합니다.</p>
+              </div>
+            </div>
+
+            <div class="board-grid">
+              <section class="board-column">
+                <header>
+                  <h4>할 일</h4>
+                  <span id="count-todo" class="column-count">0</span>
+                </header>
+                <div id="todo-list" class="task-list"></div>
+              </section>
+
+              <section class="board-column">
+                <header>
+                  <h4>진행 중</h4>
+                  <span id="count-doing" class="column-count">0</span>
+                </header>
+                <div id="doing-list" class="task-list"></div>
+              </section>
+
+              <section class="board-column">
+                <header>
+                  <h4>완료</h4>
+                  <span id="count-done" class="column-count">0</span>
+                </header>
+                <div id="done-list" class="task-list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="panel utility-stack">
+            <section class="utility-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h3>오늘 할 일 추가</h3>
+                  <p>작은 메모까지 같이 저장합니다.</p>
+                </div>
+              </div>
+              <form id="task-form" class="task-form">
+                <label>
+                  <span class="field-label">업무명</span>
+                  <input id="task-title" type="text" name="title" placeholder="예: 통계 API 검증" required />
+                </label>
+                <label>
+                  <span class="field-label">카테고리</span>
+                  <input id="task-category" type="text" name="category" placeholder="예: 백엔드, 회의, 문서" />
+                </label>
+                <div class="split-fields">
+                  <label>
+                    <span class="field-label">우선순위</span>
+                    <select id="task-priority" name="priority">
+                      <option value="high">높음</option>
+                      <option value="medium" selected>중간</option>
+                      <option value="low">낮음</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="field-label">예상 시간(분)</span>
+                    <input id="task-estimate" type="number" min="0" step="5" name="estimate" value="30" />
+                  </label>
+                </div>
+                <label>
+                  <span class="field-label">메모</span>
+                  <textarea
+                    id="task-note"
+                    name="note"
+                    rows="3"
+                    placeholder="오늘 이 업무에서 꼭 확인할 점을 적으세요."
+                  ></textarea>
+                </label>
+                <button class="primary-button" type="submit">업무 추가</button>
+              </form>
+            </section>
+
+            <section class="utility-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h3>Notion Updates</h3>
+                  <p>플랫폼 본부 하위의 최근 변경 내역을 표시합니다.</p>
+                </div>
+              </div>
+              <div class="notion-meta">
+                <span>마지막 동기화</span>
+                <strong id="notion-sync-time">아직 없음</strong>
+              </div>
+              <div id="notion-updates-list" class="notion-updates-list"></div>
+            </section>
+
+            <section class="utility-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <h3>Daily Notes</h3>
+                  <p>회고, blocker, 다음 액션을 짧게 정리합니다.</p>
+                </div>
+              </div>
+              <textarea
+                id="daily-notes"
+                rows="9"
+                placeholder="오늘 있었던 일, 막힌 점, 내일 이어갈 일을 적으세요."
+              ></textarea>
+              <div class="notes-footer">
+                <span>자동 저장</span>
+                <button id="clear-notes" class="text-button" type="button">메모 비우기</button>
+              </div>
+            </section>
+          </section>
+        </section>
+
+        <section class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <h3>Recent Activity</h3>
+              <p>오늘 생성/변경된 업무를 시간순으로 봅니다.</p>
+            </div>
+          </div>
+          <div id="activity-list" class="activity-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="task-card-template">
+      <article class="task-card">
+        <div class="task-card-top">
+          <div>
+            <p class="task-category"></p>
+            <h4 class="task-title"></h4>
+          </div>
+          <span class="task-priority"></span>
+        </div>
+        <p class="task-note"></p>
+        <div class="task-meta">
+          <span class="task-estimate"></span>
+          <span class="task-created"></span>
+        </div>
+        <div class="task-actions"></div>
+      </article>
+    </template>
+
+    <template id="upcoming-item-template">
+      <article class="upcoming-item">
+        <div>
+          <h4 class="upcoming-title"></h4>
+          <p class="upcoming-note"></p>
+        </div>
+        <div class="upcoming-meta">
+          <span class="upcoming-priority"></span>
+          <span class="upcoming-status"></span>
+        </div>
+      </article>
+    </template>
+
+    <template id="activity-item-template">
+      <article class="activity-item">
+        <div class="activity-icon"></div>
+        <div class="activity-main">
+          <h4 class="activity-title"></h4>
+          <p class="activity-subtitle"></p>
+        </div>
+        <div class="activity-side">
+          <span class="activity-time"></span>
+          <span class="activity-badge"></span>
+        </div>
+      </article>
+    </template>
+
+    <template id="notion-update-template">
+      <article class="notion-update-item">
+        <div class="notion-update-main">
+          <h4 class="notion-update-title"></h4>
+          <p class="notion-update-subtitle"></p>
+        </div>
+        <div class="notion-update-side">
+          <span class="notion-update-time"></span>
+          <a class="notion-update-link" target="_blank" rel="noreferrer">열기</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
