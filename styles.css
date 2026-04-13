@@ -756,6 +756,9 @@ select {
 
 .github-panel {
   margin-bottom: 22px;
+  min-height: 780px;
+  max-height: 780px;
+  overflow: hidden;
 }
 
 .github-meta {
@@ -789,10 +792,13 @@ select {
   color: var(--primary);
 }
 
-.github-repo-grid {
+.github-detail-view {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  min-height: 0;
+  max-height: 680px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .github-repo-card {
@@ -801,6 +807,9 @@ select {
   background: var(--surface-low);
   display: grid;
   gap: 12px;
+  min-height: 640px;
+  max-height: 640px;
+  overflow: hidden;
 }
 
 .github-repo-top {
@@ -863,13 +872,17 @@ select {
 
 .github-repo-sections {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
+  min-height: 0;
 }
 
 .github-repo-section {
   border-radius: 12px;
   background: var(--surface-lowest);
   padding: 12px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .github-repo-section header {
@@ -923,6 +936,23 @@ select {
   margin: 0;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.github-detail-view::-webkit-scrollbar,
+.github-repo-section::-webkit-scrollbar {
+  width: 10px;
+}
+
+.github-detail-view::-webkit-scrollbar-thumb,
+.github-repo-section::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 91, 191, 0.22);
+}
+
+.github-detail-view::-webkit-scrollbar-track,
+.github-repo-section::-webkit-scrollbar-track {
+  background: rgba(25, 28, 29, 0.04);
+  border-radius: 999px;
 }
 
 .github-pr-summary-item {
@@ -1091,8 +1121,13 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .github-repo-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .github-panel {
+    min-height: 700px;
+    max-height: 700px;
+  }
+
+  .github-detail-view {
+    max-height: 600px;
   }
 }
 
@@ -1130,9 +1165,22 @@ select {
 @media (max-width: 720px) {
   .stats-grid,
   .board-grid,
-  .split-fields,
-  .github-repo-grid {
+  .split-fields {
     grid-template-columns: 1fr;
+  }
+
+  .github-panel {
+    min-height: 640px;
+    max-height: 640px;
+  }
+
+  .github-detail-view {
+    max-height: 540px;
+  }
+
+  .github-repo-card {
+    min-height: 560px;
+    max-height: 560px;
   }
 
   .page-header {

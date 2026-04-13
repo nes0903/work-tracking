@@ -44,7 +44,7 @@ const elements = {
   notionUpdateTemplate: document.querySelector("#notion-update-template"),
   githubSyncTime: document.querySelector("#github-sync-time"),
   githubFilters: document.querySelector("#github-filters"),
-  githubRepoGrid: document.querySelector("#github-repo-grid"),
+  githubDetailView: document.querySelector("#github-detail-view"),
   githubRepoTemplate: document.querySelector("#github-repo-template"),
   githubEventTemplate: document.querySelector("#github-event-template"),
 };
@@ -369,7 +369,7 @@ function renderGithubUpdates() {
     : "아직 없음";
 
   renderGithubFilters();
-  elements.githubRepoGrid.innerHTML = "";
+  elements.githubDetailView.innerHTML = "";
 
   const repos = state.githubFeed.repos.filter((repo) =>
     state.githubFilter === "all" ? true : repo.repo === state.githubFilter,
@@ -378,7 +378,7 @@ function renderGithubUpdates() {
     const empty = document.createElement("p");
     empty.className = "task-note";
     empty.textContent = "동기화된 GitHub 레포 현황이 없습니다.";
-    elements.githubRepoGrid.appendChild(empty);
+    elements.githubDetailView.appendChild(empty);
   } else {
     for (const repo of repos) {
       const fragment = elements.githubRepoTemplate.content.cloneNode(true);
@@ -405,7 +405,7 @@ function renderGithubUpdates() {
         fragment.querySelector(".github-pr-events"),
         repo,
       );
-      elements.githubRepoGrid.appendChild(fragment);
+      elements.githubDetailView.appendChild(fragment);
     }
   }
 }
