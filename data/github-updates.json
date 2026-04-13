@@ -1,5 +1,5 @@
 {
-  "lastSyncedAt": "2026-04-13T08:50:00+09:00",
+  "lastSyncedAt": "2026-04-13T10:04:25+09:00",
   "source": "github_mcp",
   "owner": "https-dobedub-com",
   "repos": [
@@ -106,27 +106,16 @@
       "repo": "vogopang_back",
       "repoUrl": "https://github.com/https-dobedub-com/vogopang_back",
       "defaultBranch": "main",
-      "openPrCount": 2,
+      "openPrCount": 1,
       "latestCommit": {
-        "sha": "1ddd3061694182d5d7f803553d6da433fa526858",
-        "shortSha": "1ddd306",
-        "message": "Merge pull request #128 from https-dobedub-com/ai-agent-review\n\n[TEST] AI Review",
+        "sha": "9a065485c0b68e9dbaea0e28b6e63c0be188b4d7",
+        "shortSha": "9a06548",
+        "message": "Merge pull request #129 from https-dobedub-com/test\n\ninit",
         "author": "theo7727",
-        "committedAt": "2026-04-10T06:39:40Z",
-        "url": "https://github.com/https-dobedub-com/vogopang_back/commit/1ddd3061694182d5d7f803553d6da433fa526858"
+        "committedAt": "2026-04-13T00:08:00Z",
+        "url": "https://github.com/https-dobedub-com/vogopang_back/commit/9a065485c0b68e9dbaea0e28b6e63c0be188b4d7"
       },
       "prs": [
-        {
-          "number": 129,
-          "title": "init",
-          "state": "open",
-          "draft": false,
-          "updatedAt": "2026-04-10T07:39:45Z",
-          "url": "https://github.com/https-dobedub-com/vogopang_back/pull/129",
-          "base": "main",
-          "head": "test",
-          "author": "dobedub"
-        },
         {
           "number": 36,
           "title": "[AG-534]유저페이지 및 관리자 페이지 home 로직(통합검색 및 통합 정보 조회)",
@@ -140,6 +129,66 @@
         }
       ],
       "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "Merge pull request #129 from https-dobedub-com/test",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/9a065485c0b68e9dbaea0e28b6e63c0be188b4d7",
+          "occurredAt": "2026-04-13T00:08:00Z",
+          "author": "theo7727",
+          "status": "latest",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 1/6"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "나중에 더 고민해봐야겠음",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/09f366c51e930b55e721e9c7561abc95eb42e9e0",
+          "occurredAt": "2026-04-10T07:39:39Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 2/6"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "Auth ApiTag",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/0c93c900c275e85f883a6734bc06eaf3f241bebe",
+          "occurredAt": "2026-04-10T07:23:25Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 3/6"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "feat: dto 추가",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/939e5734d0c37c827b6599c91a64bfd7953079bd",
+          "occurredAt": "2026-04-10T07:20:21Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 4/6"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "필요없는 주석 삭제",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/9ee62d7b30b017bc23c9afce8088544cc9c18ad9",
+          "occurredAt": "2026-04-10T07:04:43Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 5/6"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "init",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/f7ac185a5b8c3f5bbeb85995a7eeb45403685396",
+          "occurredAt": "2026-04-10T06:51:22Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "기준 SHA 1ddd306 이후 새 커밋 6/6"
+        },
         {
           "kind": "commit",
           "repo": "vogopang_back",
@@ -171,7 +220,18 @@
           "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
         }
       ],
-      "prEvents": []
+      "prEvents": [
+        {
+          "kind": "pull_request",
+          "repo": "vogopang_back",
+          "title": "PR #129 left open set",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/pull/129",
+          "occurredAt": "2026-04-13T10:04:25+09:00",
+          "author": "dobedub",
+          "status": "closed_or_merged",
+          "summary": "PR #129 is no longer in the open PR list"
+        }
+      ]
     },
     {
       "owner": "https-dobedub-com",
