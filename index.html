@@ -189,6 +189,22 @@
           </aside>
         </section>
 
+        <section class="panel github-panel">
+          <div class="panel-heading">
+            <div>
+              <h3>GitHub Watch</h3>
+              <p>대상 레포의 최신 커밋과 PR 상태를 주기적으로 반영합니다.</p>
+            </div>
+            <div class="github-meta">
+              <span>마지막 동기화</span>
+              <strong id="github-sync-time">아직 없음</strong>
+            </div>
+          </div>
+
+          <div id="github-filters" class="github-filters"></div>
+          <div id="github-repo-grid" class="github-repo-grid"></div>
+        </section>
+
         <section class="lower-grid">
           <section class="panel board-panel">
             <div class="panel-heading">
@@ -369,6 +385,54 @@
         <div class="notion-update-side">
           <span class="notion-update-time"></span>
           <a class="notion-update-link" target="_blank" rel="noreferrer">열기</a>
+        </div>
+      </article>
+    </template>
+
+    <template id="github-repo-template">
+      <article class="github-repo-card">
+        <div class="github-repo-top">
+          <div>
+            <h4 class="github-repo-name"></h4>
+            <p class="github-repo-branch"></p>
+          </div>
+          <span class="github-pr-badge"></span>
+        </div>
+        <p class="github-commit-message"></p>
+        <div class="github-commit-meta">
+          <span class="github-commit-sha"></span>
+          <span class="github-commit-time"></span>
+        </div>
+        <div class="github-repo-links">
+          <a class="github-commit-link" target="_blank" rel="noreferrer">커밋</a>
+          <a class="github-repo-link" target="_blank" rel="noreferrer">레포</a>
+        </div>
+        <div class="github-repo-sections">
+          <section class="github-repo-section">
+            <header>
+              <h5>최근 커밋</h5>
+            </header>
+            <div class="github-commit-events"></div>
+          </section>
+          <section class="github-repo-section">
+            <header>
+              <h5>PR 현황</h5>
+            </header>
+            <div class="github-pr-events"></div>
+          </section>
+        </div>
+      </article>
+    </template>
+
+    <template id="github-event-template">
+      <article class="github-event-item">
+        <div class="github-event-main">
+          <h6 class="github-event-title"></h6>
+          <p class="github-event-subtitle"></p>
+        </div>
+        <div class="github-event-side">
+          <span class="github-event-time"></span>
+          <a class="github-event-link" target="_blank" rel="noreferrer">열기</a>
         </div>
       </article>
     </template>

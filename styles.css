@@ -754,6 +754,219 @@ select {
   font-size: 0.85rem;
 }
 
+.github-panel {
+  margin-bottom: 22px;
+}
+
+.github-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.github-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.github-filter-chip {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: var(--surface-low);
+  color: #5d6771;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.github-filter-chip.active {
+  background: rgba(0, 91, 191, 0.12);
+  color: var(--primary);
+}
+
+.github-repo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.github-repo-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface-low);
+  display: grid;
+  gap: 12px;
+}
+
+.github-repo-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.github-repo-name {
+  margin: 0 0 4px;
+  font-size: 0.96rem;
+}
+
+.github-repo-branch {
+  margin: 0;
+  color: #7b828b;
+  font-size: 0.78rem;
+}
+
+.github-pr-badge {
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(0, 91, 191, 0.08);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.github-commit-message {
+  margin: 0 0 10px;
+  min-height: 44px;
+  line-height: 1.45;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.github-commit-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #7b828b;
+  font-size: 0.78rem;
+}
+
+.github-repo-links {
+  display: flex;
+  gap: 12px;
+}
+
+.github-repo-links a,
+.github-event-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.github-repo-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.github-repo-section {
+  border-radius: 12px;
+  background: var(--surface-lowest);
+  padding: 12px;
+}
+
+.github-repo-section header {
+  margin-bottom: 8px;
+}
+
+.github-repo-section h5 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #7b828b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.github-event-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.github-event-item + .github-event-item {
+  border-top: 1px solid rgba(25, 28, 29, 0.06);
+}
+
+.github-event-title {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.github-event-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.github-event-side {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 8px;
+}
+
+.github-event-time {
+  color: #7b828b;
+  font-size: 0.78rem;
+}
+
+.github-event-placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.github-pr-summary-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.github-pr-summary-item + .github-pr-summary-item {
+  border-top: 1px solid rgba(25, 28, 29, 0.06);
+}
+
+.github-pr-summary-title {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.github-pr-summary-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.github-pr-summary-side {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 8px;
+}
+
+.github-pr-summary-time {
+  color: #7b828b;
+  font-size: 0.78rem;
+}
+
+.github-pr-summary-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .notion-meta {
   display: flex;
   justify-content: space-between;
@@ -877,6 +1090,10 @@ select {
   .lower-grid {
     grid-template-columns: 1fr;
   }
+
+  .github-repo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 920px) {
@@ -913,7 +1130,8 @@ select {
 @media (max-width: 720px) {
   .stats-grid,
   .board-grid,
-  .split-fields {
+  .split-fields,
+  .github-repo-grid {
     grid-template-columns: 1fr;
   }
 

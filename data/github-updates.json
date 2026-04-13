@@ -1,0 +1,578 @@
+{
+  "lastSyncedAt": "2026-04-13T08:50:00+09:00",
+  "source": "github_mcp",
+  "owner": "https-dobedub-com",
+  "repos": [
+    {
+      "owner": "https-dobedub-com",
+      "repo": "dubright_backend",
+      "repoUrl": "https://github.com/https-dobedub-com/dubright_backend",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "d2d9109945eb78aa52b2b6c22d13b9ace75d619a",
+        "shortSha": "d2d9109",
+        "message": "Merge branch 'test'",
+        "author": "fwidgetKim",
+        "committedAt": "2026-03-30T11:59:22Z",
+        "url": "https://github.com/https-dobedub-com/dubright_backend/commit/d2d9109945eb78aa52b2b6c22d13b9ace75d619a"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "dubright_backend",
+          "title": "Merge branch 'test'",
+          "url": "https://github.com/https-dobedub-com/dubright_backend/commit/d2d9109945eb78aa52b2b6c22d13b9ace75d619a",
+          "occurredAt": "2026-03-30T11:59:22Z",
+          "author": "fwidgetKim",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "dubright_backend",
+          "title": "레거시 패턴 API 수정: `effect_volume` 조건값 1 → 0으로 변경, EQ 설정 로직 수정.",
+          "url": "https://github.com/https-dobedub-com/dubright_backend/commit/7f8bdddd7159c09d32f2fd2b7ea791f9c52f0ac7",
+          "occurredAt": "2026-03-30T11:59:00Z",
+          "author": "fwidgetKim",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "dubright_backend",
+          "title": "Merge branch 'test'",
+          "url": "https://github.com/https-dobedub-com/dubright_backend/commit/b98c3418ac50d7bfc621179864da6deba431e5d9",
+          "occurredAt": "2026-03-30T08:17:23Z",
+          "author": "fwidgetKim",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "dubright_front",
+      "repoUrl": "https://github.com/https-dobedub-com/dubright_front",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "483b58db631672089104a09223a0af955a9a6528",
+        "shortSha": "483b58d",
+        "message": "Merge pull request #9 from https-dobedub-com/DA-1273-record-race-condition\n\nfix: 녹음 카운트다운 숫자 표시 제거 및 인터랙션 차단 유지",
+        "author": "HONGDAEEUI-dev",
+        "committedAt": "2026-03-17T08:43:22Z",
+        "url": "https://github.com/https-dobedub-com/dubright_front/commit/483b58db631672089104a09223a0af955a9a6528"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "dubright_front",
+          "title": "Merge pull request #9 from https-dobedub-com/DA-1273-record-race-condition",
+          "url": "https://github.com/https-dobedub-com/dubright_front/commit/483b58db631672089104a09223a0af955a9a6528",
+          "occurredAt": "2026-03-17T08:43:22Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "dubright_front",
+          "title": "fix: 녹음 카운트다운 숫자 표시 제거 및 인터랙션 차단 유지",
+          "url": "https://github.com/https-dobedub-com/dubright_front/commit/b2d8b1b058d23a4035df8159c703ccd7dfe508ce",
+          "occurredAt": "2026-03-17T08:34:52Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "dubright_front",
+          "title": "Merge pull request #8 from https-dobedub-com/DA-1273-record-race-condition",
+          "url": "https://github.com/https-dobedub-com/dubright_front/commit/8d6f3b440cbae6a3895c786d001a0c28c8bab67a",
+          "occurredAt": "2026-03-17T06:33:27Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "vogopang_back",
+      "repoUrl": "https://github.com/https-dobedub-com/vogopang_back",
+      "defaultBranch": "main",
+      "openPrCount": 2,
+      "latestCommit": {
+        "sha": "1ddd3061694182d5d7f803553d6da433fa526858",
+        "shortSha": "1ddd306",
+        "message": "Merge pull request #128 from https-dobedub-com/ai-agent-review\n\n[TEST] AI Review",
+        "author": "theo7727",
+        "committedAt": "2026-04-10T06:39:40Z",
+        "url": "https://github.com/https-dobedub-com/vogopang_back/commit/1ddd3061694182d5d7f803553d6da433fa526858"
+      },
+      "prs": [
+        {
+          "number": 129,
+          "title": "init",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2026-04-10T07:39:45Z",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/pull/129",
+          "base": "main",
+          "head": "test",
+          "author": "dobedub"
+        },
+        {
+          "number": 36,
+          "title": "[AG-534]유저페이지 및 관리자 페이지 home 로직(통합검색 및 통합 정보 조회)",
+          "state": "open",
+          "draft": true,
+          "updatedAt": "2026-04-10T07:30:10Z",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/pull/36",
+          "base": "main",
+          "head": "AG-534-home",
+          "author": "NohYusung"
+        }
+      ],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "Merge pull request #128 from https-dobedub-com/ai-agent-review",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/1ddd3061694182d5d7f803553d6da433fa526858",
+          "occurredAt": "2026-04-10T06:39:40Z",
+          "author": "theo7727",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "되나",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/1fad1ca56975fd2b0c9f2e79560f842c10beba4c",
+          "occurredAt": "2026-04-10T06:39:09Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_back",
+          "title": "Merge pull request #127 from https-dobedub-com/AG-759-client-policy",
+          "url": "https://github.com/https-dobedub-com/vogopang_back/commit/5f6b5e4e8199549e4314e7f1b2d31c23f8dce4f6",
+          "occurredAt": "2026-04-10T05:04:22Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "vogopang-library-back-office",
+      "repoUrl": "https://github.com/https-dobedub-com/vogopang-library-back-office",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "a6adc1fb168531ca9ba1626c9a53473f4f26fbfa",
+        "shortSha": "a6adc1f",
+        "message": "[AG-768] 에피소드 체험하기 설정에 미리보기 썸네일 추가 (#50)",
+        "author": "Mogeum",
+        "committedAt": "2026-04-10T09:14:36Z",
+        "url": "https://github.com/https-dobedub-com/vogopang-library-back-office/commit/a6adc1fb168531ca9ba1626c9a53473f4f26fbfa"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "vogopang-library-back-office",
+          "title": "[AG-768] 에피소드 체험하기 설정에 미리보기 썸네일 추가 (#50)",
+          "url": "https://github.com/https-dobedub-com/vogopang-library-back-office/commit/a6adc1fb168531ca9ba1626c9a53473f4f26fbfa",
+          "occurredAt": "2026-04-10T09:14:36Z",
+          "author": "Mogeum",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang-library-back-office",
+          "title": "[AG-768] 에피소드 체험하기 설정에 미리보기 썸네일 추가",
+          "url": "https://github.com/https-dobedub-com/vogopang-library-back-office/commit/ba20133f1b1178440c17254d9a9e74b5d6bdd8ed",
+          "occurredAt": "2026-04-10T09:12:59Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang-library-back-office",
+          "title": "[AG-756]체험하기 ui 수정 (#49)",
+          "url": "https://github.com/https-dobedub-com/vogopang-library-back-office/commit/370c534d6c0a48f4ee7c965dbf92d780212b6c0e",
+          "occurredAt": "2026-04-10T04:17:14Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "vogopang_front",
+      "repoUrl": "https://github.com/https-dobedub-com/vogopang_front",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "8936be7dd2ec96598cf2b2108269208c45925080",
+        "shortSha": "8936be7",
+        "message": "Merge pull request #90 from https-dobedub-com/fix/AG-697/revive-spoint-thumbnail-fallback\n\nfix: 플레이어 녹음 썸네일 판정 보정 및 녹음 모달 UI 개선",
+        "author": "HONGDAEEUI-dev",
+        "committedAt": "2026-04-08T04:11:20Z",
+        "url": "https://github.com/https-dobedub-com/vogopang_front/commit/8936be7dd2ec96598cf2b2108269208c45925080"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "vogopang_front",
+          "title": "Merge pull request #90 from https-dobedub-com/fix/AG-697/revive-spoint-thumbnail-fallback",
+          "url": "https://github.com/https-dobedub-com/vogopang_front/commit/8936be7dd2ec96598cf2b2108269208c45925080",
+          "occurredAt": "2026-04-08T04:11:20Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_front",
+          "title": "fix: 플레이어 녹음 썸네일 판정 보정 및 녹음 모달 UI 정리",
+          "url": "https://github.com/https-dobedub-com/vogopang_front/commit/4d9e5ed457833159c66c26c71bd9524547add919",
+          "occurredAt": "2026-04-08T03:13:41Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang_front",
+          "title": "Merge pull request #89 from https-dobedub-com/feature/ui-ux-imprement",
+          "url": "https://github.com/https-dobedub-com/vogopang_front/commit/0782d1ad649938af5ad3774a05f750a7a7296f30",
+          "occurredAt": "2026-04-08T03:00:45Z",
+          "author": "HONGDAEEUI-dev",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "vogopang-partner-back-office",
+      "repoUrl": "https://github.com/https-dobedub-com/vogopang-partner-back-office",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "c64a18f1527dafb2ee957ced0b2bca0ba78540a6",
+        "shortSha": "c64a18f",
+        "message": "Merge pull request #28 from https-dobedub-com/fix/AG-754/qa\n\n[AG-754] QA- 이미지 관련 명칭 수정 및 규격에 따라 ui 수정",
+        "author": "Mogeum",
+        "committedAt": "2026-04-10T07:37:43Z",
+        "url": "https://github.com/https-dobedub-com/vogopang-partner-back-office/commit/c64a18f1527dafb2ee957ced0b2bca0ba78540a6"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "vogopang-partner-back-office",
+          "title": "Merge pull request #28 from https-dobedub-com/fix/AG-754/qa",
+          "url": "https://github.com/https-dobedub-com/vogopang-partner-back-office/commit/c64a18f1527dafb2ee957ced0b2bca0ba78540a6",
+          "occurredAt": "2026-04-10T07:37:43Z",
+          "author": "Mogeum",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang-partner-back-office",
+          "title": "Merge pull request #29 from https-dobedub-com/feature/AG-752/user",
+          "url": "https://github.com/https-dobedub-com/vogopang-partner-back-office/commit/3a2c88a8a67084ed30a5174eda5d8e5662b7bf5a",
+          "occurredAt": "2026-04-10T07:32:35Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "vogopang-partner-back-office",
+          "title": "⏺ fix: 이미지 컬럼 헤더명 및 썸네일 스타일 수정",
+          "url": "https://github.com/https-dobedub-com/vogopang-partner-back-office/commit/87f9a8b5f4c632c61b10ee8d7c1ac7cc8036ffb6",
+          "occurredAt": "2026-04-10T07:31:35Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "pudding_front",
+      "repoUrl": "https://github.com/https-dobedub-com/pudding_front",
+      "defaultBranch": "staging",
+      "openPrCount": 1,
+      "latestCommit": {
+        "sha": "85c6c209e6e4538c717e9202309a1f87907ab648",
+        "shortSha": "85c6c20",
+        "message": "Merge pull request #482 from https-dobedub-com/bugfix/footer-router\n\nBugfix/footer router",
+        "author": "Mogeum",
+        "committedAt": "2026-04-01T06:12:50Z",
+        "url": "https://github.com/https-dobedub-com/pudding_front/commit/85c6c209e6e4538c717e9202309a1f87907ab648"
+      },
+      "prs": [
+        {
+          "number": 449,
+          "title": "[DA-1217]시리즈, 홈화면, 아티스트 배너 비율조정",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2026-03-06T07:12:48Z",
+          "url": "https://github.com/https-dobedub-com/pudding_front/pull/449",
+          "base": "staging",
+          "head": "refactor/DA-1217/banner-ratio-adjust",
+          "author": "LEEHEEWON123"
+        }
+      ],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "pudding_front",
+          "title": "Merge pull request #482 from https-dobedub-com/bugfix/footer-router",
+          "url": "https://github.com/https-dobedub-com/pudding_front/commit/85c6c209e6e4538c717e9202309a1f87907ab648",
+          "occurredAt": "2026-04-01T06:12:50Z",
+          "author": "Mogeum",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pudding_front",
+          "title": "fix: 개인정보 보호 라우팅 수정",
+          "url": "https://github.com/https-dobedub-com/pudding_front/commit/df51d45df384a0fd8167435230fb4dec718fafd8",
+          "occurredAt": "2026-04-01T06:10:39Z",
+          "author": "LEEHEEWON123",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pudding_front",
+          "title": "Merge pull request #481 from https-dobedub-com/staging",
+          "url": "https://github.com/https-dobedub-com/pudding_front/commit/035ee18f5f2ce5cd3f49641e1631518c9ba9d88a",
+          "occurredAt": "2026-03-16T06:26:17Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "pickme_back",
+      "repoUrl": "https://github.com/https-dobedub-com/pickme_back",
+      "defaultBranch": "main",
+      "openPrCount": 1,
+      "latestCommit": {
+        "sha": "fba2a7fceb3e048c20e99aca1a140b2eb375c966",
+        "shortSha": "fba2a7f",
+        "message": "Merge pull request #183 from https-dobedub-com/DA-1267-promotion\n\n[DA-1267] 유토피아 신작 프로모션 할인 이벤트",
+        "author": "dobedub",
+        "committedAt": "2026-03-13T04:25:12Z",
+        "url": "https://github.com/https-dobedub-com/pickme_back/commit/fba2a7fceb3e048c20e99aca1a140b2eb375c966"
+      },
+      "prs": [
+        {
+          "number": 114,
+          "title": "[DA-251] 관리자 페이지 커뮤니티 관리 기능 추가",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2025-10-15T08:06:35Z",
+          "url": "https://github.com/https-dobedub-com/pickme_back/pull/114",
+          "base": "main",
+          "head": "feature/DA-251-admin-community",
+          "author": "NohYusung"
+        }
+      ],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "pickme_back",
+          "title": "Merge pull request #183 from https-dobedub-com/DA-1267-promotion",
+          "url": "https://github.com/https-dobedub-com/pickme_back/commit/fba2a7fceb3e048c20e99aca1a140b2eb375c966",
+          "occurredAt": "2026-03-13T04:25:12Z",
+          "author": "dobedub",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_back",
+          "title": "Merge pull request #184 from https-dobedub-com/AG-426-job",
+          "url": "https://github.com/https-dobedub-com/pickme_back/commit/6db9e6a1031bf79c43bbb775d6ec837a1b8c9ea1",
+          "occurredAt": "2026-03-13T02:10:16Z",
+          "author": "dobedub",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_back",
+          "title": "fix: thumbnail url 길이",
+          "url": "https://github.com/https-dobedub-com/pickme_back/commit/20cc4319a8b8c95191420a6ef167715e8b465776",
+          "occurredAt": "2026-03-13T02:08:59Z",
+          "author": "theo7727",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "pickme_front_admin",
+      "repoUrl": "https://github.com/https-dobedub-com/pickme_front_admin",
+      "defaultBranch": "main",
+      "openPrCount": 3,
+      "latestCommit": {
+        "sha": "6bb75ffa4476f8374e4e99cd0236911c572df352",
+        "shortSha": "6bb75ff",
+        "message": "Merge pull request #38 from https-dobedub-com/feature/AG-428/popupJob\n\n[AG-428]팝업 JOB 추가",
+        "author": "Mogeum",
+        "committedAt": "2026-03-13T01:32:21Z",
+        "url": "https://github.com/https-dobedub-com/pickme_front_admin/commit/6bb75ffa4476f8374e4e99cd0236911c572df352"
+      },
+      "prs": [
+        {
+          "number": 15,
+          "title": "[DA-306] 제이슨 파일로 관리하던 FAQ를 관리자페이지에서 관리할 수 있도록 변경",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2025-10-17T06:12:27Z",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/pull/15",
+          "base": "main",
+          "head": "feature/DA-306-faq-management",
+          "author": "LEEHEEWON123"
+        },
+        {
+          "number": 14,
+          "title": "[DA-300] 금칙어 및 약관 페이지 MVVM구조로 변경",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2025-11-25T00:33:28Z",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/pull/14",
+          "base": "main",
+          "head": "feature/DA-300-terms-and-forbiddenWord",
+          "author": "LEEHEEWON123"
+        },
+        {
+          "number": 13,
+          "title": "[DA-284]사용자 등급 확장",
+          "state": "open",
+          "draft": false,
+          "updatedAt": "2025-10-15T09:07:06Z",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/pull/13",
+          "base": "main",
+          "head": "feature/DA-284/gradeExpand",
+          "author": "Mogeum"
+        }
+      ],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "pickme_front_admin",
+          "title": "Merge pull request #38 from https-dobedub-com/feature/AG-428/popupJob",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/commit/6bb75ffa4476f8374e4e99cd0236911c572df352",
+          "occurredAt": "2026-03-13T01:32:21Z",
+          "author": "Mogeum",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_front_admin",
+          "title": "Merge branch 'main' into feature/AG-428/popupJob",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/commit/fd52c187af5a69a59dda6aac69682aff12b47719",
+          "occurredAt": "2026-03-13T01:31:32Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_front_admin",
+          "title": "feature.잡 스케줄러 추가",
+          "url": "https://github.com/https-dobedub-com/pickme_front_admin/commit/0ccfa082a1543ee4ec1bc16faf383c804a867de0",
+          "occurredAt": "2026-03-13T01:09:40Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    },
+    {
+      "owner": "https-dobedub-com",
+      "repo": "pickme_front",
+      "repoUrl": "https://github.com/https-dobedub-com/pickme_front",
+      "defaultBranch": "main",
+      "openPrCount": 0,
+      "latestCommit": {
+        "sha": "80671acf1a35c6c4a13e033765a87ca1d89fc709",
+        "shortSha": "80671ac",
+        "message": "Merge pull request #68 from https-dobedub-com/fix/DA-1279/seriesDetail\n\n[DA-1279]작품 상세 1화가 유료인 경우 } 글자 표시",
+        "author": "theo7727",
+        "committedAt": "2026-03-19T09:16:21Z",
+        "url": "https://github.com/https-dobedub-com/pickme_front/commit/80671acf1a35c6c4a13e033765a87ca1d89fc709"
+      },
+      "prs": [],
+      "recentCommitEvents": [
+        {
+          "kind": "commit",
+          "repo": "pickme_front",
+          "title": "Merge pull request #68 from https-dobedub-com/fix/DA-1279/seriesDetail",
+          "url": "https://github.com/https-dobedub-com/pickme_front/commit/80671acf1a35c6c4a13e033765a87ca1d89fc709",
+          "occurredAt": "2026-03-19T09:16:21Z",
+          "author": "theo7727",
+          "status": "latest",
+          "summary": "초기 동기화: 최근 3개 커밋 중 1번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_front",
+          "title": "fix: correct typo in button text rendering on ToonDetailPage",
+          "url": "https://github.com/https-dobedub-com/pickme_front/commit/dc252d894945666c83ba4b7eedc86423e541c7a7",
+          "occurredAt": "2026-03-19T09:08:08Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 2번째"
+        },
+        {
+          "kind": "commit",
+          "repo": "pickme_front",
+          "title": "init",
+          "url": "https://github.com/https-dobedub-com/pickme_front/commit/8c9cdcc90971604e72a006da60ec22067309bb02",
+          "occurredAt": "2026-03-19T09:05:01Z",
+          "author": "Mogeum",
+          "status": "recent",
+          "summary": "초기 동기화: 최근 3개 커밋 중 3번째"
+        }
+      ],
+      "prEvents": []
+    }
+  ]
+}

@@ -42,6 +42,11 @@ const elements = {
   notionSyncTime: document.querySelector("#notion-sync-time"),
   notionUpdatesList: document.querySelector("#notion-updates-list"),
   notionUpdateTemplate: document.querySelector("#notion-update-template"),
+  githubSyncTime: document.querySelector("#github-sync-time"),
+  githubFilters: document.querySelector("#github-filters"),
+  githubRepoGrid: document.querySelector("#github-repo-grid"),
+  githubRepoTemplate: document.querySelector("#github-repo-template"),
+  githubEventTemplate: document.querySelector("#github-event-template"),
 };
 
 const priorityLabel = {
@@ -57,6 +62,11 @@ const state = {
     lastSyncedAt: null,
     items: [],
   },
+  githubFeed: {
+    lastSyncedAt: null,
+    repos: [],
+  },
+  githubFilter: "all",
   timer: {
     intervalId: null,
     remainingSeconds: 25 * 60,
@@ -72,7 +82,9 @@ function initialize() {
   syncTimerFromDay();
   render();
   loadNotionUpdates();
+  loadGithubUpdates();
   window.setInterval(loadNotionUpdates, 60 * 1000);
+  window.setInterval(loadGithubUpdates, 60 * 1000);
 
   elements.previousDay.addEventListener("click", () => changeDay(-1));
   elements.nextDay.addEventListener("click", () => changeDay(1));
@@ -176,6 +188,7 @@ function render() {
   renderActivityList(tasks);
   renderWeeklyChart();
   renderNotionUpdates();
+  renderGithubUpdates();
   renderClock();
 }
 
@@ -195,6 +208,26 @@ async function loadNotionUpdates() {
     };
   }
   renderNotionUpdates();
+}
+
+async function loadGithubUpdates() {
+  try {
+    const response = await fetch(`./data/github-updates.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    state.githubFeed = {
+      lastSyncedAt: payload.lastSyncedAt ?? null,
+      repos: Array.isArray(payload.repos) ? payload.repos : [],
+      items: Array.isArray(payload.items) ? payload.items : [],
+    };
+  } catch {
+    state.githubFeed = {
+      lastSyncedAt: null,
+      repos: [],
+      items: [],
+    };
+  }
+  renderGithubUpdates();
 }
 
 function renderTaskList(container, tasks) {
@@ -327,6 +360,159 @@ function renderNotionUpdates() {
     const link = fragment.querySelector(".notion-update-link");
     link.href = item.url || "#";
     elements.notionUpdatesList.appendChild(fragment);
+  }
+}
+
+function renderGithubUpdates() {
+  elements.githubSyncTime.textContent = state.githubFeed.lastSyncedAt
+    ? formatDateTime(state.githubFeed.lastSyncedAt)
+    : "아직 없음";
+
+  renderGithubFilters();
+  elements.githubRepoGrid.innerHTML = "";
+
+  const repos = state.githubFeed.repos.filter((repo) =>
+    state.githubFilter === "all" ? true : repo.repo === state.githubFilter,
+  );
+  if (repos.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "task-note";
+    empty.textContent = "동기화된 GitHub 레포 현황이 없습니다.";
+    elements.githubRepoGrid.appendChild(empty);
+  } else {
+    for (const repo of repos) {
+      const fragment = elements.githubRepoTemplate.content.cloneNode(true);
+      fragment.querySelector(".github-repo-name").textContent = repo.repo || "unknown";
+      fragment.querySelector(".github-repo-branch").textContent = `branch ${repo.defaultBranch || "unknown"}`;
+      fragment.querySelector(".github-pr-badge").textContent = `Open PR ${repo.openPrCount ?? 0}`;
+      fragment.querySelector(".github-commit-message").textContent =
+        repo.latestCommit?.message || "최근 커밋 정보 없음";
+      fragment.querySelector(".github-commit-sha").textContent =
+        repo.latestCommit?.shortSha || repo.latestCommit?.sha?.slice(0, 7) || "-";
+      fragment.querySelector(".github-commit-time").textContent = repo.latestCommit?.committedAt
+        ? relativeTime(repo.latestCommit.committedAt)
+        : "시간 없음";
+      const commitLink = fragment.querySelector(".github-commit-link");
+      commitLink.href = repo.latestCommit?.url || repo.repoUrl || "#";
+      const repoLink = fragment.querySelector(".github-repo-link");
+      repoLink.href = repo.repoUrl || "#";
+      renderGithubEventGroup(
+        fragment.querySelector(".github-commit-events"),
+        repo.recentCommitEvents,
+        "최근 커밋 이벤트가 없습니다.",
+      );
+      renderGithubPrSection(
+        fragment.querySelector(".github-pr-events"),
+        repo,
+      );
+      elements.githubRepoGrid.appendChild(fragment);
+    }
+  }
+}
+
+function renderGithubFilters() {
+  elements.githubFilters.innerHTML = "";
+  const filters = ["all", ...state.githubFeed.repos.map((repo) => repo.repo)];
+  for (const filter of filters) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `github-filter-chip ${state.githubFilter === filter ? "active" : ""}`.trim();
+    button.textContent = filter === "all" ? "전체" : filter;
+    button.addEventListener("click", () => {
+      state.githubFilter = filter;
+      renderGithubUpdates();
+    });
+    elements.githubFilters.appendChild(button);
+  }
+}
+
+function renderGithubEventGroup(container, events, emptyMessage) {
+  container.innerHTML = "";
+  const items = Array.isArray(events) ? events : [];
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "github-event-placeholder";
+    empty.textContent = emptyMessage;
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const item of items) {
+    const fragment = elements.githubEventTemplate.content.cloneNode(true);
+    fragment.querySelector(".github-event-title").textContent = item.title || "제목 없음";
+    fragment.querySelector(".github-event-subtitle").textContent =
+      [item.kind, item.author, item.status].filter(Boolean).join(" · ") || "메타데이터 없음";
+    fragment.querySelector(".github-event-time").textContent = item.occurredAt
+      ? relativeTime(item.occurredAt)
+      : "시간 없음";
+    const link = fragment.querySelector(".github-event-link");
+    link.href = item.url || "#";
+    container.appendChild(fragment);
+  }
+}
+
+function renderGithubPrSection(container, repo) {
+  container.innerHTML = "";
+
+  const prs = Array.isArray(repo.prs) ? repo.prs : [];
+  const prEvents = Array.isArray(repo.prEvents) ? repo.prEvents : [];
+
+  if (prs.length === 0 && prEvents.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "github-event-placeholder";
+    empty.textContent = "열린 PR이 없습니다.";
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const pr of prs) {
+    const item = document.createElement("article");
+    item.className = "github-pr-summary-item";
+
+    const main = document.createElement("div");
+    const title = document.createElement("h6");
+    title.className = "github-pr-summary-title";
+    title.textContent = `#${pr.number} ${pr.title}`;
+    const subtitle = document.createElement("p");
+    subtitle.className = "github-pr-summary-subtitle";
+    subtitle.textContent = [pr.base, pr.head, pr.author, pr.draft ? "draft" : "ready"]
+      .filter(Boolean)
+      .join(" · ");
+    main.appendChild(title);
+    main.appendChild(subtitle);
+
+    const side = document.createElement("div");
+    side.className = "github-pr-summary-side";
+    const time = document.createElement("span");
+    time.className = "github-pr-summary-time";
+    time.textContent = pr.updatedAt ? relativeTime(pr.updatedAt) : "시간 없음";
+    const link = document.createElement("a");
+    link.className = "github-pr-summary-link";
+    link.href = pr.url || "#";
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = pr.state || "open";
+    side.appendChild(time);
+    side.appendChild(link);
+
+    item.appendChild(main);
+    item.appendChild(side);
+    container.appendChild(item);
+  }
+
+  if (prEvents.length > 0) {
+    for (const event of prEvents) {
+      const fragment = elements.githubEventTemplate.content.cloneNode(true);
+      fragment.querySelector(".github-event-title").textContent = event.title || "제목 없음";
+      fragment.querySelector(".github-event-subtitle").textContent =
+        [event.kind, event.author, event.status].filter(Boolean).join(" · ") || "메타데이터 없음";
+      fragment.querySelector(".github-event-time").textContent = event.occurredAt
+        ? relativeTime(event.occurredAt)
+        : "시간 없음";
+      const link = fragment.querySelector(".github-event-link");
+      link.href = event.url || "#";
+      container.appendChild(fragment);
+    }
   }
 }
 
