@@ -9,4 +9,13 @@ if [ -f .env.local ]; then
   set +a
 fi
 
-node ./server.mjs
+node ./server.mjs &
+WEBHOOK_PID=$!
+
+cleanup() {
+  kill "$WEBHOOK_PID" 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+
+npm run dev

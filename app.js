@@ -225,7 +225,7 @@ async function loadNotionUpdates() {
       lastSyncedAt: payload.lastSyncedAt ?? null,
       items: Array.isArray(payload.items) ? payload.items : [],
     };
-  } catch (error) {
+  } catch {
     state.notionFeed = {
       lastSyncedAt: null,
       items: [],
