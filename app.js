@@ -9,6 +9,7 @@ const elements = {
   taskTitle: document.querySelector("#task-title"),
   taskCategory: document.querySelector("#task-category"),
   taskPriority: document.querySelector("#task-priority"),
+  taskDueDate: document.querySelector("#task-due-date"),
   taskEstimate: document.querySelector("#task-estimate"),
   taskNote: document.querySelector("#task-note"),
   dailyNotes: document.querySelector("#daily-notes"),
@@ -77,9 +78,10 @@ const state = {
 initialize();
 
 function initialize() {
-  ensureDay(state.activeDate);
+  prepareDay(state.activeDate);
   elements.selectedDate.value = state.activeDate;
   syncTimerFromDay();
+  syncTaskDueDate();
   render();
   loadNotionUpdates();
   loadGithubUpdates();
@@ -101,7 +103,7 @@ function initialize() {
 
 function loadState() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {};
+    return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {});
   } catch {
     return {};
   }
@@ -112,22 +114,39 @@ function saveState() {
 }
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return formatDateKey(new Date());
 }
 
-function ensureDay(dateKey) {
-  if (state.days[dateKey]) return;
-  state.days[dateKey] = {
+function createEmptyDay() {
+  return {
     tasks: [],
     notes: "",
     focusMinutes: 0,
     timerDuration: 25,
   };
-  saveState();
+}
+
+function prepareDay(dateKey) {
+  let changed = false;
+
+  if (!state.days[dateKey]) {
+    state.days[dateKey] = createEmptyDay();
+    changed = true;
+  }
+
+  if (rolloverPendingTasks(dateKey)) {
+    changed = true;
+  }
+
+  if (changed) {
+    saveState();
+  }
 }
 
 function getActiveDay() {
-  ensureDay(state.activeDate);
+  if (!state.days[state.activeDate]) {
+    state.days[state.activeDate] = createEmptyDay();
+  }
   return state.days[state.activeDate];
 }
 
@@ -138,17 +157,18 @@ function handleDateChange(event) {
 }
 
 function changeDay(offset) {
-  const current = new Date(`${state.activeDate}T00:00:00`);
+  const current = parseDateKey(state.activeDate);
   current.setDate(current.getDate() + offset);
-  switchToDate(current.toISOString().slice(0, 10));
+  switchToDate(formatDateKey(current));
 }
 
 function switchToDate(dateKey) {
   pauseTimer();
   state.activeDate = dateKey;
-  ensureDay(dateKey);
+  prepareDay(dateKey);
   elements.selectedDate.value = dateKey;
   syncTimerFromDay();
+  syncTaskDueDate();
   render();
 }
 
@@ -158,13 +178,17 @@ function syncTimerFromDay() {
   elements.timerDuration.value = day.timerDuration;
 }
 
+function syncTaskDueDate() {
+  elements.taskDueDate.value = state.activeDate;
+}
+
 function render() {
   const day = getActiveDay();
   const tasks = day.tasks;
 
-  const todo = tasks.filter((task) => task.status === "todo");
-  const doing = tasks.filter((task) => task.status === "doing");
-  const done = tasks.filter((task) => task.status === "done");
+  const todo = sortTasksForDisplay(tasks.filter((task) => task.status === "todo"));
+  const doing = sortTasksForDisplay(tasks.filter((task) => task.status === "doing"));
+  const done = sortTasksForDisplay(tasks.filter((task) => task.status === "done"));
 
   elements.dateCaption.textContent = formatDateCaption(state.activeDate);
   elements.dailyNotes.value = day.notes;
@@ -247,13 +271,28 @@ function renderTaskList(container, tasks) {
     fragment.querySelector(".task-category").textContent = task.category || "분류 없음";
     fragment.querySelector(".task-title").textContent = task.title;
 
+    const effectivePriority = getEffectivePriority(task);
     const priority = fragment.querySelector(".task-priority");
-    priority.textContent = priorityLabel[task.priority];
-    priority.className = `task-priority priority-${task.priority}`;
+    priority.textContent = priorityLabel[effectivePriority];
+    priority.className = `task-priority priority-${effectivePriority}`;
+
+    const flag = fragment.querySelector(".task-flag");
+    const flagInfo = getTaskFlag(task);
+    if (flagInfo) {
+      flag.textContent = flagInfo.label;
+      flag.className = `task-flag ${flagInfo.kind}`;
+    } else {
+      flag.remove();
+    }
 
     fragment.querySelector(".task-note").textContent = task.note || "메모 없음";
     fragment.querySelector(".task-estimate").textContent = `예상 ${task.estimate}분`;
-    fragment.querySelector(".task-created").textContent = formatTime(task.createdAt);
+    const deadline = fragment.querySelector(".task-deadline");
+    deadline.textContent = formatDeadlineLabel(task);
+    deadline.className = `task-deadline ${isTaskOverdue(task) ? "is-overdue" : ""}`.trim();
+    fragment.querySelector(".task-origin").textContent = task.carryoverCount > 0
+      ? `${formatShortDate(task.carriedFromDate)}에서 승계`
+      : `등록 ${formatTime(task.createdAt)}`;
 
     const actions = fragment.querySelector(".task-actions");
     for (const action of buildActions(task)) {
@@ -271,15 +310,10 @@ function renderTaskList(container, tasks) {
 
 function renderUpcomingList(tasks) {
   elements.upcomingList.innerHTML = "";
-  const upcoming = [...tasks]
+  const upcoming = sortTasksForDisplay(
+    tasks
     .filter((task) => task.status !== "done")
-    .sort((left, right) => {
-      const priorityScore = { high: 0, medium: 1, low: 2 };
-      return (
-        priorityScore[left.priority] - priorityScore[right.priority] ||
-        new Date(left.createdAt) - new Date(right.createdAt)
-      );
-    })
+  )
     .slice(0, 4);
 
   if (upcoming.length === 0) {
@@ -294,7 +328,11 @@ function renderUpcomingList(tasks) {
     const fragment = elements.upcomingItemTemplate.content.cloneNode(true);
     fragment.querySelector(".upcoming-title").textContent = task.title;
     fragment.querySelector(".upcoming-note").textContent = task.note || "메모 없음";
-    fragment.querySelector(".upcoming-priority").textContent = `우선순위 ${priorityLabel[task.priority]}`;
+    fragment.querySelector(".upcoming-priority").textContent =
+      `우선순위 ${priorityLabel[getEffectivePriority(task)]}`;
+    const deadline = fragment.querySelector(".upcoming-deadline");
+    deadline.textContent = formatDeadlineLabel(task);
+    deadline.className = `upcoming-deadline ${isTaskOverdue(task) ? "is-overdue" : ""}`.trim();
     fragment.querySelector(".upcoming-status").textContent =
       task.status === "doing" ? "진행 중" : "할 일";
     elements.upcomingList.appendChild(fragment);
@@ -304,7 +342,7 @@ function renderUpcomingList(tasks) {
 function renderActivityList(tasks) {
   elements.activityList.innerHTML = "";
   const activities = [...tasks]
-    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .sort((left, right) => new Date(right.updatedAt || right.createdAt) - new Date(left.updatedAt || left.createdAt))
     .slice(0, 5);
 
   if (activities.length === 0) {
@@ -318,16 +356,17 @@ function renderActivityList(tasks) {
   for (const task of activities) {
     const fragment = elements.activityItemTemplate.content.cloneNode(true);
     const icon = fragment.querySelector(".activity-icon");
-    icon.textContent = activityIcon(task);
+    const effectivePriority = getEffectivePriority(task);
+    icon.textContent = activityIcon(effectivePriority);
     icon.style.display = "grid";
     icon.style.placeItems = "center";
     icon.style.fontWeight = "800";
-    icon.style.color = activityColor(task.priority);
+    icon.style.color = activityColor(effectivePriority);
 
     fragment.querySelector(".activity-title").textContent = task.title;
     fragment.querySelector(".activity-subtitle").textContent =
-      task.note || `${task.category || "분류 없음"} 카테고리로 저장됨`;
-    fragment.querySelector(".activity-time").textContent = relativeTime(task.createdAt);
+      task.note || buildActivitySubtitle(task);
+    fragment.querySelector(".activity-time").textContent = relativeTime(task.updatedAt || task.createdAt);
     fragment.querySelector(".activity-badge").textContent = statusLabel(task.status);
     elements.activityList.appendChild(fragment);
   }
@@ -519,12 +558,12 @@ function renderGithubPrSection(container, repo) {
 function renderWeeklyChart() {
   const points = [];
   const labels = [];
-  const today = new Date(`${state.activeDate}T00:00:00`);
+  const today = parseDateKey(state.activeDate);
 
   for (let index = 6; index >= 0; index -= 1) {
     const current = new Date(today);
     current.setDate(today.getDate() - index);
-    const key = current.toISOString().slice(0, 10);
+    const key = formatDateKey(current);
     const day = state.days[key] || { tasks: [], focusMinutes: 0 };
     const completedCount = day.tasks.filter((task) => task.status === "done").length;
     const score = completedCount * 20 + day.focusMinutes;
@@ -609,21 +648,30 @@ function buildActions(task) {
 function handleCreateTask(event) {
   event.preventDefault();
   const day = getActiveDay();
+  const timestamp = new Date().toISOString();
+  const lineageId = crypto.randomUUID();
   const task = {
-    id: crypto.randomUUID(),
+    id: lineageId,
+    lineageId,
     title: elements.taskTitle.value.trim(),
     category: elements.taskCategory.value.trim(),
     priority: elements.taskPriority.value,
+    dueDate: elements.taskDueDate.value || state.activeDate,
     estimate: Number(elements.taskEstimate.value || 0),
     note: elements.taskNote.value.trim(),
     status: "todo",
-    createdAt: new Date().toISOString(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    carryoverCount: 0,
+    carriedFromDate: null,
+    completedAt: null,
   };
 
   day.tasks.unshift(task);
   saveState();
   elements.taskForm.reset();
   elements.taskPriority.value = "medium";
+  elements.taskDueDate.value = state.activeDate;
   elements.taskEstimate.value = "30";
   render();
 }
@@ -633,6 +681,8 @@ function updateTaskStatus(taskId, nextStatus) {
   const task = day.tasks.find((item) => item.id === taskId);
   if (!task) return;
   task.status = nextStatus;
+  task.updatedAt = new Date().toISOString();
+  task.completedAt = nextStatus === "done" ? task.updatedAt : null;
   saveState();
   render();
 }
@@ -725,7 +775,7 @@ function formatDateCaption(dateKey) {
     month: "long",
     day: "numeric",
     weekday: "long",
-  }).format(new Date(`${dateKey}T00:00:00`));
+  }).format(parseDateKey(dateKey));
 }
 
 function formatTime(value) {
@@ -774,4 +824,218 @@ function activityColor(priority) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function normalizeState(rawState) {
+  if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(rawState)
+      .filter(([dateKey]) => isDateKey(dateKey))
+      .map(([dateKey, day]) => [dateKey, normalizeDay(day, dateKey)]),
+  );
+}
+
+function normalizeDay(day, dateKey) {
+  return {
+    tasks: Array.isArray(day?.tasks) ? day.tasks.map((task) => normalizeTask(task, dateKey)) : [],
+    notes: typeof day?.notes === "string" ? day.notes : "",
+    focusMinutes: Math.max(0, Number(day?.focusMinutes) || 0),
+    timerDuration: clamp(Number(day?.timerDuration || 25), 1, 180),
+  };
+}
+
+function normalizeTask(task, dateKey) {
+  const fallbackId = crypto.randomUUID();
+  const id = typeof task?.id === "string" && task.id ? task.id : fallbackId;
+  const createdAt = isValidDateTime(task?.createdAt) ? task.createdAt : new Date(`${dateKey}T09:00:00`).toISOString();
+  const updatedAt = isValidDateTime(task?.updatedAt) ? task.updatedAt : createdAt;
+  const allowedPriority = ["high", "medium", "low"];
+  const allowedStatus = ["todo", "doing", "done"];
+
+  return {
+    id,
+    lineageId: typeof task?.lineageId === "string" && task.lineageId ? task.lineageId : id,
+    title: typeof task?.title === "string" ? task.title : "",
+    category: typeof task?.category === "string" ? task.category : "",
+    priority: allowedPriority.includes(task?.priority) ? task.priority : "medium",
+    dueDate: isDateKey(task?.dueDate) ? task.dueDate : dateKey,
+    estimate: Math.max(0, Number(task?.estimate) || 0),
+    note: typeof task?.note === "string" ? task.note : "",
+    status: allowedStatus.includes(task?.status) ? task.status : "todo",
+    createdAt,
+    updatedAt,
+    carryoverCount: Math.max(0, Number(task?.carryoverCount) || 0),
+    carriedFromDate: isDateKey(task?.carriedFromDate) ? task.carriedFromDate : null,
+    completedAt: isValidDateTime(task?.completedAt) ? task.completedAt : null,
+  };
+}
+
+function rolloverPendingTasks(targetDateKey) {
+  const targetDay = state.days[targetDateKey];
+  const knownLineages = new Set(targetDay.tasks.map((task) => task.lineageId || task.id));
+  const carriedTasks = [];
+  let changed = false;
+
+  const sourceDates = Object.keys(state.days)
+    .filter((dateKey) => dateKey < targetDateKey)
+    .sort((left, right) => right.localeCompare(left));
+
+  for (const sourceDateKey of sourceDates) {
+    const sourceDay = state.days[sourceDateKey];
+    const remainingTasks = [];
+
+    for (const task of sourceDay.tasks) {
+      if (task.status === "done") {
+        remainingTasks.push(task);
+        continue;
+      }
+
+      const lineageId = task.lineageId || task.id;
+      if (knownLineages.has(lineageId)) {
+        changed = true;
+        continue;
+      }
+
+      carriedTasks.push(createCarryoverTask(task, sourceDateKey));
+      knownLineages.add(lineageId);
+      changed = true;
+    }
+
+    if (remainingTasks.length !== sourceDay.tasks.length) {
+      sourceDay.tasks = remainingTasks;
+    }
+  }
+
+  if (carriedTasks.length > 0) {
+    targetDay.tasks = [...sortTasksForDisplay(carriedTasks), ...targetDay.tasks];
+  }
+
+  return changed;
+}
+
+function createCarryoverTask(task, sourceDateKey) {
+  const timestamp = new Date().toISOString();
+
+  return {
+    ...task,
+    id: crypto.randomUUID(),
+    priority: "high",
+    updatedAt: timestamp,
+    carryoverCount: (task.carryoverCount || 0) + 1,
+    carriedFromDate: sourceDateKey,
+    completedAt: null,
+  };
+}
+
+function sortTasksForDisplay(tasks) {
+  return [...tasks].sort(compareTasksForDisplay);
+}
+
+function compareTasksForDisplay(left, right) {
+  const priorityScore = { high: 0, medium: 1, low: 2 };
+
+  return (
+    Number(isTaskOverdue(right)) - Number(isTaskOverdue(left)) ||
+    priorityScore[getEffectivePriority(left)] - priorityScore[getEffectivePriority(right)] ||
+    left.dueDate.localeCompare(right.dueDate) ||
+    new Date(left.createdAt) - new Date(right.createdAt)
+  );
+}
+
+function getEffectivePriority(task) {
+  if (task.status !== "done" && (task.priority === "high" || task.carryoverCount > 0 || isTaskOverdue(task))) {
+    return "high";
+  }
+
+  return task.priority;
+}
+
+function isTaskOverdue(task, referenceDateKey = state.activeDate) {
+  return task.status !== "done" && isDateKey(task.dueDate) && task.dueDate < referenceDateKey;
+}
+
+function getTaskFlag(task) {
+  if (isTaskOverdue(task)) {
+    return {
+      label: `${daysPastDue(task.dueDate)}일 지연`,
+      kind: "overdue",
+    };
+  }
+
+  if (task.carryoverCount > 0) {
+    return {
+      label: "전일 승계",
+      kind: "carryover",
+    };
+  }
+
+  return null;
+}
+
+function formatDeadlineLabel(task) {
+  if (!isDateKey(task.dueDate)) {
+    return "마감 미정";
+  }
+
+  if (isTaskOverdue(task)) {
+    return `마감 ${formatShortDate(task.dueDate)} · ${daysPastDue(task.dueDate)}일 지남`;
+  }
+
+  if (task.dueDate === state.activeDate) {
+    return "오늘 마감";
+  }
+
+  return `마감 ${formatShortDate(task.dueDate)}`;
+}
+
+function buildActivitySubtitle(task) {
+  if (task.carryoverCount > 0) {
+    return `${task.category || "분류 없음"} · ${formatShortDate(task.carriedFromDate)}에서 승계`;
+  }
+
+  return `${task.category || "분류 없음"} 카테고리로 저장됨`;
+}
+
+function daysPastDue(dateKey) {
+  return Math.max(1, daysBetweenDateKeys(dateKey, state.activeDate));
+}
+
+function daysBetweenDateKeys(startDateKey, endDateKey) {
+  const start = parseDateKey(startDateKey);
+  const end = parseDateKey(endDateKey);
+  return Math.round((end - start) / 86400000);
+}
+
+function formatShortDate(dateKey) {
+  if (!isDateKey(dateKey)) {
+    return "날짜 미정";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isDateKey(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isValidDateTime(value) {
+  return typeof value === "string" && !Number.isNaN(new Date(value).getTime());
 }

@@ -22,26 +22,34 @@ CREATE TABLE IF NOT EXISTS work_days (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
+  lineage_id TEXT NOT NULL,
   work_date TEXT NOT NULL,
   title TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT '',
   priority TEXT NOT NULL DEFAULT 'medium',
+  due_date TEXT NOT NULL,
   estimate_minutes INTEGER NOT NULL DEFAULT 30,
   note TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'todo',
   sort_order INTEGER NOT NULL DEFAULT 0,
+  carryover_count INTEGER NOT NULL DEFAULT 0,
+  carried_from_date TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   completed_at TEXT,
   FOREIGN KEY (work_date) REFERENCES work_days(work_date) ON DELETE CASCADE,
   CHECK (priority IN ('high', 'medium', 'low')),
   CHECK (status IN ('todo', 'doing', 'done')),
-  CHECK (estimate_minutes >= 0)
+  CHECK (estimate_minutes >= 0),
+  CHECK (carryover_count >= 0),
+  CHECK (length(due_date) = 10),
+  CHECK (carried_from_date IS NULL OR length(carried_from_date) = 10)
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_work_date ON tasks(work_date);
 CREATE INDEX IF NOT EXISTS idx_tasks_work_date_status ON tasks(work_date, status);
 CREATE INDEX IF NOT EXISTS idx_tasks_work_date_priority ON tasks(work_date, priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date_status ON tasks(due_date, status);
 
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id TEXT PRIMARY KEY,
@@ -217,7 +225,8 @@ SELECT
   SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) AS todo_tasks,
   SUM(CASE WHEN status = 'doing' THEN 1 ELSE 0 END) AS doing_tasks,
   SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done_tasks,
-  SUM(CASE WHEN priority = 'high' AND status <> 'done' THEN 1 ELSE 0 END) AS open_high_priority_tasks
+  SUM(CASE WHEN priority = 'high' AND status <> 'done' THEN 1 ELSE 0 END) AS open_high_priority_tasks,
+  SUM(CASE WHEN due_date < work_date AND status <> 'done' THEN 1 ELSE 0 END) AS overdue_tasks
 FROM tasks
 GROUP BY work_date;
 

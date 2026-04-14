@@ -543,15 +543,20 @@ select {
 
 .upcoming-meta {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
 .upcoming-priority,
+.upcoming-deadline,
 .upcoming-status {
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.upcoming-deadline.is-overdue {
+  color: var(--danger);
 }
 
 .focus-card {
@@ -646,6 +651,13 @@ select {
   gap: 12px;
 }
 
+.task-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .task-category {
   margin: 0 0 4px;
   color: #7b828b;
@@ -665,6 +677,23 @@ select {
   padding: 5px 9px;
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.task-flag {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.task-flag.overdue {
+  background: rgba(186, 26, 26, 0.12);
+  color: var(--danger);
+}
+
+.task-flag.carryover {
+  background: rgba(0, 91, 191, 0.12);
+  color: var(--primary);
 }
 
 .priority-high {
@@ -691,11 +720,16 @@ select {
 
 .task-meta {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
   color: #7b828b;
   font-size: 0.82rem;
+}
+
+.task-deadline.is-overdue {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 .task-actions {
@@ -736,7 +770,7 @@ select {
 
 .split-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
