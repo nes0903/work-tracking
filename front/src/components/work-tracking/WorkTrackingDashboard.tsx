@@ -43,6 +43,32 @@ interface TaskFormState {
 
 const PROFILE_NAME = "Noh Yusung";
 const PROFILE_ROLE = "Principal Operator";
+const QUICK_LINKS = [
+  {
+    label: "Library Hub 열기",
+    href: "https://dobedub.vogopang.com/library-hub",
+  },
+  {
+    label: "푸딩툰 이용자",
+    href: "https://www.puddingtoon.com/home",
+  },
+  {
+    label: "푸딩툰 관리자",
+    href: "https://admin2.puddingtoon.org",
+  },
+  {
+    label: "덥라이트 운영",
+    href: "https://staging.dubright.org",
+  },
+  {
+    label: "픽미툰 이용자",
+    href: "https://www.pickmetoon.com",
+  },
+  {
+    label: "픽미툰 관리자",
+    href: "https://admin.pickmetoon.com",
+  },
+] as const;
 
 function createTaskFormState(dateKey: string): TaskFormState {
   return {
@@ -595,14 +621,17 @@ export function WorkTrackingDashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          <a
-            className="sidebar-link"
-            href="https://dobedub.vogopang.com/library-hub"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Library Hub 열기
-          </a>
+          {QUICK_LINKS.map((link) => (
+            <a
+              key={link.href}
+              className="sidebar-link"
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {link.label}
+            </a>
+          ))}
           <button className="sidebar-cta" type="button">
             오늘 계획 정리
           </button>
