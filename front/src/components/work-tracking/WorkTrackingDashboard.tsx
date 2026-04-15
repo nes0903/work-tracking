@@ -41,8 +41,6 @@ interface TaskFormState {
   note: string;
 }
 
-const PROFILE_NAME = "Noh Yusung";
-const PROFILE_ROLE = "Principal Operator";
 const QUICK_LINKS = [
   {
     label: "Library Hub 열기",
@@ -313,6 +311,10 @@ export function WorkTrackingDashboard() {
   const completion = activeDay.tasks.length
     ? Math.round((doneTasks.length / activeDay.tasks.length) * 100)
     : 0;
+  const overdueCount = useMemo(
+    () => activeDay.tasks.filter((task) => isTaskOverdue(task, activeDate)).length,
+    [activeDate, activeDay.tasks],
+  );
 
   const weeklyChart = useMemo(() => {
     const points: number[] = [];
@@ -605,21 +607,6 @@ export function WorkTrackingDashboard() {
           <p>WORK TRACKING SUITE</p>
         </div>
 
-        <nav className="sidebar-nav">
-          <button className="nav-item nav-item-active" type="button">
-            Dashboard
-          </button>
-          <button className="nav-item" type="button">
-            Analytics
-          </button>
-          <button className="nav-item" type="button">
-            Reports
-          </button>
-          <button className="nav-item" type="button">
-            Archive
-          </button>
-        </nav>
-
         <div className="sidebar-footer">
           {QUICK_LINKS.map((link) => (
             <a
@@ -632,23 +619,11 @@ export function WorkTrackingDashboard() {
               {link.label}
             </a>
           ))}
-          <button className="sidebar-cta" type="button">
-            오늘 계획 정리
-          </button>
         </div>
       </aside>
 
       <div className="app-shell">
         <header className="topbar">
-          <div className="search-wrap">
-            <span className="search-icon">⌕</span>
-            <input
-              type="text"
-              placeholder="업무, 메모, 카테고리 검색은 다음 단계에서 붙일 예정입니다."
-              disabled
-            />
-          </div>
-
           <div className="topbar-right">
             <div className="date-panel">
               <label className="field-label" htmlFor="selected-date">
@@ -656,7 +631,6 @@ export function WorkTrackingDashboard() {
               </label>
               <div className="date-row">
                 <button
-                  id="previous-day"
                   className="icon-button"
                   type="button"
                   aria-label="이전 날짜"
@@ -664,16 +638,15 @@ export function WorkTrackingDashboard() {
                 >
                   ◀
                 </button>
-                  <input
-                    id="selected-date"
-                    type="date"
-                    value={activeDate}
-                    onChange={(event) => {
-                      void switchToDate(event.target.value);
-                    }}
-                  />
+                <input
+                  id="selected-date"
+                  type="date"
+                  value={activeDate}
+                  onChange={(event) => {
+                    void switchToDate(event.target.value);
+                  }}
+                />
                 <button
-                  id="next-day"
                   className="icon-button"
                   type="button"
                   aria-label="다음 날짜"
@@ -682,17 +655,7 @@ export function WorkTrackingDashboard() {
                   ▶
                 </button>
               </div>
-              <p id="date-caption" className="date-caption">
-                {formatDateCaption(activeDate)}
-              </p>
-            </div>
-
-            <div className="profile-chip">
-              <div className="profile-avatar">NY</div>
-              <div>
-                <strong>{PROFILE_NAME}</strong>
-                <p>{PROFILE_ROLE}</p>
-              </div>
+              <p className="date-caption">{formatDateCaption(activeDate)}</p>
             </div>
           </div>
         </header>
@@ -701,10 +664,10 @@ export function WorkTrackingDashboard() {
           <section className="page-header">
             <div>
               <h2>Work Tracking Dashboard</h2>
-              <p>오늘 해야 할 일과 집중 시간을 고급 대시보드 형태로 관리합니다.</p>
+              <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
             </div>
             <div className="page-header-actions">
-              <button id="clear-completed" className="secondary-button" type="button" onClick={clearCompleted}>
+              <button className="secondary-button" type="button" onClick={clearCompleted}>
                 완료 항목 정리
               </button>
               <button
@@ -718,10 +681,38 @@ export function WorkTrackingDashboard() {
           </section>
 
           <section className="stats-grid">
-            <StatCard icon="▣" pillClassName="positive" pillLabel="오늘 기준" label="전체 할 일" value={String(activeDay.tasks.length)} iconClassName="stat-icon-primary" />
-            <StatCard icon="✓" pillClassName="positive" pillLabel={`${completion}%`} label="완료" value={String(doneTasks.length)} iconClassName="stat-icon-warm" />
-            <StatCard icon="↻" pillClassName="neutral" pillLabel="Live" label="진행 중" value={String(doingTasks.length)} iconClassName="stat-icon-cool" />
-            <StatCard icon="◔" pillClassName="alert" pillLabel="Focus" label="집중 시간" value={`${activeDay.focusMinutes}분`} iconClassName="stat-icon-alert" />
+            <StatCard
+              icon="▣"
+              pillClassName="neutral"
+              pillLabel={`${activeDay.tasks.length > 0 ? todoTasks.length + doingTasks.length : 0} 남음`}
+              label="전체 할 일"
+              value={String(activeDay.tasks.length)}
+              iconClassName="stat-icon-primary"
+            />
+            <StatCard
+              icon="✓"
+              pillClassName="positive"
+              pillLabel={`${completion}%`}
+              label="완료"
+              value={String(doneTasks.length)}
+              iconClassName="stat-icon-positive"
+            />
+            <StatCard
+              icon="↻"
+              pillClassName="neutral"
+              pillLabel={doingTasks.length > 0 ? "진행 중" : "Idle"}
+              label="진행 중"
+              value={String(doingTasks.length)}
+              iconClassName="stat-icon-info"
+            />
+            <StatCard
+              icon="◔"
+              pillClassName={overdueCount > 0 ? "alert" : "neutral"}
+              pillLabel={overdueCount > 0 ? `${overdueCount} 지연` : "정상"}
+              label="집중 시간"
+              value={`${activeDay.focusMinutes}분`}
+              iconClassName="stat-icon-tertiary"
+            />
           </section>
 
           <section className="hero-grid">
@@ -729,14 +720,14 @@ export function WorkTrackingDashboard() {
               <div className="panel-heading">
                 <div>
                   <h3>Weekly Momentum</h3>
-                  <p>최근 7일간 완료/집중 흐름을 요약합니다.</p>
+                  <p>최근 7일간 완료 및 집중 흐름입니다.</p>
                 </div>
               </div>
 
               <div className="chart-meta">
-                <span>완료율</span>
+                <span>완료율 {completion}%</span>
                 <div className="progress-track">
-                  <div id="completion-bar" className="progress-bar" style={{ width: `${completion}%` }} />
+                  <div className="progress-bar" style={{ width: `${completion}%` }} />
                 </div>
               </div>
 
@@ -750,19 +741,19 @@ export function WorkTrackingDashboard() {
                     <line x1="60" y1="100" x2="600" y2="100" />
                     <line x1="60" y1="60" x2="600" y2="60" />
                   </g>
-                  <polyline id="weekly-line" className="chart-line" points={weeklyChart.polylinePoints} />
-                  <g id="weekly-dots">
+                  <polyline className="chart-line" points={weeklyChart.polylinePoints} />
+                  <g>
                     {weeklyChart.chartPoints.map((point) => (
                       <circle
                         key={`dot-${point.label}`}
                         className="chart-dot"
                         cx={point.x}
                         cy={point.y}
-                        r="6"
+                        r="5"
                       />
                     ))}
                   </g>
-                  <g id="weekly-labels">
+                  <g>
                     {weeklyChart.chartPoints.map((point) => (
                       <text key={`label-${point.label}`} className="chart-label" x={point.x} y="244">
                         {point.label}
@@ -773,39 +764,38 @@ export function WorkTrackingDashboard() {
               </div>
             </article>
 
-            <aside className="panel side-panel">
+            <aside className="side-panel">
               <div className="panel-heading">
                 <div>
                   <h3>Upcoming Priorities</h3>
-                  <p>아직 끝나지 않은 중요한 업무를 상단에 보여줍니다.</p>
+                  <p>아직 끝나지 않은 중요한 업무입니다.</p>
                 </div>
-                <a className="mini-link" href="https://dobedub.vogopang.com/library-hub" target="_blank" rel="noreferrer">
-                  View Hub
-                </a>
               </div>
-              <div id="upcoming-list" className="stack-list">
+              <div className="stack-list">
                 {upcomingTasks.length === 0 ? (
-                  <p className="task-note">남아 있는 우선 업무가 없습니다.</p>
+                  <p className="empty-note">남아 있는 우선 업무가 없습니다.</p>
                 ) : (
-                  upcomingTasks.map((task) => (
-                    <article key={`upcoming-${task.id}`} className="upcoming-item">
-                      <div>
+                  upcomingTasks.map((task) => {
+                    const overdue = isTaskOverdue(task, activeDate);
+                    const itemClass = `upcoming-item ${overdue ? "is-overdue" : task.carryoverCount > 0 ? "is-carryover" : ""}`.trim();
+                    return (
+                      <article key={`upcoming-${task.id}`} className={itemClass}>
                         <h4 className="upcoming-title">{task.title}</h4>
                         <p className="upcoming-note">{task.note || "메모 없음"}</p>
-                      </div>
-                      <div className="upcoming-meta">
-                        <span className="upcoming-priority">
-                          {`우선순위 ${priorityLabel[getEffectivePriority(task)]}`}
-                        </span>
-                        <span className={`upcoming-deadline ${isTaskOverdue(task, activeDate) ? "is-overdue" : ""}`.trim()}>
-                          {formatDeadlineLabel(task, activeDate)}
-                        </span>
-                        <span className="upcoming-status">
-                          {task.status === "doing" ? "진행 중" : "할 일"}
-                        </span>
-                      </div>
-                    </article>
-                  ))
+                        <div className="upcoming-meta">
+                          <span className="upcoming-priority">
+                            {priorityLabel[getEffectivePriority(task)].toUpperCase()}
+                          </span>
+                          <span className={`upcoming-deadline ${overdue ? "is-overdue" : ""}`.trim()}>
+                            {formatDeadlineLabel(task, activeDate)}
+                          </span>
+                          <span className="upcoming-status">
+                            {task.status === "doing" ? "진행 중" : "대기"}
+                          </span>
+                        </div>
+                      </article>
+                    );
+                  })
                 )}
               </div>
 
@@ -813,15 +803,12 @@ export function WorkTrackingDashboard() {
                 <div className="panel-heading compact">
                   <div>
                     <h3>Focus Session</h3>
-                    <p>한 세션이 끝나면 집중 시간이 누적됩니다.</p>
+                    <p>세션이 끝나면 집중 시간이 누적됩니다.</p>
                   </div>
                 </div>
-                <strong id="timer-clock" className="focus-clock">
-                  {formatClock(timerRemainingSeconds)}
-                </strong>
+                <strong className="focus-clock">{formatClock(timerRemainingSeconds)}</strong>
                 <div className="timer-controls">
                   <button
-                    id="timer-start"
                     className="primary-button"
                     type="button"
                     onClick={() => setIsTimerRunning(true)}
@@ -830,21 +817,19 @@ export function WorkTrackingDashboard() {
                     시작
                   </button>
                   <button
-                    id="timer-pause"
                     className="secondary-button"
                     type="button"
                     onClick={() => setIsTimerRunning(false)}
                   >
                     일시정지
                   </button>
-                  <button id="timer-reset" className="secondary-button" type="button" onClick={resetTimer}>
+                  <button className="secondary-button" type="button" onClick={resetTimer}>
                     리셋
                   </button>
                 </div>
                 <label className="timer-duration-wrap">
                   <span className="field-label">세션 길이(분)</span>
                   <input
-                    id="timer-duration"
                     type="number"
                     min="1"
                     max="180"
@@ -861,17 +846,15 @@ export function WorkTrackingDashboard() {
             <div className="panel-heading">
               <div>
                 <h3>GitHub Watch</h3>
-                <p>대상 레포의 최신 커밋과 PR 상태를 주기적으로 반영합니다.</p>
+                <p>대상 레포의 최신 커밋과 PR 상태입니다.</p>
               </div>
               <div className="github-meta">
                 <span>마지막 동기화</span>
-                <strong id="github-sync-time">
-                  {notionOrGithubSyncLabel(githubFeed.lastSyncedAt)}
-                </strong>
+                <strong>{syncLabel(githubFeed.lastSyncedAt)}</strong>
               </div>
             </div>
 
-            <div id="github-filters" className="github-filters">
+            <div className="github-filters">
               {githubFilters.map((filter) => (
                 <button
                   key={filter}
@@ -884,9 +867,9 @@ export function WorkTrackingDashboard() {
               ))}
             </div>
 
-            <div id="github-detail-view" className="github-detail-view">
+            <div className="github-detail-view">
               {visibleRepos.length === 0 ? (
-                <p className="task-note">동기화된 GitHub 레포 현황이 없습니다.</p>
+                <p className="empty-note">동기화된 GitHub 레포 현황이 없습니다.</p>
               ) : (
                 visibleRepos.map((repo) => (
                   <GithubRepoCard key={`${repo.repo}-${repo.defaultBranch}`} repo={repo} />
@@ -900,7 +883,7 @@ export function WorkTrackingDashboard() {
               <div className="panel-heading">
                 <div>
                   <h3>Task Board</h3>
-                  <p>오늘 업무를 할 일, 진행 중, 완료 상태로 관리합니다.</p>
+                  <p>오늘 업무를 상태별로 관리합니다.</p>
                 </div>
               </div>
 
@@ -919,12 +902,11 @@ export function WorkTrackingDashboard() {
                     <p>작은 메모까지 같이 저장합니다.</p>
                   </div>
                 </div>
-                <form id="task-form" className="task-form" onSubmit={handleCreateTask}>
+                <form className="task-form" onSubmit={handleCreateTask}>
                   <label>
                     <span className="field-label">업무명</span>
                     <input
                       ref={taskTitleRef}
-                      id="task-title"
                       type="text"
                       name="title"
                       placeholder="예: 통계 API 검증"
@@ -936,7 +918,6 @@ export function WorkTrackingDashboard() {
                   <label>
                     <span className="field-label">카테고리</span>
                     <input
-                      id="task-category"
                       type="text"
                       name="category"
                       placeholder="예: 백엔드, 회의, 문서"
@@ -948,7 +929,6 @@ export function WorkTrackingDashboard() {
                     <label>
                       <span className="field-label">우선순위</span>
                       <select
-                        id="task-priority"
                         name="priority"
                         value={taskForm.priority}
                         onChange={(event) =>
@@ -966,7 +946,6 @@ export function WorkTrackingDashboard() {
                     <label>
                       <span className="field-label">마감일</span>
                       <input
-                        id="task-due-date"
                         type="date"
                         name="dueDate"
                         value={taskForm.dueDate}
@@ -974,9 +953,8 @@ export function WorkTrackingDashboard() {
                       />
                     </label>
                     <label>
-                      <span className="field-label">예상 시간(분)</span>
+                      <span className="field-label">예상(분)</span>
                       <input
-                        id="task-estimate"
                         type="number"
                         min="0"
                         step="5"
@@ -989,7 +967,6 @@ export function WorkTrackingDashboard() {
                   <label>
                     <span className="field-label">메모</span>
                     <textarea
-                      id="task-note"
                       name="note"
                       rows={3}
                       placeholder="오늘 이 업무에서 꼭 확인할 점을 적으세요."
@@ -1007,22 +984,20 @@ export function WorkTrackingDashboard() {
                 <div className="panel-heading compact">
                   <div>
                     <h3>Notion Updates</h3>
-                    <p>플랫폼 본부 하위의 최근 변경 내역을 표시합니다.</p>
+                    <p>플랫폼 본부 하위의 최근 변경 내역입니다.</p>
                   </div>
                 </div>
                 <div className="notion-meta">
                   <span>마지막 동기화</span>
-                  <strong id="notion-sync-time">
-                    {notionOrGithubSyncLabel(notionFeed.lastSyncedAt)}
-                  </strong>
+                  <strong>{syncLabel(notionFeed.lastSyncedAt)}</strong>
                 </div>
-                <div id="notion-updates-list" className="notion-updates-list">
+                <div className="notion-updates-list">
                   {notionFeed.items.length === 0 ? (
-                    <p className="task-note">동기화된 Notion 업데이트가 없습니다.</p>
+                    <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
                   ) : (
                     notionFeed.items.slice(0, 6).map((item, index) => (
                       <article key={`${item.title}-${item.editedAt}-${index}`} className="notion-update-item">
-                        <div className="notion-update-main">
+                        <div>
                           <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
                           <p className="notion-update-subtitle">
                             {[item.section, item.parent, item.editor].filter(Boolean).join(" · ") || "메타데이터 없음"}
@@ -1046,7 +1021,7 @@ export function WorkTrackingDashboard() {
                 <div className="panel-heading compact">
                   <div>
                     <h3>Daily Notes</h3>
-                    <p>회고, blocker, 다음 액션을 짧게 정리합니다.</p>
+                    <p>회고, 막힌 점, 다음 액션을 짧게 정리합니다.</p>
                   </div>
                 </div>
                 <textarea
@@ -1058,7 +1033,7 @@ export function WorkTrackingDashboard() {
                 />
                 <div className="notes-footer">
                   <span>자동 저장</span>
-                  <button id="clear-notes" className="text-button" type="button" onClick={clearNotes}>
+                  <button className="text-button" type="button" onClick={clearNotes}>
                     메모 비우기
                   </button>
                 </div>
@@ -1070,12 +1045,12 @@ export function WorkTrackingDashboard() {
             <div className="panel-heading">
               <div>
                 <h3>Recent Activity</h3>
-                <p>오늘 생성/변경된 업무를 시간순으로 봅니다.</p>
+                <p>오늘 생성 및 변경된 업무를 시간순으로 봅니다.</p>
               </div>
             </div>
-            <div id="activity-list" className="activity-list">
+            <div className="activity-list">
               {activityTasks.length === 0 ? (
-                <p className="task-note">아직 활동 기록이 없습니다.</p>
+                <p className="empty-note">아직 활동 기록이 없습니다.</p>
               ) : (
                 activityTasks.map((task) => {
                   const effectivePriority = getEffectivePriority(task);
@@ -1174,7 +1149,7 @@ function TaskColumn({
   );
 }
 
-function notionOrGithubSyncLabel(value: string | null) {
+function syncLabel(value: string | null) {
   return value ? formatDateTime(value) : "아직 없음";
 }
 
