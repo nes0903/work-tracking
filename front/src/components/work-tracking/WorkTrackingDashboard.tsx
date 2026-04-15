@@ -221,13 +221,8 @@ export function WorkTrackingDashboard() {
     loadNotionUpdates();
     loadGithubUpdates();
 
-    const notionIntervalId = window.setInterval(loadNotionUpdates, 60 * 1000);
-    const githubIntervalId = window.setInterval(loadGithubUpdates, 60 * 1000);
-
     return () => {
       mounted = false;
-      window.clearInterval(notionIntervalId);
-      window.clearInterval(githubIntervalId);
     };
   }, []);
 
