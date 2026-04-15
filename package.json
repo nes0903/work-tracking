@@ -1,25 +1,19 @@
 {
-  "name": "work-tracking",
+  "name": "work-tracking-workspace",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "front",
+    "back"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "dev:webhook": "node ./server.mjs"
-  },
-  "dependencies": {
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "typescript": "^5"
+    "dev:front": "npm --workspace front run dev",
+    "dev:back": "npm --workspace back run start:dev",
+    "build:front": "npm --workspace front run build",
+    "build:back": "npm --workspace back run build",
+    "lint:front": "npm --workspace front run lint",
+    "lint:back": "npm --workspace back run lint",
+    "build": "npm run build:front && npm run build:back",
+    "lint": "npm run lint:front && npm run lint:back"
   }
 }

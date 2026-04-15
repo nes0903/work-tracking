@@ -1,8 +1,16 @@
 .env.local
-data/notion-webhook-status.json
 node_modules
 .next
 out
+dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+front/.next
+front/node_modules
+back/node_modules
+back/dist
+back/sqlite/*.sqlite
+back/sqlite/*.sqlite3
+back/sqlite/*.db
+back/data/notion-webhook-status.json
