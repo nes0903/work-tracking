@@ -14,3 +14,4 @@ back/sqlite/*.sqlite
 back/sqlite/*.sqlite3
 back/sqlite/*.db
 back/data/notion-webhook-status.json
+.env
