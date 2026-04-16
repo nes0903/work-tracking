@@ -8,16 +8,137 @@ import {
   type GithubEvent,
   type GithubFeed,
   type NotionFeed,
+  type NotionUpdateItem,
   type Task,
   type TaskPriority,
   type TaskStatus,
   type WorkDayMap,
 } from "@libs/work-tracking";
 import {
+  getDatabase,
   getJsonSetting,
   setJsonSetting,
   withTransaction,
 } from "@libs/sqlite-db";
+
+interface NotionEventRow {
+  event_id: string;
+  event_type: string;
+  page_url: string;
+  page_link: string;
+  title: string;
+  edited_at: string | null;
+  section_title: string | null;
+  parent_title: string | null;
+  editor_name: string | null;
+  summary: string;
+  received_at: string;
+}
+
+export interface NotionFeedPage {
+  items: NotionUpdateItem[];
+  nextCursor: string | null;
+  lastSyncedAt: string | null;
+}
+
+const NOTION_CURSOR_SEPARATOR = "|";
+
+export function listNotionUpdateEvents(
+  limit: number,
+  cursor: string | null,
+): NotionFeedPage {
+  const db = getDatabase();
+  const safeLimit = Math.max(1, Math.min(limit, 50));
+  const parsedCursor = parseNotionCursor(cursor);
+
+  const rows = parsedCursor
+    ? (db
+        .prepare(
+          `
+            SELECT event_id, event_type, page_url, page_link, title, edited_at,
+                   section_title, parent_title, editor_name, summary, received_at
+            FROM notion_update_events
+            WHERE received_at < ?
+               OR (received_at = ? AND event_id < ?)
+            ORDER BY received_at DESC, event_id DESC
+            LIMIT ?
+          `,
+        )
+        .all(
+          parsedCursor.receivedAt,
+          parsedCursor.receivedAt,
+          parsedCursor.eventId,
+          safeLimit + 1,
+        ) as unknown as NotionEventRow[])
+    : (db
+        .prepare(
+          `
+            SELECT event_id, event_type, page_url, page_link, title, edited_at,
+                   section_title, parent_title, editor_name, summary, received_at
+            FROM notion_update_events
+            ORDER BY received_at DESC, event_id DESC
+            LIMIT ?
+          `,
+        )
+        .all(safeLimit + 1) as unknown as NotionEventRow[]);
+
+  const hasMore = rows.length > safeLimit;
+  const pageRows = hasMore ? rows.slice(0, safeLimit) : rows;
+  const items = pageRows.map(mapNotionEventRow);
+  const nextCursor = hasMore
+    ? buildNotionCursor(pageRows[pageRows.length - 1])
+    : null;
+
+  const lastSyncedRow = db
+    .prepare(
+      "SELECT MAX(received_at) AS last_synced_at FROM notion_update_events",
+    )
+    .get() as { last_synced_at: string | null } | undefined;
+
+  return {
+    items,
+    nextCursor,
+    lastSyncedAt: lastSyncedRow?.last_synced_at ?? null,
+  };
+}
+
+function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
+  return {
+    eventId: row.event_id,
+    type: row.event_type,
+    title: row.title,
+    url: row.page_url,
+    link: row.page_link,
+    editedAt: row.edited_at,
+    section: row.section_title ?? "",
+    parent: row.parent_title,
+    editor: row.editor_name,
+    summary: row.summary,
+  };
+}
+
+function parseNotionCursor(cursor: string | null) {
+  if (!cursor) {
+    return null;
+  }
+
+  const separatorIndex = cursor.indexOf(NOTION_CURSOR_SEPARATOR);
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const receivedAt = cursor.slice(0, separatorIndex);
+  const eventId = cursor.slice(separatorIndex + 1);
+  if (!receivedAt || !eventId) {
+    return null;
+  }
+
+  return { receivedAt, eventId };
+}
+
+function buildNotionCursor(row: NotionEventRow) {
+  return `${row.received_at}${NOTION_CURSOR_SEPARATOR}${row.event_id}`;
+}
 
 interface TaskRow {
   id: string;

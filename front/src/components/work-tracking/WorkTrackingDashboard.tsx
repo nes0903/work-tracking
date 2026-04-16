@@ -86,6 +86,7 @@ export function WorkTrackingDashboard() {
   const [activeDate, setActiveDate] = useState(initialDate);
   const [taskForm, setTaskForm] = useState<TaskFormState>(() => createTaskFormState(initialDate));
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
+  const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [githubFilter, setGithubFilter] = useState("all");
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState(25 * 60);
@@ -169,9 +170,12 @@ export function WorkTrackingDashboard() {
 
     async function loadNotionUpdates() {
       try {
-        const response = await fetch(`/api/notion-updates?t=${Date.now()}`, {
-          cache: "no-store",
-        });
+        const response = await fetch(
+          `/api/notion-updates?limit=10&t=${Date.now()}`,
+          {
+            cache: "no-store",
+          },
+        );
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -184,6 +188,7 @@ export function WorkTrackingDashboard() {
         setNotionFeed({
           lastSyncedAt: payload.lastSyncedAt ?? null,
           items: Array.isArray(payload.items) ? payload.items : [],
+          nextCursor: payload.nextCursor ?? null,
         });
       } catch {
         if (mounted) {
@@ -439,6 +444,44 @@ export function WorkTrackingDashboard() {
     const current = parseDateKey(activeDate);
     current.setDate(current.getDate() + offset);
     void switchToDate(formatDateKey(current));
+  }
+
+  async function handleLoadMoreNotion() {
+    if (!notionFeed.nextCursor || isLoadingMoreNotion) {
+      return;
+    }
+    setIsLoadingMoreNotion(true);
+    try {
+      const response = await fetch(
+        `/api/notion-updates?limit=10&cursor=${encodeURIComponent(notionFeed.nextCursor)}&t=${Date.now()}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as NotionFeed;
+      const incoming = Array.isArray(payload.items) ? payload.items : [];
+      setNotionFeed((prev) => {
+        const existingIds = new Set(
+          prev.items.map((entry) => entry.eventId).filter(Boolean),
+        );
+        const merged = [
+          ...prev.items,
+          ...incoming.filter(
+            (entry) => !entry.eventId || !existingIds.has(entry.eventId),
+          ),
+        ];
+        return {
+          lastSyncedAt: payload.lastSyncedAt ?? prev.lastSyncedAt ?? null,
+          items: merged,
+          nextCursor: payload.nextCursor ?? null,
+        };
+      });
+    } catch (error) {
+      console.error("[dashboard] failed to load more notion updates", error);
+    } finally {
+      setIsLoadingMoreNotion(false);
+    }
   }
 
   async function handleCreateTask(event: React.FormEvent<HTMLFormElement>) {
@@ -990,8 +1033,11 @@ export function WorkTrackingDashboard() {
                   {notionFeed.items.length === 0 ? (
                     <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
                   ) : (
-                    notionFeed.items.slice(0, 6).map((item, index) => (
-                      <article key={`${item.title}-${item.editedAt}-${index}`} className="notion-update-item">
+                    notionFeed.items.map((item, index) => (
+                      <article
+                        key={item.eventId ?? `${item.title}-${item.editedAt}-${index}`}
+                        className="notion-update-item"
+                      >
                         <div>
                           <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
                           <p className="notion-update-subtitle">
@@ -1009,6 +1055,16 @@ export function WorkTrackingDashboard() {
                       </article>
                     ))
                   )}
+                  {notionFeed.nextCursor ? (
+                    <button
+                      type="button"
+                      className="notion-load-more"
+                      onClick={handleLoadMoreNotion}
+                      disabled={isLoadingMoreNotion}
+                    >
+                      {isLoadingMoreNotion ? "불러오는 중…" : "더보기"}
+                    </button>
+                  ) : null}
                 </div>
               </section>
 

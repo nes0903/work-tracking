@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
-import { getGithubFeed, getNotionFeed } from "@libs/feed-store";
+import {
+  getGithubFeed,
+  getNotionFeed,
+  type NotionFeedQuery,
+} from "@libs/feed-store";
 
 @Injectable()
 export class FeedsRepository {
-  getNotionFeed() {
-    return getNotionFeed();
+  getNotionFeed(query: NotionFeedQuery) {
+    return getNotionFeed(query);
   }
 
   getGithubFeed() {

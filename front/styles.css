@@ -1170,6 +1170,29 @@ button {
   text-decoration: underline;
 }
 
+.notion-load-more {
+  margin-top: 4px;
+  padding: 10px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--on-surface-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.notion-load-more:hover:not(:disabled) {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.notion-load-more:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* ============================================================
    Activity panel
    ============================================================ */

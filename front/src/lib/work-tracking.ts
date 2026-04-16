@@ -45,6 +45,7 @@ export interface NotionUpdateItem {
 export interface NotionFeed {
   lastSyncedAt: string | null;
   items: NotionUpdateItem[];
+  nextCursor?: string | null;
 }
 
 export interface GithubEvent {
@@ -101,6 +102,7 @@ export function emptyNotionFeed(): NotionFeed {
   return {
     lastSyncedAt: null,
     items: [],
+    nextCursor: null,
   };
 }
 
