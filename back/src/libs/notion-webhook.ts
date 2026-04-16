@@ -10,6 +10,8 @@ import { getDatabase } from "@libs/sqlite-db";
 
 const NOTION_WEBHOOK_VERIFICATION_TOKEN =
   process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN || "";
+const NOTION_API_TOKEN = process.env.NOTION_API_TOKEN || "";
+const NOTION_API_VERSION = process.env.NOTION_API_VERSION || "2022-06-28";
 
 const DATA_DIR = path.join(__dirname, "..", "..", "data");
 const WEBHOOK_STATUS_PATH = path.join(DATA_DIR, "notion-webhook-status.json");
@@ -27,6 +29,21 @@ interface NotionWebhookEvent {
   authors?: Array<{
     id?: string;
   }>;
+}
+
+interface NotionRichText {
+  plain_text?: string;
+}
+
+interface NotionPropertyValue {
+  type?: string;
+  title?: NotionRichText[];
+}
+
+interface NotionPageResponse {
+  id?: string;
+  url?: string;
+  properties?: Record<string, NotionPropertyValue>;
 }
 
 interface UpdateFeedItem {
@@ -112,7 +129,7 @@ export async function handleNotionWebhook(
     };
   }
 
-  const item = buildUpdateItem(payload);
+  const item = await buildUpdateItem(payload);
   upsertUpdateFeed(item);
 
   return {
@@ -145,15 +162,20 @@ function verifyNotionSignature(rawBody: string, headerValue: string | null) {
   return timingSafeEqual(left, right);
 }
 
-function buildUpdateItem(event: NotionWebhookEvent): UpdateFeedItem {
+async function buildUpdateItem(
+  event: NotionWebhookEvent,
+): Promise<UpdateFeedItem> {
   const entityId = event.entity?.id ?? "";
-  const url = notionPageUrl(entityId);
   const eventKind = humanizeEventType(event.type ?? "");
+
+  const page = await fetchPageSafely(entityId);
+  const title = page ? extractPageTitle(page) : "";
+  const url = page?.url || notionPageUrl(entityId);
 
   return {
     eventId: event.id || cryptoSafeId(entityId, event.timestamp),
     type: event.type ?? "",
-    title: eventKind,
+    title: title || eventKind,
     url,
     link: url,
     editedAt: event.timestamp ?? null,
@@ -162,6 +184,53 @@ function buildUpdateItem(event: NotionWebhookEvent): UpdateFeedItem {
     editor: null,
     summary: `${eventKind} 감지`,
   };
+}
+
+async function fetchPageSafely(entityId: string) {
+  if (!entityId || !NOTION_API_TOKEN) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.notion.com/v1/pages/${entityId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${NOTION_API_TOKEN}`,
+          "Notion-Version": NOTION_API_VERSION,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as NotionPageResponse;
+  } catch {
+    return null;
+  }
+}
+
+function extractPageTitle(page: NotionPageResponse) {
+  const properties = page.properties || {};
+  for (const value of Object.values(properties)) {
+    if (value?.type === "title") {
+      return extractRichTitle(value.title);
+    }
+  }
+  return "";
+}
+
+function extractRichTitle(list?: NotionRichText[]) {
+  if (!Array.isArray(list)) {
+    return "";
+  }
+  return list
+    .map((item) => item?.plain_text || "")
+    .join("")
+    .trim();
 }
 
 function upsertUpdateFeed(item: UpdateFeedItem) {
