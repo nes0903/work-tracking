@@ -426,12 +426,6 @@ button {
 /* ============================================================
    Panels (Bento)
    ============================================================ */
-.hero-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-}
-
 .lower-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -473,182 +467,6 @@ button {
   font-weight: 500;
 }
 
-/* ============================================================
-   Chart panel
-   ============================================================ */
-.chart-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 20px;
-  color: var(--on-surface-variant);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.progress-track {
-  flex: 1;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--surface-container-high);
-  overflow: hidden;
-}
-
-.progress-bar {
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--primary-gradient);
-  transition: width 240ms ease;
-}
-
-.chart-wrap {
-  position: relative;
-}
-
-#weekly-chart {
-  width: 100%;
-  height: 280px;
-}
-
-.chart-grid line {
-  stroke: var(--surface-container-high);
-  stroke-width: 1;
-}
-
-.chart-line {
-  fill: none;
-  stroke: var(--primary);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.chart-dot {
-  fill: var(--surface-container-lowest);
-  stroke: var(--primary);
-  stroke-width: 2.5;
-}
-
-.chart-label {
-  fill: var(--on-surface-faint);
-  font-size: 11px;
-  font-weight: 600;
-  text-anchor: middle;
-}
-
-/* ============================================================
-   Side panel (Upcoming + Focus)
-   ============================================================ */
-.side-panel {
-  display: grid;
-  align-content: start;
-  gap: 24px;
-  padding: 32px;
-  border-radius: var(--radius-lg);
-  background: var(--surface-container-lowest);
-  box-shadow: var(--shadow-ambient);
-}
-
-.side-panel .panel-heading {
-  margin-bottom: 16px;
-}
-
-.stack-list {
-  display: grid;
-  gap: 12px;
-}
-
-.upcoming-item {
-  padding: 16px;
-  border-radius: var(--radius-md);
-  background: var(--surface-container-low);
-  border-left: 3px solid var(--primary);
-}
-
-.upcoming-item.is-overdue {
-  border-left-color: var(--error);
-}
-
-.upcoming-item.is-carryover {
-  border-left-color: var(--tertiary);
-}
-
-.upcoming-title {
-  margin: 0 0 6px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--on-surface);
-}
-
-.upcoming-note {
-  margin: 0 0 10px;
-  color: var(--on-surface-variant);
-  line-height: 1.5;
-  font-size: 0.78rem;
-}
-
-.upcoming-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.upcoming-priority,
-.upcoming-deadline,
-.upcoming-status {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--on-surface-muted);
-}
-
-.upcoming-deadline.is-overdue {
-  color: var(--error);
-}
-
-/* ============================================================
-   Focus card
-   ============================================================ */
-.focus-card {
-  padding: 20px;
-  border-radius: var(--radius-md);
-  background: var(--surface-container-low);
-}
-
-.focus-card .panel-heading {
-  margin-bottom: 12px;
-}
-
-.focus-clock {
-  display: block;
-  margin: 4px 0 16px;
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: var(--on-surface);
-}
-
-.timer-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.timer-controls .primary-button,
-.timer-controls .secondary-button {
-  padding: 8px 14px;
-  font-size: 0.76rem;
-}
-
-.timer-duration-wrap {
-  display: block;
-  margin-top: 14px;
-}
-
-.timer-duration-wrap input,
 .task-form input,
 .task-form textarea,
 .task-form select,
@@ -664,7 +482,6 @@ button {
   transition: background 160ms ease;
 }
 
-.timer-duration-wrap input:focus,
 .task-form input:focus,
 .task-form textarea:focus,
 .task-form select:focus,
@@ -1280,7 +1097,6 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-grid,
   .lower-grid {
     grid-template-columns: 1fr;
   }
@@ -1329,7 +1145,6 @@ button {
   }
 
   .panel,
-  .side-panel,
   .utility-panel {
     padding: 24px;
   }

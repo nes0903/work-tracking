@@ -7,19 +7,16 @@ import {
   activityColor,
   activityIcon,
   buildActivitySubtitle,
-  clamp,
   emptyGithubFeed,
   emptyNotionFeed,
   formatDateCaption,
   formatDateKey,
   formatDateTime,
-  formatDeadlineLabel,
   getDay,
   getEffectivePriority,
   isTaskOverdue,
   loadDaysFromStorage,
   parseDateKey,
-  priorityLabel,
   relativeTime,
   sortTasksForDisplay,
   statusLabel,
@@ -89,8 +86,6 @@ export function WorkTrackingDashboard() {
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [githubFilter, setGithubFilter] = useState("all");
-  const [timerRemainingSeconds, setTimerRemainingSeconds] = useState(25 * 60);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
@@ -242,44 +237,6 @@ export function WorkTrackingDashboard() {
     }
   }, [githubFeed.repos, githubFilter]);
 
-  useEffect(() => {
-    if (!isTimerRunning) {
-      return;
-    }
-
-    const sessionDate = activeDate;
-    const sessionDuration = activeDay.timerDuration;
-    const intervalId = window.setInterval(() => {
-      setTimerRemainingSeconds((previous) => {
-        if (previous <= 1) {
-          window.clearInterval(intervalId);
-          setIsTimerRunning(false);
-          void (async () => {
-            try {
-              const result = await postDashboardAction({
-                action: "recordFocusSession",
-                date: sessionDate,
-                durationMinutes: sessionDuration,
-              });
-              applyDashboardState(sessionDate, result.days, {
-                syncNotes: sessionDate === activeDate,
-              });
-            } catch (error) {
-              console.error("[dashboard] failed to record focus session", error);
-            }
-          })();
-          return sessionDuration * 60;
-        }
-
-        return previous - 1;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [activeDate, activeDay.timerDuration, isTimerRunning]);
-
   const todoTasks = useMemo(
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "todo")),
     [activeDay.tasks],
@@ -290,11 +247,6 @@ export function WorkTrackingDashboard() {
   );
   const doneTasks = useMemo(
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "done")),
-    [activeDay.tasks],
-  );
-  const upcomingTasks = useMemo(
-    () =>
-      sortTasksForDisplay(activeDay.tasks.filter((task) => task.status !== "done")).slice(0, 4),
     [activeDay.tasks],
   );
   const activityTasks = useMemo(
@@ -316,39 +268,6 @@ export function WorkTrackingDashboard() {
     [activeDate, activeDay.tasks],
   );
 
-  const weeklyChart = useMemo(() => {
-    const points: number[] = [];
-    const labels: string[] = [];
-    const today = parseDateKey(activeDate);
-
-    for (let index = 6; index >= 0; index -= 1) {
-      const current = new Date(today);
-      current.setDate(today.getDate() - index);
-      const key = formatDateKey(current);
-      const day = getDay(days, key);
-      const completedCount = day.tasks.filter((task) => task.status === "done").length;
-      points.push(completedCount * 20 + day.focusMinutes);
-      labels.push(
-        new Intl.DateTimeFormat("ko-KR", {
-          month: "numeric",
-          day: "numeric",
-        }).format(current),
-      );
-    }
-
-    const max = Math.max(60, ...points);
-    const chartPoints = points.map((value, index) => {
-      const x = 60 + (540 / 6) * index;
-      const y = 220 - (value / max) * 160;
-      return { x, y, value, label: labels[index] };
-    });
-
-    return {
-      chartPoints,
-      polylinePoints: chartPoints.map((point) => `${point.x},${point.y}`).join(" "),
-    };
-  }, [activeDate, days]);
-
   const githubFilters = useMemo(
     () => ["all", ...githubFeed.repos.map((repo) => repo.repo).filter(Boolean)] as string[],
     [githubFeed.repos],
@@ -368,10 +287,8 @@ export function WorkTrackingDashboard() {
       syncNotes?: boolean;
     },
   ) {
-    setIsTimerRunning(false);
     setDays(nextDays);
     setActiveDate(dateKey);
-    setTimerRemainingSeconds(getDay(nextDays, dateKey).timerDuration * 60);
 
     if (options?.resetTaskForm) {
       setTaskForm(createTaskFormState(dateKey));
@@ -576,30 +493,6 @@ export function WorkTrackingDashboard() {
     });
   }
 
-  function updateTimerDuration(value: string) {
-    const minutes = clamp(Number(value || 25), 1, 180);
-    setIsTimerRunning(false);
-    void mutateDashboard(
-      {
-        action: "updateTimerDuration",
-        date: activeDate,
-        timerDuration: minutes,
-      },
-      {
-        date: activeDate,
-        syncNotes: false,
-      },
-    ).catch((error) => {
-      console.error("[dashboard] failed to update timer duration", error);
-      setTimerRemainingSeconds(minutes * 60);
-    });
-  }
-
-  function resetTimer() {
-    setIsTimerRunning(false);
-    setTimerRemainingSeconds(activeDay.timerDuration * 60);
-  }
-
   function buildActions(task: Task): TaskAction[] {
     const actions: TaskAction[] = [];
 
@@ -751,133 +644,6 @@ export function WorkTrackingDashboard() {
               value={`${activeDay.focusMinutes}분`}
               iconClassName="stat-icon-tertiary"
             />
-          </section>
-
-          <section className="hero-grid">
-            <article className="panel chart-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Weekly Momentum</h3>
-                  <p>최근 7일간 완료 및 집중 흐름입니다.</p>
-                </div>
-              </div>
-
-              <div className="chart-meta">
-                <span>완료율 {completion}%</span>
-                <div className="progress-track">
-                  <div className="progress-bar" style={{ width: `${completion}%` }} />
-                </div>
-              </div>
-
-              <div className="chart-wrap">
-                <svg id="weekly-chart" viewBox="0 0 640 260" role="img" aria-label="주간 업무 추이 차트">
-                  <g className="chart-grid">
-                    <line x1="60" y1="30" x2="60" y2="220" />
-                    <line x1="60" y1="220" x2="600" y2="220" />
-                    <line x1="60" y1="180" x2="600" y2="180" />
-                    <line x1="60" y1="140" x2="600" y2="140" />
-                    <line x1="60" y1="100" x2="600" y2="100" />
-                    <line x1="60" y1="60" x2="600" y2="60" />
-                  </g>
-                  <polyline className="chart-line" points={weeklyChart.polylinePoints} />
-                  <g>
-                    {weeklyChart.chartPoints.map((point) => (
-                      <circle
-                        key={`dot-${point.label}`}
-                        className="chart-dot"
-                        cx={point.x}
-                        cy={point.y}
-                        r="5"
-                      />
-                    ))}
-                  </g>
-                  <g>
-                    {weeklyChart.chartPoints.map((point) => (
-                      <text key={`label-${point.label}`} className="chart-label" x={point.x} y="244">
-                        {point.label}
-                      </text>
-                    ))}
-                  </g>
-                </svg>
-              </div>
-            </article>
-
-            <aside className="side-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Upcoming Priorities</h3>
-                  <p>아직 끝나지 않은 중요한 업무입니다.</p>
-                </div>
-              </div>
-              <div className="stack-list">
-                {upcomingTasks.length === 0 ? (
-                  <p className="empty-note">남아 있는 우선 업무가 없습니다.</p>
-                ) : (
-                  upcomingTasks.map((task) => {
-                    const overdue = isTaskOverdue(task, activeDate);
-                    const itemClass = `upcoming-item ${overdue ? "is-overdue" : task.carryoverCount > 0 ? "is-carryover" : ""}`.trim();
-                    return (
-                      <article key={`upcoming-${task.id}`} className={itemClass}>
-                        <h4 className="upcoming-title">{task.title}</h4>
-                        <p className="upcoming-note">{task.note || "메모 없음"}</p>
-                        <div className="upcoming-meta">
-                          <span className="upcoming-priority">
-                            {priorityLabel[getEffectivePriority(task)].toUpperCase()}
-                          </span>
-                          <span className={`upcoming-deadline ${overdue ? "is-overdue" : ""}`.trim()}>
-                            {formatDeadlineLabel(task, activeDate)}
-                          </span>
-                          <span className="upcoming-status">
-                            {task.status === "doing" ? "진행 중" : "대기"}
-                          </span>
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="focus-card">
-                <div className="panel-heading compact">
-                  <div>
-                    <h3>Focus Session</h3>
-                    <p>세션이 끝나면 집중 시간이 누적됩니다.</p>
-                  </div>
-                </div>
-                <strong className="focus-clock">{formatClock(timerRemainingSeconds)}</strong>
-                <div className="timer-controls">
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => setIsTimerRunning(true)}
-                    disabled={isTimerRunning}
-                  >
-                    시작
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => setIsTimerRunning(false)}
-                  >
-                    일시정지
-                  </button>
-                  <button className="secondary-button" type="button" onClick={resetTimer}>
-                    리셋
-                  </button>
-                </div>
-                <label className="timer-duration-wrap">
-                  <span className="field-label">세션 길이(분)</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="180"
-                    step="1"
-                    value={activeDay.timerDuration}
-                    onChange={(event) => updateTimerDuration(event.target.value)}
-                  />
-                </label>
-              </div>
-            </aside>
           </section>
 
           <section className="panel github-panel">
@@ -1202,15 +968,4 @@ function TaskColumn({
 
 function syncLabel(value: string | null) {
   return value ? formatDateTime(value) : "아직 없음";
-}
-
-function formatClock(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = Math.max(totalSeconds % 60, 0)
-    .toString()
-    .padStart(2, "0");
-
-  return `${minutes}:${seconds}`;
 }
