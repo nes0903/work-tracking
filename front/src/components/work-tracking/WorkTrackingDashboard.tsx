@@ -221,8 +221,33 @@ export function WorkTrackingDashboard() {
     loadNotionUpdates();
     loadGithubUpdates();
 
+    const eventSource = new EventSource("/api/events");
+
+    eventSource.addEventListener("feed-update", (event) => {
+      if (!mounted) {
+        return;
+      }
+      try {
+        const payload = JSON.parse((event as MessageEvent).data) as {
+          source?: "notion" | "github";
+        };
+        if (payload.source === "notion") {
+          void loadNotionUpdates();
+        } else if (payload.source === "github") {
+          void loadGithubUpdates();
+        }
+      } catch (error) {
+        console.error("[dashboard] failed to parse feed-update event", error);
+      }
+    });
+
+    eventSource.onerror = () => {
+      console.warn("[dashboard] SSE connection error; browser will retry");
+    };
+
     return () => {
       mounted = false;
+      eventSource.close();
     };
   }, []);
 

@@ -7,6 +7,7 @@ import {
 } from "@libs/dashboard-db";
 import { emptyNotionFeed } from "@libs/work-tracking";
 import { getDatabase } from "@libs/sqlite-db";
+import { emitFeedUpdate } from "@libs/feed-events";
 
 const NOTION_WEBHOOK_VERIFICATION_TOKEN =
   process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN || "";
@@ -278,6 +279,8 @@ function upsertUpdateFeed(item: UpdateFeedItem) {
     item.editor,
     item.summary,
   );
+
+  emitFeedUpdate("notion");
 }
 
 function humanizeEventType(type: string) {

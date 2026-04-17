@@ -11,6 +11,7 @@ import {
   type GithubRepo,
 } from "@libs/work-tracking";
 import { getDatabase } from "@libs/sqlite-db";
+import { emitFeedUpdate } from "@libs/feed-events";
 
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "";
 const MAX_FEED_ITEMS = 20;
@@ -662,6 +663,7 @@ function applyPushToFeed(input: ApplyPushInput) {
     newPrEvents: [],
   });
   setGithubFeedInStore(next);
+  emitFeedUpdate("github");
 }
 
 interface ApplyPrInput {
@@ -684,6 +686,7 @@ function applyPrEventToFeed(input: ApplyPrInput) {
     newPrEvents: [input.prEvent],
   });
   setGithubFeedInStore(next);
+  emitFeedUpdate("github");
 }
 
 interface UpdateFeedInput {
