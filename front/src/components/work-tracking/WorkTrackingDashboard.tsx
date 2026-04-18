@@ -286,7 +286,10 @@ export function WorkTrackingDashboard() {
     [activeDay.tasks],
   );
   const repoList = useMemo(
-    () => githubFeed.repos.map((repo) => repo.repo).filter(Boolean),
+    () =>
+      githubFeed.repos
+        .map((repo) => repo.repo)
+        .filter((name): name is string => Boolean(name)),
     [githubFeed.repos],
   );
 
