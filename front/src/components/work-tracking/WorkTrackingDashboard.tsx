@@ -650,9 +650,6 @@ export function WorkTrackingDashboard() {
               </div>
             )}
             <div className="date-panel">
-              <label className="field-label" htmlFor="selected-date">
-                기준 날짜
-              </label>
               <div className="date-row">
                 <button
                   className="icon-button"
