@@ -260,20 +260,48 @@ button {
   position: sticky;
   top: 0;
   z-index: 20;
-  height: 80px;
-  padding: 0 40px;
-  background: rgba(247, 249, 251, 0.85);
+  min-height: 96px;
+  padding: 24px 48px;
+  background: rgba(247, 249, 251, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.topbar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.topbar-title h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  color: var(--on-primary-container);
+  line-height: 1.15;
+}
+
+.topbar-title p {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .topbar-right {
   display: flex;
-  align-items: center;
-  gap: 24px;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .date-panel {
@@ -340,13 +368,13 @@ button {
    Content — generous margins (space is luxury)
    ============================================================ */
 .content {
-  padding: 48px 48px 64px;
+  padding: 0 48px 64px;
   max-width: var(--content-max-width);
   width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 32px;
 }
 
 .page-header {

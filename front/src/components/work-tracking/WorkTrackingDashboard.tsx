@@ -84,7 +84,7 @@ export function WorkTrackingDashboard() {
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
-  const [activeView, setActiveView] = useState<"dashboard" | "github">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "github" | "notion">("dashboard");
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
@@ -573,6 +573,16 @@ export function WorkTrackingDashboard() {
               <span className="sidebar-nav-count">{repoList.length}</span>
             ) : null}
           </button>
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "notion" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("notion")}
+          >
+            Notion Updates
+            {notionFeed.items.length > 0 ? (
+              <span className="sidebar-nav-count">{notionFeed.items.length}</span>
+            ) : null}
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -592,7 +602,50 @@ export function WorkTrackingDashboard() {
 
       <div className="app-shell">
         <header className="topbar">
+          <div className="topbar-title">
+            {activeView === "dashboard" ? (
+              <>
+                <h2>Work Tracking Dashboard</h2>
+                <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
+              </>
+            ) : activeView === "github" ? (
+              <>
+                <h2>GitHub Watch</h2>
+                <p>
+                  {selectedRepo === null
+                    ? "등록된 모든 레포의 최신 커밋과 PR 상태입니다."
+                    : `${selectedRepo} 상세 현황입니다.`}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Notion Updates</h2>
+                <p>플랫폼 본부 하위의 최근 변경 내역입니다.</p>
+              </>
+            )}
+          </div>
           <div className="topbar-right">
+            {activeView === "dashboard" ? (
+              <div className="page-header-actions">
+                <button className="secondary-button" type="button" onClick={clearCompleted}>
+                  완료 항목 정리
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => taskTitleRef.current?.focus()}
+                >
+                  + 새 업무
+                </button>
+              </div>
+            ) : (
+              <div className="github-meta">
+                <span>마지막 동기화</span>
+                <strong>
+                  {syncLabel(activeView === "notion" ? notionFeed.lastSyncedAt : githubFeed.lastSyncedAt)}
+                </strong>
+              </div>
+            )}
             <div className="date-panel">
               <label className="field-label" htmlFor="selected-date">
                 기준 날짜
@@ -629,43 +682,6 @@ export function WorkTrackingDashboard() {
         </header>
 
         <main className="content">
-          <section className="page-header">
-            {activeView === "dashboard" ? (
-              <>
-                <div>
-                  <h2>Work Tracking Dashboard</h2>
-                  <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
-                </div>
-                <div className="page-header-actions">
-                  <button className="secondary-button" type="button" onClick={clearCompleted}>
-                    완료 항목 정리
-                  </button>
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => taskTitleRef.current?.focus()}
-                  >
-                    + 새 업무
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <h2>GitHub Watch</h2>
-                  <p>
-                    {selectedRepo === null
-                      ? "등록된 모든 레포의 최신 커밋과 PR 상태입니다."
-                      : `${selectedRepo} 상세 현황입니다.`}
-                  </p>
-                </div>
-                <div className="github-meta">
-                  <span>마지막 동기화</span>
-                  <strong>{syncLabel(githubFeed.lastSyncedAt)}</strong>
-                </div>
-              </>
-            )}
-          </section>
 
           {activeView === "github" ? (
             <section className="panel github-panel">
@@ -700,6 +716,46 @@ export function WorkTrackingDashboard() {
                     <GithubRepoCard key={`${repo.repo}-${repo.defaultBranch}`} repo={repo} />
                   ))
                 )}
+              </div>
+            </section>
+          ) : activeView === "notion" ? (
+            <section className="panel notion-panel">
+              <div className="notion-updates-list">
+                {notionFeed.items.length === 0 ? (
+                  <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
+                ) : (
+                  notionFeed.items.map((item, index) => (
+                    <article
+                      key={item.eventId ?? `${item.title}-${item.editedAt}-${index}`}
+                      className="notion-update-item"
+                    >
+                      <div>
+                        <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
+                        <p className="notion-update-subtitle">
+                          {[item.section, item.parent, item.editor].filter(Boolean).join(" · ") || "메타데이터 없음"}
+                        </p>
+                      </div>
+                      <div className="notion-update-side">
+                        <span className="notion-update-time">
+                          {item.editedAt ? relativeTime(item.editedAt) : "시간 없음"}
+                        </span>
+                        <a className="notion-update-link" href={item.url || "#"} target="_blank" rel="noreferrer">
+                          열기
+                        </a>
+                      </div>
+                    </article>
+                  ))
+                )}
+                {notionFeed.nextCursor ? (
+                  <button
+                    type="button"
+                    className="notion-load-more"
+                    onClick={handleLoadMoreNotion}
+                    disabled={isLoadingMoreNotion}
+                  >
+                    {isLoadingMoreNotion ? "불러오는 중…" : "더보기"}
+                  </button>
+                ) : null}
               </div>
             </section>
           ) : (
@@ -804,56 +860,6 @@ export function WorkTrackingDashboard() {
                     업무 추가
                   </button>
                 </form>
-              </section>
-
-              <section className="utility-panel">
-                <div className="panel-heading compact">
-                  <div>
-                    <h3>Notion Updates</h3>
-                    <p>플랫폼 본부 하위의 최근 변경 내역입니다.</p>
-                  </div>
-                </div>
-                <div className="notion-meta">
-                  <span>마지막 동기화</span>
-                  <strong>{syncLabel(notionFeed.lastSyncedAt)}</strong>
-                </div>
-                <div className="notion-updates-list">
-                  {notionFeed.items.length === 0 ? (
-                    <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
-                  ) : (
-                    notionFeed.items.map((item, index) => (
-                      <article
-                        key={item.eventId ?? `${item.title}-${item.editedAt}-${index}`}
-                        className="notion-update-item"
-                      >
-                        <div>
-                          <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
-                          <p className="notion-update-subtitle">
-                            {[item.section, item.parent, item.editor].filter(Boolean).join(" · ") || "메타데이터 없음"}
-                          </p>
-                        </div>
-                        <div className="notion-update-side">
-                          <span className="notion-update-time">
-                            {item.editedAt ? relativeTime(item.editedAt) : "시간 없음"}
-                          </span>
-                          <a className="notion-update-link" href={item.url || "#"} target="_blank" rel="noreferrer">
-                            열기
-                          </a>
-                        </div>
-                      </article>
-                    ))
-                  )}
-                  {notionFeed.nextCursor ? (
-                    <button
-                      type="button"
-                      className="notion-load-more"
-                      onClick={handleLoadMoreNotion}
-                      disabled={isLoadingMoreNotion}
-                    >
-                      {isLoadingMoreNotion ? "불러오는 중…" : "더보기"}
-                    </button>
-                  ) : null}
-                </div>
               </section>
 
               <section className="utility-panel">
