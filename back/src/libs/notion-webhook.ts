@@ -41,10 +41,39 @@ interface NotionPropertyValue {
   title?: NotionRichText[];
 }
 
+interface NotionParent {
+  type?: "page_id" | "database_id" | "workspace" | "block_id";
+  page_id?: string;
+  database_id?: string;
+  block_id?: string;
+  workspace?: boolean;
+}
+
+interface NotionUserRef {
+  id?: string;
+  object?: string;
+}
+
 interface NotionPageResponse {
   id?: string;
   url?: string;
+  parent?: NotionParent;
+  last_edited_by?: NotionUserRef;
+  last_edited_time?: string;
   properties?: Record<string, NotionPropertyValue>;
+}
+
+interface NotionDatabaseResponse {
+  id?: string;
+  url?: string;
+  parent?: NotionParent;
+  title?: NotionRichText[];
+}
+
+interface NotionUserResponse {
+  id?: string;
+  name?: string;
+  type?: string;
 }
 
 interface UpdateFeedItem {
@@ -173,6 +202,13 @@ async function buildUpdateItem(
   const title = page ? extractPageTitle(page) : "";
   const url = page?.url || notionPageUrl(entityId);
 
+  const breadcrumb = page ? await buildBreadcrumb(page.parent) : [];
+  const section = breadcrumb[0] ?? "";
+  const parent = breadcrumb.length > 1 ? breadcrumb.slice(1).join(" / ") : null;
+
+  const editorId = page?.last_edited_by?.id;
+  const editor = editorId ? await fetchUserName(editorId) : null;
+
   return {
     eventId: event.id || cryptoSafeId(entityId, event.timestamp),
     type: event.type ?? "",
@@ -180,11 +216,116 @@ async function buildUpdateItem(
     url,
     link: url,
     editedAt: event.timestamp ?? null,
-    section: "",
-    parent: null,
-    editor: null,
+    section,
+    parent,
+    editor,
     summary: `${eventKind} 감지`,
   };
+}
+
+const MAX_BREADCRUMB_DEPTH = 6;
+
+async function buildBreadcrumb(start: NotionParent | undefined): Promise<string[]> {
+  const segments: string[] = [];
+  const seen = new Set<string>();
+  let cursor = start;
+
+  for (let step = 0; step < MAX_BREADCRUMB_DEPTH; step += 1) {
+    if (!cursor || !cursor.type) {
+      break;
+    }
+
+    if (cursor.type === "workspace") {
+      break;
+    }
+
+    if (cursor.type === "page_id" && cursor.page_id) {
+      if (seen.has(cursor.page_id)) {
+        break;
+      }
+      seen.add(cursor.page_id);
+      const parentPage = await fetchPageSafely(cursor.page_id);
+      if (!parentPage) {
+        break;
+      }
+      const title = extractPageTitle(parentPage);
+      if (title) {
+        segments.unshift(title);
+      }
+      cursor = parentPage.parent;
+      continue;
+    }
+
+    if (cursor.type === "database_id" && cursor.database_id) {
+      if (seen.has(cursor.database_id)) {
+        break;
+      }
+      seen.add(cursor.database_id);
+      const database = await fetchDatabaseSafely(cursor.database_id);
+      if (!database) {
+        break;
+      }
+      const title = extractRichTitle(database.title);
+      if (title) {
+        segments.unshift(title);
+      }
+      cursor = database.parent;
+      continue;
+    }
+
+    break;
+  }
+
+  return segments;
+}
+
+async function fetchDatabaseSafely(id: string) {
+  if (!id || !NOTION_API_TOKEN) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://api.notion.com/v1/databases/${id}`, {
+      headers: {
+        Authorization: `Bearer ${NOTION_API_TOKEN}`,
+        "Notion-Version": NOTION_API_VERSION,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as NotionDatabaseResponse;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchUserName(id: string): Promise<string | null> {
+  if (!id || !NOTION_API_TOKEN) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://api.notion.com/v1/users/${id}`, {
+      headers: {
+        Authorization: `Bearer ${NOTION_API_TOKEN}`,
+        "Notion-Version": NOTION_API_VERSION,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const user = (await response.json()) as NotionUserResponse;
+    return user.name?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchPageSafely(entityId: string) {
