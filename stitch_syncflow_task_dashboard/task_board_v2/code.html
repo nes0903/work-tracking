@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Slate &amp; Stone - Task Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full py-6 px-4 space-y-1 bg-[#f0f4f7] dark:bg-[#141719] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] text-[13px] leading-relaxed fixed left-0 top-0 w-64 z-50 border-r border-transparent">
+<div class="mb-8 px-2">
+<div class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</div>
+<div class="text-xs text-on-surface-variant mt-1">Production Stack</div>
+</div>
+<div class="space-y-1 flex-grow">
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Tasks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">webhook</span>
+<span>Webhooks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">view_timeline</span>
+<span>Timeline</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<span>Team</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span>Docs</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+<span>Automations</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-auto pt-4 space-y-1">
+<button class="w-full flex items-center justify-center space-x-2 bg-primary text-on-primary rounded-md py-2 px-4 transition-all duration-200 hover:bg-primary-dim mb-4">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Page</span>
+</button>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span>Help &amp; Support</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+<span>Trash</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col h-full bg-surface">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-14 px-8 bg-[#f8f9fb] dark:bg-[#0f1112] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] tracking-tight text-sm font-medium sticky top-0 z-40 w-full transition-colors duration-300">
+<div class="flex items-center">
+<span class="text-lg font-bold tracking-tighter text-[#2a3439] dark:text-[#f4f8ff] mr-8">Slate &amp; Stone</span>
+</div>
+<div class="flex items-center space-x-4">
+<button class="hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20 ml-2">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Close up portrait of a professional man with short dark hair and a subtle smile against a neutral gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr4bGu4gH_rFJkh0wLaCsIzrtkcL3ySK0s4CyRzib30kuBXYSJpRtFwDvbRpd15OssdHoLg5ncG0R_S6f23DimAKPaFxai3xD5lPCeng2pd-HRLvc_mFD92URGneDQsZpU6-30IbiwzdTfp8LImxDCqmUp1b9SOj5TDFLDkwXKErIp_fD69t71l9E3jmDC522sPr0EaoahYXMm_PH0Dl_gEe08tdj6OkcA3yy7J9EpsEeOxzdOLHGhnOYNXxeqVCU64rybHo2d"/>
+</div>
+</div>
+</header>
+<!-- Kanban Board Canvas -->
+<main class="flex-1 overflow-x-auto overflow-y-hidden p-8 flex gap-6">
+<!-- Column 1: To Do -->
+<div class="flex-shrink-0 w-80 flex flex-col bg-surface-container-low rounded-xl">
+<div class="p-4 flex justify-between items-center">
+<h2 class="font-headline font-semibold text-on-surface text-sm uppercase tracking-wider">To Do <span class="text-on-surface-variant font-normal ml-2">3</span></h2>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-lg outline outline-1 outline-outline-variant/20 shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)] hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] transition-all cursor-grab active:cursor-grabbing">
+<div class="flex justify-between items-start mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary-container text-on-secondary-container uppercase tracking-wide">Design</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">more_horiz</span>
+</div>
+<h3 class="text-on-surface font-medium text-sm mb-2 leading-snug">Draft System Architecture Diagrams</h3>
+<p class="text-on-surface-variant text-xs mb-4 line-clamp-2">Map out the core data flow for the new editorial pipeline, focusing on the ingestion layer.</p>
+<div class="flex justify-between items-center mt-auto pt-2 border-t border-transparent">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high outline outline-2 outline-surface-container-lowest overflow-hidden">
+<img alt="Assignee" class="w-full h-full object-cover" data-alt="Portrait of a young woman with glasses and dark hair in a casual setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBav5IhfFy6ypRiKKRR3CWpoTOD4UeH6jIWOw_EHfRRGYYipB9-6uee7A0-y7gJJP3puWHhb5eKQdXUTFl8-KYvKu9AtHEEW0BgyHHDQU8IWDv9D72Q9jctYuN1R5o-WYD9-aWup2GgEce38xOz0aOsi-xdSA2F7QnxyrD0JxcEnz35eADe5iCizj0g77n-M924W6Pv4x7DbR1VhwND4wGaSld7BoCsNvUyeA2szT0vzZd7o_eNCyvneLa8dg8bKsvsq-OC-5Zh"/>
+</div>
+</div>
+<div class="flex items-center text-on-surface-variant text-xs space-x-2">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+<span>Oct 12</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-lg outline outline-1 outline-outline-variant/20 shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)] hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] transition-all cursor-grab active:cursor-grabbing">
+<div class="flex justify-between items-start mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-error-container/20 text-error uppercase tracking-wide">High Priority</span>
+</div>
+<h3 class="text-on-surface font-medium text-sm mb-2 leading-snug">Review Typography Scale Updates</h3>
+<div class="flex justify-between items-center mt-4 pt-2 border-t border-transparent">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high outline outline-2 outline-surface-container-lowest overflow-hidden flex items-center justify-center text-[10px] font-medium text-on-surface-variant">
+                                    JS
+                                </div>
+</div>
+<div class="flex items-center text-on-surface-variant text-xs space-x-2">
+<span class="material-symbols-outlined text-[14px]">chat_bubble_outline</span>
+<span>2</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: In Progress -->
+<div class="flex-shrink-0 w-80 flex flex-col bg-surface-container-low rounded-xl">
+<div class="p-4 flex justify-between items-center">
+<h2 class="font-headline font-semibold text-on-surface text-sm uppercase tracking-wider">In Progress <span class="text-on-surface-variant font-normal ml-2">2</span></h2>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-sm">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-lg outline outline-1 outline-outline-variant/20 shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] cursor-grab active:cursor-grabbing relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/80"></div>
+<div class="flex justify-between items-start mb-2 pl-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-container-high text-on-surface-variant uppercase tracking-wide">Development</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">more_horiz</span>
+</div>
+<h3 class="text-on-surface font-medium text-sm mb-2 leading-snug pl-2">Implement Navigation Shell</h3>
+<p class="text-on-surface-variant text-xs mb-4 line-clamp-2 pl-2">Build out the SideNavBar and TopAppBar components based on the finalized JSON specs.</p>
+<div class="flex justify-between items-center mt-auto pt-2 pl-2 border-t border-transparent">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high outline outline-2 outline-surface-container-lowest overflow-hidden flex items-center justify-center text-[10px] font-medium text-on-surface-variant">
+                                    AM
+                                </div>
+<div class="w-6 h-6 rounded-full bg-surface-container-high outline outline-2 outline-surface-container-lowest overflow-hidden">
+<img alt="Assignee" class="w-full h-full object-cover" data-alt="Portrait of a smiling man with short hair and a light beard in natural outdoor lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAfRkhDdprHvoEWLXGML55p9wDuDSZy8zfjzsbBB9BT10vMLwhrNgz_5Om_VMNuGj2-xWjG0gHWiC9TlxtzUCuVTp8Y93s6lRsOOMNHd6xIIifVM5PZlMadrj8FG6SuxzF-gHh9O9d28xhoVOrI4sdq_viI17G5u_pcQnmIAyz0mQnbJJDlZbqtrEA9roSjLD8T3Q5p3mkDQgrjxiC88rtQQK9M10zrPvQoOKiPypKUcwMDMJIQZAEBhCy0AOM860aTKANOUCc"/>
+</div>
+</div>
+<div class="flex items-center text-on-surface-variant text-xs space-x-1">
+<span class="material-symbols-outlined text-[14px]">attachment</span>
+<span>1</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Done -->
+<div class="flex-shrink-0 w-80 flex flex-col bg-surface-container-low/50 rounded-xl">
+<div class="p-4 flex justify-between items-center">
+<h2 class="font-headline font-semibold text-on-surface-variant text-sm uppercase tracking-wider">Done <span class="text-on-surface-variant/50 font-normal ml-2">4</span></h2>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-sm">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 opacity-70 hover:opacity-100 transition-opacity">
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest/80 p-4 rounded-lg outline outline-1 outline-outline-variant/10 cursor-default">
+<div class="flex items-start mb-2 space-x-2">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<h3 class="text-on-surface-variant font-medium text-sm line-through leading-snug">Finalize Color Tokens</h3>
+</div>
+<div class="flex justify-between items-center mt-2 pt-2 border-t border-transparent ml-6">
+<div class="text-xs text-on-surface-variant/70">Completed Oct 10</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

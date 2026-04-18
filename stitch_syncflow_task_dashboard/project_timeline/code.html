@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Slate &amp; Stone - Timeline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fb;
+            color: #2a3439;
+        }
+        .tonal-shift-boundary {
+            box-shadow: 1px 0 0 0 rgba(169, 180, 185, 0.2);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(169, 180, 185, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="bg-[#f0f4f7] dark:bg-[#141719] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] text-[13px] leading-relaxed fixed left-0 top-0 h-full w-64 z-50 no-border tonal-shift-boundary flat no shadows flex flex-col py-6 px-4 space-y-1 hidden md:flex">
+<div class="mb-8 px-2 flex items-center space-x-3">
+<div class="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-on-primary font-bold">
+                E
+            </div>
+<div>
+<h2 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</h2>
+<p class="text-[11px] text-on-surface-variant">Production Stack</p>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Tasks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">webhook</span>
+<span>Webhooks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">view_timeline</span>
+<span>Timeline</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<span>Team</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span>Docs</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+<span>Automations</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-auto space-y-1 pt-4 tonal-shift-boundary">
+<button class="w-full flex items-center justify-center space-x-2 bg-primary hover:bg-primary-dim text-on-primary py-2 px-4 rounded-md transition-colors duration-300">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-medium">New Page</span>
+</button>
+<div class="pt-4 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span>Help &amp; Support</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+<span>Trash</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-0 md:ml-64 flex flex-col h-full relative">
+<!-- TopAppBar -->
+<header class="bg-[#f8f9fb] dark:bg-[#0f1112] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] tracking-tight text-sm font-medium fixed top-0 right-0 z-40 w-full md:w-[calc(100%-16rem)] bg-[#f8f9fb] dark:bg-[#0f1112] flat no shadows flex justify-between items-center h-14 px-8 hidden md:flex">
+<div class="flex-1 flex items-center">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-1.5 bg-surface-container-lowest ghost-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-on-surface placeholder:text-on-surface-variant transition-all" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-1.5 rounded-full hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 slow-linear-out relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 slow-linear-out">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-dim overflow-hidden ml-2 ghost-border">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Close-up portrait of a young man with a slight smile, wearing a dark shirt against a neutral background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqIBSm2ylM_Md4qixmG3idAyrmUUHPZYo5hsUFsWhsNHCENiTnWANafePcZQA0ZTggccGmoIVbPaVCtrtS-3BoakBQuY4zKgDmIlJF6VkIYSa6B4o7dQGFJwaO9PgtkOu8dMnBxVprz_HANt18ZPxwlhl0GERc6Z36lwu69iKymkcSI0OP5xUOrCC4MyMzyYNDHrGd6vVt5ThPzBgDzs1x4nXqVJF9vFIJTG6MheR2l8Ns8UANJiN6qXxhzzfJGK4YUPRosXp2"/>
+</div>
+<button class="p-1 rounded-md hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 slow-linear-out">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 pt-14 md:pt-20 px-4 md:px-8 pb-8 overflow-y-auto">
+<!-- Page Header -->
+<div class="mb-8 flex justify-between items-end">
+<div>
+<h1 class="text-3xl font-bold tracking-tighter text-on-surface mb-1">Project Timeline</h1>
+<p class="text-body-md text-on-surface-variant">Q4 Production Schedule &amp; Milestone Tracking</p>
+</div>
+<div class="flex space-x-3">
+<button class="px-4 py-2 bg-surface-container text-on-surface-variant rounded-md text-sm font-medium hover:bg-surface-container-high transition-colors">
+                        Filter
+                    </button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-md text-sm font-medium hover:bg-primary-dim transition-colors flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+<span>New Milestone</span>
+</button>
+</div>
+</div>
+<!-- Bento Layout for Timeline -->
+<div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)] min-h-[600px]">
+<!-- Left Panel: Project List -->
+<div class="w-full lg:w-1/3 bg-surface-container-lowest ghost-border rounded-xl flex flex-col overflow-hidden shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)]">
+<div class="p-5 bg-surface-container-low border-b border-surface-variant/50">
+<h3 class="text-label-md uppercase tracking-[0.05em] font-semibold text-on-surface-variant">Active Initiatives</h3>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-2">
+<!-- Project Item 1 -->
+<div class="p-4 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary scale-y-100 transition-transform"></div>
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-medium text-on-surface">Brand Refresh 2024</h4>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-xs text-on-surface-variant font-medium">In Progress</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-3 line-clamp-1">Visual identity overhaul and component library update.</p>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden z-20">
+<img alt="Team member" class="w-full h-full object-cover" data-alt="Portrait of a smiling woman with blonde hair." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4h9bhFvk9ifWIXeA9dBEHKxmY3E4X6gb-uzSYhI7PnSerYkacPCgpQukd-pazFldDhq54OBv6W2plSu140JFZQrnKKSaFBScPPwFkUwe4nJwIPL6iKIDqBk2gQ_nzjbc1OwxBztmq-BQlFQ-IkI1i9mxDoGwRutQDFgTcvst_qanzFYytOHSi7IJSh-gA16WdkiV8wF-2oz6fUEVkohKHQZdvzNQ9drRZdEVa8Zi-RvdiMPYzOl7rjLTpyU89bd7zU42c8jzw"/>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden z-10">
+<img alt="Team member" class="w-full h-full object-cover" data-alt="Portrait of a man with glasses." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyNcUQqiUmt7K9Sy4xKoLs1pbobN_6Omd_ks1rHTs-KCsqGk_mVaDj7NZygq_xa7dl1iPvZZR7TnD5djkzcHQy0Id0TeetyF-P4GG_xRQMThzYDkwZij90xhMWy0u-IYBZgHleXigbXnD97FVmIaaIEo2kBRQXYrwY17gUoR2CPEmRIyDIbVYhfjdSo-AgMucs9Dq_LozBFyW1j2j6dDKmt9wNubz12gkiN0ONRJVBpbjgpcbN8wsQCUnNHQ_1oT6X_FnUj-eh"/>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Oct 1 - Nov 15</span>
+</div>
+</div>
+<!-- Project Item 2 -->
+<div class="p-4 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-medium text-on-surface">Marketing Site Launch</h4>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-xs text-on-surface-variant font-medium">Planning</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-3 line-clamp-1">New landing pages for Q4 product announcement.</p>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden z-20">
+<img alt="Team member" class="w-full h-full object-cover" data-alt="Portrait of a smiling woman." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY5gTtBSrF1NsGma6dURRpatWreKHsq8q1Qhwd0u6bK7YL1-Z3tTLUr168E4bzVBwfKwrWkGVVG-X-8o6be1xXhaWnZoaQqZj2MjJxXFo_O9wv_CDu-77vPwnVywODINsLCVhuMyZD3jwEZ6gUQ-IpYD6t4NPC1SkhGQAYx33pPQdRu90T6RaImF3FbgucaLYeXOyxz1Ou89iS8L4qS4tLWSvMYsDx9qnxaPTAUvGGTF_VxZVgs6dnWMpZpM4hGGzNbrUA5tyx"/>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Nov 1 - Dec 10</span>
+</div>
+</div>
+<!-- Project Item 3 -->
+<div class="p-4 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-medium text-on-surface">Q4 Financial Audit</h4>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-xs text-on-surface-variant font-medium">Review</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-3 line-clamp-1">End of year financial reconciliation and reporting.</p>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden z-20">
+<div class="w-full h-full bg-secondary flex items-center justify-center text-[10px] text-on-secondary font-bold">JD</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden z-10">
+<div class="w-full h-full bg-tertiary flex items-center justify-center text-[10px] text-on-tertiary font-bold">AS</div>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Dec 1 - Dec 31</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Gantt Chart View -->
+<div class="w-full lg:w-2/3 bg-surface-container-lowest ghost-border rounded-xl flex flex-col overflow-hidden shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)]">
+<!-- Calendar Header -->
+<div class="bg-surface-container-low flex border-b border-surface-variant/50">
+<div class="w-24 shrink-0 flex items-center justify-center border-r border-surface-variant/50 p-2">
+<button class="p-1 hover:bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="text-xs font-semibold px-2">Q4</span>
+<button class="p-1 hover:bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="flex-1 flex text-xs text-on-surface-variant font-medium">
+<div class="flex-1 text-center py-3 border-r border-surface-variant/50">October</div>
+<div class="flex-1 text-center py-3 border-r border-surface-variant/50 bg-surface-container/30">November</div>
+<div class="flex-1 text-center py-3">December</div>
+</div>
+</div>
+<!-- Timeline Grid Area -->
+<div class="flex-1 relative overflow-auto p-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iMTAwJSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48bGluZSB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMTAwJSIgc3Ryb2tlPSIjZThlZmYzIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')] bg-[length:11.11%_100%]">
+<!-- Current Date Indicator -->
+<div class="absolute top-0 bottom-0 left-[35%] w-px bg-error/50 z-0">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 bg-error text-on-error text-[10px] px-1.5 py-0.5 rounded-sm font-medium">Today</div>
+</div>
+<!-- Brand Refresh Track -->
+<div class="relative h-20 mb-4 z-10 group">
+<!-- Background track styling (optional, keeps it clean without) -->
+<!-- Task Bar -->
+<div class="absolute top-4 left-[5%] right-[45%] h-12 bg-primary/10 rounded-md ghost-border flex items-center px-3 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<span class="text-sm font-medium text-primary ml-2 truncate">Phase 1: Research &amp; Audit</span>
+<div class="ml-auto w-6 h-6 rounded-full bg-surface-dim border-2 border-surface-container-lowest overflow-hidden shrink-0">
+<img alt="Assignee" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQKMdmpAU5GohZIy8ijghu9FjIYLS_2FOvZvRZawfyirHmrE2_fnQnPeV2GFNqCbGcyJWrdFX-Zf9XCcSPxgRLYcJJbsoXge3nlcTa8wPOM1-92uczHWAblujxWz044UizfZVpo8Fs2nWBK35UPnZbUCL8D7pzI7jqGlk1Q95JDw6y2DbF7Dc7tU6MXCKcKgFjSrG9ZZhDHDRf9qxtNuc6Tbjd8wfCM3LGn9aqmDHsw0v3iw5yEID89cJ4PiySw_6zjvhFcvPv"/>
+</div>
+</div>
+<!-- Milestone Diamond -->
+<div class="absolute top-8 left-[58%] w-4 h-4 bg-tertiary rotate-45 rounded-sm shadow-sm" title="Review Meeting"></div>
+</div>
+<!-- Marketing Site Track -->
+<div class="relative h-20 mb-4 z-10">
+<div class="absolute top-4 left-[38%] right-[15%] h-12 bg-surface-container rounded-md ghost-border flex items-center px-3 overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary"></div>
+<span class="text-sm font-medium text-on-surface ml-2 truncate">Wireframing &amp; Copy</span>
+<div class="ml-auto flex -space-x-1">
+<div class="w-5 h-5 rounded-full bg-surface-dim border border-surface-container-lowest overflow-hidden shrink-0">
+<img alt="Assignee" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZCMgf2KvM_MDvqBo626zWtLy6l6XZB0ZGdB--NXEYlvjweo27uF823Bmx5esVlRaUUcUGoxV132hzkoiwcYZR-pz7K_KKpItLbzlaPvcvRrfLMtBbgVucHpg42vRwMifFIq1Nhpf2pRr1wlgHXjNHsZ-fQA4nOBgfHNCk7yk0WD79IoDP33yCL1hil9GetxtVTojlQGEhD2GmZZQkTK-mE56FefRRU_UrUFEf5m90bDVY-QNF88q7b4ShfeLhsks2LngKCOwL"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Audit Track -->
+<div class="relative h-20 z-10">
+<div class="absolute top-4 left-[70%] right-[5%] h-12 bg-surface-container rounded-md ghost-border flex items-center px-3 overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-outline"></div>
+<span class="text-sm font-medium text-on-surface ml-2 truncate">Data Collection</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Slate &amp; Stone - Resource Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 z-50 bg-[#f0f4f7] dark:bg-[#141719] flex flex-col py-6 px-4 space-y-1">
+<div class="mb-8 px-2 flex items-center space-x-3">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="auto_stories">auto_stories</span>
+</div>
+<div>
+<h1 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</h1>
+<p class="text-xs text-on-surface-variant">Production Stack</p>
+</div>
+</div>
+<button class="w-full flex items-center justify-center space-x-2 bg-primary text-on-primary py-2 px-4 rounded-md mb-6 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+<span class="font-['Inter'] text-[13px] font-medium tracking-wide">New Page</span>
+</button>
+<div class="flex-grow space-y-1">
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Dashboard</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="check_circle">check_circle</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Tasks</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="webhook">webhook</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Webhooks</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="view_timeline">view_timeline</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Timeline</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="group">group</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Team</span>
+</a>
+<a class="flex items-center px-3 py-2 bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="description">description</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Docs</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="auto_fix_high">auto_fix_high</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Automations</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Settings</span>
+</a>
+</div>
+<div class="pt-4 mt-auto border-t border-transparent space-y-1">
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="help">help</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Help &amp; Support</span>
+</a>
+<a class="flex items-center px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-on-surface" data-icon="delete">delete</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Trash</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-64 min-h-screen flex flex-col relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 z-40 w-[calc(100%-16rem)] flex justify-between items-center h-14 px-8 bg-[#f8f9fb] dark:bg-[#0f1112]">
+<div class="flex items-center flex-1">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-md py-1.5 pl-10 pr-4 text-sm font-['Inter'] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary/50 transition-colors bg-opacity-80 backdrop-blur-md" placeholder="Search Docs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
+</button>
+<button class="p-2 text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-surface-container ml-2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsQywB8rUkw6nyzqMP7-K7HlFru8Db-DrK23Q7ffemhF-hfUMBVVk5WHATsHj0pJ4fXT0mX7vGi-5Ci3LoSlhK15keriNvcHQAGYmCk0q1va_n6lQJFAL_vVbvTkMx07BqaFfAJ87oeKAso58j-HtBbxnTUJO-YR74AfPvxFtEw0MvVgAoskCnnUx0pi8A1wPs6-pys6IpeLwt_anLgeB2ZzOwdx-eku8JcU9R99ZEOfZm1ow4y4_AOtL-jttOleAfrRgUqmmE"/>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 mt-14 p-10 max-w-6xl mx-auto w-full">
+<div class="mb-12">
+<h1 class="font-headline text-4xl font-bold tracking-tight text-on-surface mb-3">Resource Library</h1>
+<p class="font-body text-on-surface-variant text-lg max-w-2xl leading-relaxed">A curated collection of design patterns, architectural decisions, and editorial guidelines for the Slate &amp; Stone platform.</p>
+</div>
+<!-- Asymmetric Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Featured Doc (Spans 8 cols) -->
+<article class="col-span-1 md:col-span-8 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-300 group cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-surface-container opacity-50 rounded-bl-[100px] -z-10 transition-transform duration-500 group-hover:scale-110"></div>
+<div class="flex items-start justify-between mb-6">
+<div class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-xs font-label uppercase tracking-widest font-semibold inline-flex items-center">
+<span class="material-symbols-outlined text-[14px] mr-1" data-icon="star">star</span>
+                            Featured Guideline
+                        </div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<h2 class="font-headline text-2xl font-bold text-on-surface mb-4 tracking-tight">The "No-Line" Rule: Tonal Architecture in UI Design</h2>
+<p class="font-body text-on-surface-variant leading-relaxed mb-6">Explore the philosophy of defining boundaries through background color shifts and subtle tonal transitions rather than relying on harsh 1px borders. Learn how nesting layers of 'fine paper' creates depth.</p>
+<div class="flex items-center space-x-4 text-sm text-outline">
+<span class="flex items-center"><span class="material-symbols-outlined text-[16px] mr-1" data-icon="schedule">schedule</span> 8 min read</span>
+<span class="flex items-center"><span class="material-symbols-outlined text-[16px] mr-1" data-icon="person">person</span> Design Team</span>
+</div>
+</article>
+<!-- Secondary Doc (Spans 4 cols) -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-300 group cursor-pointer flex flex-col">
+<div class="mb-4 bg-surface-container-high w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="text_fields">text_fields</span>
+</div>
+<h3 class="font-headline text-lg font-semibold text-on-surface mb-2 tracking-tight">Typography Extremes</h3>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed flex-grow">Pairing oversized, airy headlines with meticulously tight, functional labels for a custom, premium rhythm.</p>
+<div class="mt-4 pt-4 border-t border-transparent text-xs text-outline flex justify-between items-center">
+<span>Updated 2 days ago</span>
+</div>
+</article>
+<!-- Small Grid Items -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-300 cursor-pointer">
+<h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Components</h4>
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2">Ghost Borders</h3>
+<p class="font-body text-sm text-on-surface-variant">Implementation details for focus states and accessibility outlines.</p>
+</article>
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-300 cursor-pointer">
+<h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Colors</h4>
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2">Desaturation Palette</h3>
+<p class="font-body text-sm text-on-surface-variant">The spectrum of charcoal, stone, and slate replacing vibrant hues.</p>
+</article>
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-300 cursor-pointer flex items-center justify-between group">
+<div>
+<h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Assets</h4>
+<h3 class="font-headline text-base font-semibold text-on-surface">Iconography Set</h3>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-primary-container" data-icon="download">download</span>
+</div>
+</article>
+</div>
+<!-- Directory Section -->
+<div class="mt-16">
+<h2 class="font-headline text-xl font-semibold tracking-tight text-on-surface mb-6 flex items-center">
+<span class="material-symbols-outlined mr-2" data-icon="folder_open">folder_open</span>
+                    Complete Directory
+                </h2>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/20 overflow-hidden">
+<!-- List Header (implied, no borders) -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface-container-low/50 text-xs font-label uppercase tracking-widest text-on-surface-variant">
+<div class="col-span-6">Document Name</div>
+<div class="col-span-3">Category</div>
+<div class="col-span-3 text-right">Last Modified</div>
+</div>
+<!-- List Items (alternating backgrounds) -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="col-span-6 flex items-center">
+<span class="material-symbols-outlined text-outline mr-3 text-[18px]" data-icon="article">article</span>
+<span class="font-body text-sm font-medium text-on-surface group-hover:text-primary transition-colors">Asymmetric Margins in Practice</span>
+</div>
+<div class="col-span-3 flex items-center">
+<span class="px-2 py-1 bg-surface-container-high rounded text-xs text-on-surface-variant font-label">Layout</span>
+</div>
+<div class="col-span-3 flex items-center justify-end text-sm text-outline font-body">
+                            Oct 12, 2023
+                        </div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="col-span-6 flex items-center">
+<span class="material-symbols-outlined text-outline mr-3 text-[18px]" data-icon="article">article</span>
+<span class="font-body text-sm font-medium text-on-surface group-hover:text-primary transition-colors">Glassmorphism Overlays</span>
+</div>
+<div class="col-span-3 flex items-center">
+<span class="px-2 py-1 bg-surface-container-high rounded text-xs text-on-surface-variant font-label">Components</span>
+</div>
+<div class="col-span-3 flex items-center justify-end text-sm text-outline font-body">
+                            Oct 10, 2023
+                        </div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="col-span-6 flex items-center">
+<span class="material-symbols-outlined text-outline mr-3 text-[18px]" data-icon="article">article</span>
+<span class="font-body text-sm font-medium text-on-surface group-hover:text-primary transition-colors">The Layering Principle</span>
+</div>
+<div class="col-span-3 flex items-center">
+<span class="px-2 py-1 bg-surface-container-high rounded text-xs text-on-surface-variant font-label">Elevation</span>
+</div>
+<div class="col-span-3 flex items-center justify-end text-sm text-outline font-body">
+                            Sep 28, 2023
+                        </div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -10,7 +10,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-md font-bold tracking-tight transition-[background,color,transform] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-md font-semibold tracking-tight transition-[background,color,transform] duration-300 ease-linear active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 
 const sizes: Record<Size, string> = {
   sm: "px-3 py-1.5 text-xs",
@@ -19,11 +19,11 @@ const sizes: Record<Size, string> = {
 
 const variants: Record<Variant, string> = {
   primary:
-    "text-on-primary bg-[linear-gradient(135deg,#3c608a_0%,#2f547d_100%)] hover:bg-primary-dim",
+    "text-on-primary bg-[linear-gradient(180deg,#5a5f65_0%,#4e5358_100%)] hover:bg-primary-dim",
   secondary:
-    "bg-primary-container text-on-primary-container hover:brightness-95",
+    "bg-primary-container text-on-primary-container hover:bg-surface-container-high",
   tertiary:
-    "bg-transparent text-on-primary-container hover:text-primary p-0",
+    "bg-transparent text-primary hover:bg-surface-container p-0",
 };
 
 export function Button({

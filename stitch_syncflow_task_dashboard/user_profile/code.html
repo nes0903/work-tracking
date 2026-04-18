@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Slate &amp; Stone - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex selection:bg-secondary-container selection:text-on-surface">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 z-50 bg-[#f0f4f7] dark:bg-[#141719] flex flex-col py-6 px-4 space-y-1">
+<div class="mb-8 px-4 flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
+                E
+            </div>
+<div>
+<h1 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Slate &amp; Stone</h1>
+<p class="font-['Inter'] text-[13px] leading-relaxed text-[#5a5f65] dark:text-[#a9b4b9]">Production Stack</p>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Tasks</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">webhook</span>
+<span>Webhooks</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">view_timeline</span>
+<span>Timeline</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span>Team</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Docs</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
+<span>Automations</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md font-['Inter'] text-[13px] leading-relaxed scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-auto space-y-1 pt-4">
+<button class="w-full mb-4 px-4 py-2 bg-primary text-on-primary rounded-md font-['Inter'] text-[13px] font-medium flex items-center justify-center space-x-2 bg-gradient-to-b from-primary to-primary-dim hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Page</span>
+</button>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+<span>Help &amp; Support</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 font-['Inter'] text-[13px] leading-relaxed" href="#">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span>Trash</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 z-40 w-[calc(100%-16rem)] bg-[#f8f9fb] dark:bg-[#0f1112] flex justify-between items-center h-14 px-8">
+<div class="text-lg font-bold tracking-tighter text-[#2a3439] dark:text-[#f4f8ff]">
+                Settings
+            </div>
+<div class="flex items-center space-x-4">
+<button class="text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="text-[#5a5f65] dark:text-[#a9b4b9] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full ml-2 ring-2 ring-surface-container-low" data-alt="close up professional headshot of man with short hair wearing a dark grey shirt against a plain light background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE3fdUsBC858TI7rsfw3GoQN5dNVlMIfxak-7MlVzkIUzhsTB_86LjI5h2lSsWhz5jiLP3LHahw9yuD7G5IM2wPtJ0JjbHp-06RVqX-xv8bKp9nfj8Rqw7VsZ4_dL2SrRJw7bHv5XQIMlLqbD7wmBH4g1761_19lctppdmsM9HKqLtxzgEko4zAIjUjScCDHR5bVdEzxqJUVdLGk7ivayG7GWcWjoVKYQSesgwx3la549XunGdyYAL4mJWkKl5AIbcXyOWF7D4"/>
+</div>
+</header>
+<!-- Settings Canvas -->
+<div class="pt-24 px-12 pb-24 max-w-5xl w-full mx-auto">
+<div class="mb-12">
+<h2 class="text-4xl font-headline font-semibold tracking-tight text-on-surface mb-2">Profile &amp; Preferences</h2>
+<p class="text-body-md text-on-surface-variant max-w-2xl">Manage your personal information, security settings, and how we communicate with you across your workspace.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Navigation within Settings -->
+<div class="lg:col-span-3 space-y-2">
+<a class="block px-4 py-2.5 text-sm font-medium text-on-surface bg-surface-container-low rounded-md" href="#">Account Profile</a>
+<a class="block px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#">Notifications</a>
+<a class="block px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#">Security</a>
+<a class="block px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#">Integrations</a>
+</div>
+<!-- Forms Area -->
+<div class="lg:col-span-9 space-y-16">
+<!-- Profile Section -->
+<section>
+<h3 class="text-xl font-headline font-medium text-on-surface mb-6 tracking-tight">Personal Information</h3>
+<div class="bg-surface-container-lowest rounded-xl p-8 space-y-8">
+<div class="flex items-center space-x-6">
+<div class="relative">
+<img alt="Avatar" class="w-20 h-20 rounded-full object-cover" data-alt="close up professional headshot of man with short hair wearing a dark grey shirt against a plain light background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC27WbEs2JyvfFBkKvxGWhQqQS0lLPMGMFXBZHkwXdIrHgaBysPeLsreTih8kiVnQS8euyPzSN5I2W2NjEK8ZbVqbk83JvzZtpyTLxaQzvDAUGEeM6bGEv8Hz7bqf0qDkOL-ZmJq-QfE_9GzKAyZXPAzZ3ds14CSyM4eqk9mJTTZYOf5btXhYqgSVs4eIvRy2OSkNMumpWN2hs23RgVm0FCvMj8HsOxFdo_yuwQ97cB8LPAdWTuzw9Z0tZPFUVhZHnFFNYFE2GS"/>
+<button class="absolute bottom-0 right-0 bg-surface-container-highest text-on-surface p-1.5 rounded-full hover:bg-primary-container transition-colors shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)]">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<div>
+<h4 class="text-sm font-medium text-on-surface">Profile Picture</h4>
+<p class="text-sm text-on-surface-variant mt-1">PNG, JPG up to 5MB. Recommended 256x256px.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block text-xs font-semibold tracking-widest uppercase text-on-surface-variant mb-2">First Name</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 border rounded-md px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary/50 focus:ring-0 transition-colors" type="text" value="Alexander"/>
+</div>
+<div>
+<label class="block text-xs font-semibold tracking-widest uppercase text-on-surface-variant mb-2">Last Name</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 border rounded-md px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary/50 focus:ring-0 transition-colors" type="text" value="Chen"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-xs font-semibold tracking-widest uppercase text-on-surface-variant mb-2">Email Address</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 border rounded-md px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary/50 focus:ring-0 transition-colors" type="email" value="alexander.chen@slateandstone.io"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-xs font-semibold tracking-widest uppercase text-on-surface-variant mb-2">Bio</label>
+<textarea class="w-full bg-surface-container-lowest border-outline-variant/20 border rounded-md px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary/50 focus:ring-0 transition-colors resize-none" rows="3">Lead Editor at Slate &amp; Stone. Focusing on architectural narratives and spatial design systems.</textarea>
+</div>
+</div>
+<div class="flex justify-end pt-4">
+<button class="px-6 py-2.5 bg-primary text-on-primary rounded-md text-sm font-medium bg-gradient-to-b from-primary to-primary-dim hover:opacity-90 transition-opacity">Save Changes</button>
+</div>
+</div>
+</section>
+<!-- Notifications Section -->
+<section>
+<h3 class="text-xl font-headline font-medium text-on-surface mb-6 tracking-tight">Notification Preferences</h3>
+<div class="bg-surface-container-lowest rounded-xl p-8 space-y-6">
+<div class="flex items-start justify-between py-4">
+<div>
+<h4 class="text-sm font-medium text-on-surface">Weekly Digest</h4>
+<p class="text-sm text-on-surface-variant mt-1">Receive a weekly overview of workspace activity and performance metrics.</p>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary" role="switch">
+<span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+<div class="flex items-start justify-between py-4 bg-surface-container-low -mx-8 px-8">
+<div>
+<h4 class="text-sm font-medium text-on-surface">Mentions &amp; Replies</h4>
+<p class="text-sm text-on-surface-variant mt-1">Get notified immediately when someone tags you or replies to your threads.</p>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary" role="switch">
+<span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+<div class="flex items-start justify-between py-4">
+<div>
+<h4 class="text-sm font-medium text-on-surface">Document Updates</h4>
+<p class="text-sm text-on-surface-variant mt-1">Alerts for significant changes to documents you are following or collaborating on.</p>
+</div>
+<button aria-checked="false" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-surface-container-highest" role="switch">
+<span class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+<div class="flex items-start justify-between py-4 bg-surface-container-low -mx-8 px-8">
+<div>
+<h4 class="text-sm font-medium text-on-surface">System Announcements</h4>
+<p class="text-sm text-on-surface-variant mt-1">Important updates about platform features, maintenance, and security.</p>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary" role="switch">
+<span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

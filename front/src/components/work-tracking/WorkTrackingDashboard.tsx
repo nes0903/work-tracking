@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { TaskCard, type TaskAction } from "./TaskCard";
 import {
@@ -77,7 +77,6 @@ function createTaskFormState(dateKey: string): TaskFormState {
 
 export function WorkTrackingDashboard() {
   const initialDate = todayKey();
-  const taskTitleRef = useRef<HTMLInputElement>(null);
   const [days, setDays] = useState<WorkDayMap>({});
   const [activeDate, setActiveDate] = useState(initialDate);
   const [taskForm, setTaskForm] = useState<TaskFormState>(() => createTaskFormState(initialDate));
@@ -481,21 +480,6 @@ export function WorkTrackingDashboard() {
     });
   }
 
-  function clearCompleted() {
-    void mutateDashboard(
-      {
-        action: "clearCompleted",
-        date: activeDate,
-      },
-      {
-        date: activeDate,
-        syncNotes: false,
-      },
-    ).catch((error) => {
-      console.error("[dashboard] failed to clear completed tasks", error);
-    });
-  }
-
   function clearNotes() {
     setNotesDraft("");
     void mutateDashboard(
@@ -628,20 +612,7 @@ export function WorkTrackingDashboard() {
             )}
           </div>
           <div className="topbar-right">
-            {activeView === "dashboard" ? (
-              <div className="page-header-actions">
-                <button className="secondary-button" type="button" onClick={clearCompleted}>
-                  완료 항목 정리
-                </button>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => taskTitleRef.current?.focus()}
-                >
-                  + 새 업무
-                </button>
-              </div>
-            ) : (
+            {activeView === "dashboard" ? null : (
               <div className="github-meta">
                 <span>마지막 동기화</span>
                 <strong>
@@ -788,7 +759,6 @@ export function WorkTrackingDashboard() {
                   <label>
                     <span className="field-label">업무명</span>
                     <input
-                      ref={taskTitleRef}
                       type="text"
                       name="title"
                       placeholder="예: 통계 API 검증"

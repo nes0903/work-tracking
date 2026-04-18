@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Team Directory - Slate &amp; Stone</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .fill-icon { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-surface text-on-background min-h-screen flex antialiased selection:bg-secondary-container selection:text-on-surface">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 z-50 bg-[#f0f4f7] dark:bg-[#141719] no-border tonal-shift-boundary flat no shadows flex flex-col h-full py-6 px-4 space-y-1 hidden md:flex">
+<div class="mb-8 px-3 flex items-center space-x-3">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold text-sm">
+                EW
+            </div>
+<div>
+<h1 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</h1>
+<p class="font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499]">Production Stack</p>
+</div>
+</div>
+<button class="w-full mb-6 bg-primary text-on-primary rounded-md py-2 px-4 font-medium text-sm flex items-center justify-center space-x-2 transition-transform duration-200 hover:scale-[0.98] focus:outline-none">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Page</span>
+</button>
+<div class="flex-1 space-y-1 overflow-y-auto">
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">dashboard</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">check_circle</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Tasks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">webhook</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Webhooks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">view_timeline</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Timeline</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md Active: scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px] fill-icon">group</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Team</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">description</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Docs</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">auto_fix_high</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Automations</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">settings</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Settings</span>
+</a>
+</div>
+<div class="mt-auto space-y-1 pt-4 border-t-0">
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">help</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Help &amp; Support</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-[#2a3439] transition-colors">delete</span>
+<span class="font-['Inter'] text-[13px] leading-relaxed">Trash</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 relative min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 z-40 w-full md:w-[calc(100%-16rem)] bg-[#f8f9fb] dark:bg-[#0f1112] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] tracking-tight text-sm font-medium flat no shadows flex justify-between items-center h-14 px-4 md:px-8 transition-colors duration-300">
+<div class="flex items-center md:hidden">
+<button class="p-2 -ml-2 text-[#566166] hover:bg-[#f0f4f7] rounded-md transition-colors duration-300">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<span class="ml-2 text-lg font-bold tracking-tighter text-[#2a3439] dark:text-[#f4f8ff]">Slate &amp; Stone</span>
+</div>
+<div class="hidden md:flex items-center">
+<span class="text-lg font-bold tracking-tighter text-[#2a3439] dark:text-[#f4f8ff]">Slate &amp; Stone</span>
+</div>
+<div class="flex-1 flex justify-start md:ml-8 hidden md:flex">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full bg-surface-container-lowest outline-none text-sm placeholder:text-on-surface-variant text-on-surface py-1.5 pl-9 pr-3 rounded-md transition-colors focus:ring-0 focus:border-primary/50 border border-outline-variant/20" placeholder="Search team..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-1 md:space-x-2">
+<button aria-label="notifications" class="p-2 text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button aria-label="help_outline" class="p-2 text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300 flex items-center justify-center hidden md:flex">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<button aria-label="more_vert" class="p-2 text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] rounded-full transition-colors duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden ml-2 flex-shrink-0 border border-outline-variant/20">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Close up portrait of a young professional woman with dark hair in a minimalist studio setting with soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5guCRuoyIOBufUZWtyjV4AzblJlBGgM4o_Big0d8fRKun25EZ0u-OHUEVoGldpO_WpE7leI9q8J45U4SDfQcZKynhbdRabjEGPSAT0e4yQ0S8Q3QsKKZuRH4PAHTbZRjjkMSDxqyJipx0KBKNXhwhQZnCeznW_cx_hHbKeUiPmkRKo5t6sCvGu2z0-PljOqi-mKJ8zOs6kRdFbvRq8ujczJ25cdAb6rz8O0uT3qcmWmX4gYmHKUOIPzDJ04w3-DOLOxciAdF_"/>
+</div>
+</div>
+</header>
+<!-- Page Content Canvas -->
+<div class="pt-20 px-4 md:px-12 pb-24 max-w-7xl mx-auto">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-12 mt-8">
+<div class="max-w-2xl pr-8">
+<h2 class="text-[2.5rem] leading-tight font-extrabold tracking-[-0.02em] text-on-surface mb-3">Team Roster</h2>
+<p class="text-on-surface-variant text-base leading-relaxed max-w-xl">
+                        The principal architects and editorial staff curating the Slate &amp; Stone workspace. Directory is organized by structural domain.
+                    </p>
+</div>
+<div class="mt-6 md:mt-0 flex items-center space-x-3">
+<div class="flex bg-surface-container-low rounded-md p-1">
+<button class="px-3 py-1.5 bg-surface-container-lowest shadow-[0_2px_8px_-2px_rgba(42,52,57,0.05)] rounded text-on-surface text-sm font-medium flex items-center space-x-1">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+<span class="sr-only">Grid View</span>
+</button>
+<button class="px-3 py-1.5 text-on-surface-variant hover:text-on-surface rounded text-sm font-medium flex items-center space-x-1 transition-colors">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+<span class="sr-only">List View</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary hover:bg-primary-dim px-4 py-2 rounded-md text-sm font-medium transition-colors duration-300 flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span>Invite Member</span>
+</button>
+</div>
+</div>
+<!-- Team Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Member Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all duration-300 hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] relative border border-outline-variant/20 hover:border-outline-variant/40">
+<div class="absolute top-4 right-4">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] uppercase tracking-[0.05em] font-medium">Online</span>
+</div>
+<div class="flex flex-col items-start mb-6">
+<div class="w-16 h-16 rounded-full overflow-hidden mb-4 bg-surface-container-low">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="Professional headshot of a mature man with a beard wearing a grey sweater, neutral grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVkx_j4r7PW3DNtQ2DNmbIshBncrdluqBP33LUfAlH9X54gD8g9Z1nKM6eZwRjpA7ei2jNdjuhut_Xb_0_quujeG07fL1_m4nIsGQ6EIFACNJs_DUsJVtHn8uSJ-RYItib42_kTCom4ryDVrZHx53i-jAJuFW0BrCz77VKYhZmGRhoPvov48gCKSR6dmKN_QlKiQSBCcr5JkrF5DYdmxhhCjQut0RcDOtvXt2-HxAqHww1KhE0fULZb7rra__nmX7Du494ASQG"/>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-on-surface tracking-tight mb-0.5">Julian Hayes</h3>
+<p class="text-sm text-on-surface-variant font-medium">Editor in Chief</p>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-surface-variant/50">
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">mail</span>
+<a class="hover:text-on-surface transition-colors" href="#">julian@slateandstone.com</a>
+</div>
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">location_on</span>
+<span>London, UK</span>
+</div>
+</div>
+</div>
+<!-- Member Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all duration-300 hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] relative border border-outline-variant/20 hover:border-outline-variant/40">
+<div class="absolute top-4 right-4">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] uppercase tracking-[0.05em] font-medium">Away</span>
+</div>
+<div class="flex flex-col items-start mb-6">
+<div class="w-16 h-16 rounded-full overflow-hidden mb-4 bg-surface-container-low">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="Professional portrait of a young woman smiling gently, warm studio lighting with a soft beige background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHRY-KjS5UndYpcQ1CuYG_Dcgq-FnfX-BAIhYVftIE96HEJxrWVkMhBqiqIIcEul9DrbiFZMd2pU5Gaw0g1afJCk3SIKMwAb5gwzeK4t7ICriJtPJ2b9MyHc2ncSbUj-8tSC6JyBQlEtHNVTJ6K9ySL_7rEjNrAMs9hFToia3pKMnLFbB0BgFlnrtFZy_VjVcetzA6LUc7gkoIAylIemnSO3Crj_aVaBYXVp8swqA1QJuQfiJJhasjQ1DpGTZ1GB8RzUJ5i2Xz"/>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-on-surface tracking-tight mb-0.5">Clara Vance</h3>
+<p class="text-sm text-on-surface-variant font-medium">Head of Typography</p>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-surface-variant/50">
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">mail</span>
+<a class="hover:text-on-surface transition-colors" href="#">clara@slateandstone.com</a>
+</div>
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">location_on</span>
+<span>Berlin, DE</span>
+</div>
+</div>
+</div>
+<!-- Member Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all duration-300 hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] relative border border-outline-variant/20 hover:border-outline-variant/40">
+<div class="absolute top-4 right-4">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] uppercase tracking-[0.05em] font-medium">Online</span>
+</div>
+<div class="flex flex-col items-start mb-6">
+<div class="w-16 h-16 rounded-full overflow-hidden mb-4 bg-surface-container-low flex items-center justify-center bg-secondary-container text-on-secondary-container font-semibold text-xl">
+                            MR
+                        </div>
+<div>
+<h3 class="text-lg font-semibold text-on-surface tracking-tight mb-0.5">Marcus Reed</h3>
+<p class="text-sm text-on-surface-variant font-medium">Lead Developer</p>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-surface-variant/50">
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">mail</span>
+<a class="hover:text-on-surface transition-colors" href="#">marcus@slateandstone.com</a>
+</div>
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">location_on</span>
+<span>New York, US</span>
+</div>
+</div>
+</div>
+<!-- Member Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 group transition-all duration-300 hover:shadow-[0_12px_32px_-4px_rgba(42,52,57,0.08)] relative border border-outline-variant/20 hover:border-outline-variant/40">
+<div class="absolute top-4 right-4">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] uppercase tracking-[0.05em] font-medium">Offline</span>
+</div>
+<div class="flex flex-col items-start mb-6">
+<div class="w-16 h-16 rounded-full overflow-hidden mb-4 bg-surface-container-low">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="Casual portrait of a young man with dark hair smiling slightly, soft outdoor lighting in an urban setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9AgMzvyC9HPgAPVWEim7UoalcGCSYf9xzCveGb_knyl1EU6rsXFNKKbwLX1IBqCROeozB--SO2Rro0_pFZ6QTOlno_AlvJ27aYZuavwX2jYyiqfUM6j4d_ImqN1VH-ZQDep2GSUz9Qfcnzz8XF_GJBGe5hz1XJavsPUoOo_LSXNoHP67mKleZLoAry087TgrLiVkousXwCgItutO09r-KU2l5_wuevU2T2EZw0mlGUDQJR7J9iBSHOHbd9RjjHhAG0bnT0S1d"/>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-on-surface tracking-tight mb-0.5">Elias Thorne</h3>
+<p class="text-sm text-on-surface-variant font-medium">UX Architect</p>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-surface-variant/50">
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">mail</span>
+<a class="hover:text-on-surface transition-colors" href="#">elias@slateandstone.com</a>
+</div>
+<div class="flex items-center text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-2">location_on</span>
+<span>Toronto, CA</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State / Add New (Stylized) -->
+<div class="mt-8 bg-surface-container-low rounded-xl p-8 border border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-center max-w-3xl mx-auto">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-surface-variant text-[24px]">group_add</span>
+</div>
+<h4 class="text-base font-semibold text-on-surface mb-1">Expand the Roster</h4>
+<p class="text-sm text-on-surface-variant max-w-sm mb-6">Invite external collaborators or new team members to access the editorial stack.</p>
+<button class="text-sm font-medium text-primary hover:text-on-surface transition-colors border-b border-primary/30 hover:border-on-surface pb-0.5">
+                    Generate Invite Link
+                </button>
+</div>
+</div>
+</main>
+</body></html>

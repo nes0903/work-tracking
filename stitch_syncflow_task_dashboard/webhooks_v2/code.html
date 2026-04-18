@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Webhooks Integration Center - Slate &amp; Stone</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased selection:bg-primary selection:text-on-primary min-h-screen flex">
+<!-- SideNavBar (from JSON) -->
+<nav aria-label="Sidebar" class="bg-[#f0f4f7] dark:bg-[#141719] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] text-[13px] leading-relaxed fixed left-0 top-0 h-full w-64 z-50 flex flex-col h-full py-6 px-4 space-y-1 hidden md:flex">
+<div class="mb-8 px-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface text-lg" data-icon="layers">layers</span>
+</div>
+<div>
+<h2 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</h2>
+<p class="text-xs text-on-surface-variant">Production Stack</p>
+</div>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+                Tasks
+            </a>
+<a class="bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2 scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="webhook" data-weight="fill" style="font-variation-settings: 'FILL' 1;">webhook</span>
+                Webhooks
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="view_timeline">view_timeline</span>
+                Timeline
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="group">group</span>
+                Team
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="description">description</span>
+                Docs
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_fix_high">auto_fix_high</span>
+                Automations
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+                Settings
+            </a>
+</div>
+<div class="mt-auto space-y-1 pt-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-primary-dim transition-colors py-2 rounded-md mb-4 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                New Page
+            </button>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+                Help &amp; Support
+            </a>
+<a class="text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200 flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+                Trash
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar (from JSON) -->
+<header class="bg-[#f8f9fb] dark:bg-[#0f1112] text-[#5a5f65] dark:text-[#a9b4b9] font-['Inter'] tracking-tight text-sm font-medium fixed top-0 right-0 z-40 w-[calc(100%-16rem)] flex justify-between items-center h-14 px-8 hidden md:flex transition-all duration-300">
+<div class="flex items-center gap-4 flex-1">
+<div class="text-lg font-bold tracking-tighter text-[#2a3439] dark:text-[#f4f8ff]">Slate &amp; Stone</div>
+<div class="relative w-64 ml-8">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-md py-1.5 pl-9 pr-3 text-sm focus:border-primary/50 focus:ring-0 transition-colors text-on-surface placeholder:text-on-surface-variant/70" placeholder="Search webhooks..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 rounded-full text-[#566166] dark:text-[#889499]">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 rounded-full text-[#566166] dark:text-[#889499]">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<button class="p-2 hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 rounded-full text-[#566166] dark:text-[#889499]">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+<div class="ml-4 w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="close up portrait of a professional man looking directly at camera with soft natural lighting and blurred background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCORK48Sogl-41-9WGKpvSwyvojCks0fu9YHQXpmiwh6DUvQVP5LnN-UV5PhipClI_ebniv7HEyV8ME-esCh792ETHFrqIUAjq-CIImr-zvLIAMt4lvAQqyOu1p64ZQ1g3IPAP8JubsSNW8taP8t0usmhXE8v0D9zAycg9sxCdyixD5veTC7wpNAJ4G3060de1dIRsaz2Oe1trd8uM-ddA1o5j5n0pa1c61XqgJ1XQM_FuLZBWcLTGY6dszo8tX6YRSLiLutnpH"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 pt-20 px-8 pb-12 overflow-y-auto">
+<div class="max-w-6xl mx-auto space-y-10">
+<!-- Header Section -->
+<div class="flex items-end justify-between border-b-0 pb-2">
+<div class="space-y-2">
+<h1 class="text-4xl font-headline tracking-[-0.02em] font-medium text-on-surface">Webhooks Integration</h1>
+<p class="text-on-surface-variant text-base font-body max-w-2xl">Monitor external payload deliveries and configure endpoint destinations across the production environment.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest text-on-surface font-medium text-sm rounded-md border border-outline-variant/20 hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="sync">sync</span>
+                            Refresh
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary font-medium text-sm rounded-md bg-gradient-to-b from-primary to-primary-dim hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_link">add_link</span>
+                            Add Endpoint
+                        </button>
+</div>
+</div>
+<!-- Metrics Bento -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="call_made">call_made</span>
+</div>
+<p class="text-label-sm uppercase tracking-[0.05em] text-on-surface-variant mb-2">Total Deliveries (24h)</p>
+<p class="text-3xl font-headline tracking-tight text-on-surface">14,293</p>
+<div class="mt-4 flex items-center gap-2 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-surface-tint" data-icon="trending_up">trending_up</span>
+<span>+12% vs previous</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 relative overflow-hidden">
+<p class="text-label-sm uppercase tracking-[0.05em] text-on-surface-variant mb-2">Success Rate</p>
+<p class="text-3xl font-headline tracking-tight text-on-surface">99.8%</p>
+<div class="mt-4 flex items-center gap-2 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<span>System Healthy</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20 relative overflow-hidden">
+<p class="text-label-sm uppercase tracking-[0.05em] text-on-surface-variant mb-2">Failed Payloads</p>
+<p class="text-3xl font-headline tracking-tight text-error">24</p>
+<div class="mt-4 flex items-center gap-2 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-error" data-icon="error_outline">error_outline</span>
+<span>Requires attention</span>
+</div>
+</div>
+</div>
+<!-- Recent Payloads Table Area -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/20 overflow-hidden">
+<div class="p-6 pb-4 flex justify-between items-center border-b border-surface-variant/50">
+<h3 class="text-lg font-headline font-medium text-on-surface">Recent Payloads</h3>
+<div class="flex items-center gap-2">
+<span class="text-sm text-on-surface-variant">Filter by:</span>
+<select class="bg-surface-container-low border-none rounded-md text-sm text-on-surface-variant py-1 pl-3 pr-8 focus:ring-0 cursor-pointer">
+<option>All Statuses</option>
+<option>Success (2xx)</option>
+<option>Failed (4xx, 5xx)</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm text-on-surface-variant">
+<thead class="text-label-sm uppercase tracking-[0.05em] text-on-surface bg-surface-container-low/50">
+<tr>
+<th class="px-6 py-4 font-medium">Event ID</th>
+<th class="px-6 py-4 font-medium">Endpoint</th>
+<th class="px-6 py-4 font-medium">Type</th>
+<th class="px-6 py-4 font-medium">Status</th>
+<th class="px-6 py-4 font-medium text-right">Time</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs">evt_9xk2m4n</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<span class="text-on-surface font-medium truncate max-w-[200px]">api.production.com/webhooks/stripe</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-high text-xs text-on-surface-variant">payment.succeeded</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-surface-tint">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<span class="font-mono text-xs">200 OK</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">Just now</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs">evt_8ab1c9f</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<span class="text-on-surface font-medium truncate max-w-[200px]">hooks.slack.com/services/T00...</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-high text-xs text-on-surface-variant">alert.triggered</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-surface-tint">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<span class="font-mono text-xs">200 OK</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">2m ago</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 Error -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group bg-error-container/5">
+<td class="px-6 py-4 font-mono text-xs">evt_7pq5r2s</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error/40"></div>
+<span class="text-on-surface font-medium truncate max-w-[200px]">custom-crm.internal/api/sync</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-high text-xs text-on-surface-variant">user.updated</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-[16px]" data-icon="cancel">cancel</span>
+<span class="font-mono text-xs">503 Timeout</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">15m ago</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs">evt_6kl9j1m</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<span class="text-on-surface font-medium truncate max-w-[200px]">api.production.com/webhooks/stripe</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-high text-xs text-on-surface-variant">invoice.created</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-surface-tint">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<span class="font-mono text-xs">201 Created</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">1h ago</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 flex items-center justify-center border-t border-surface-variant/50">
+<button class="text-sm font-medium text-primary hover:text-on-surface transition-colors">View all 14,293 events</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

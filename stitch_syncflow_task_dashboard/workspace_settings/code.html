@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Workspace &amp; Billing - Slate &amp; Stone</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eff3",
+                        "primary-fixed-dim": "#d0d5db",
+                        "on-error": "#fff7f6",
+                        "primary-dim": "#4e5358",
+                        "on-tertiary-fixed": "#3e454c",
+                        "surface-variant": "#d9e4ea",
+                        "on-secondary": "#f6f9ff",
+                        "on-primary": "#f4f8ff",
+                        "surface": "#f8f9fb",
+                        "primary-container": "#dee3e9",
+                        "tertiary": "#586067",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#545c65",
+                        "secondary-fixed-dim": "#cdd5e0",
+                        "tertiary-container": "#e4ecf5",
+                        "on-primary-fixed": "#3b4045",
+                        "on-secondary-container": "#4b535b",
+                        "on-tertiary-fixed-variant": "#5a6269",
+                        "error-dim": "#4e0309",
+                        "on-secondary-fixed": "#384049",
+                        "outline": "#717c82",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#cfdce3",
+                        "tertiary-fixed-dim": "#d6dee6",
+                        "error-container": "#fe8983",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "tertiary-fixed": "#e4ecf5",
+                        "secondary": "#586069",
+                        "on-primary-fixed-variant": "#575c62",
+                        "background": "#f8f9fb",
+                        "secondary-dim": "#4c545d",
+                        "on-error-container": "#752121",
+                        "on-primary-container": "#4d5258",
+                        "tertiary-dim": "#4c545b",
+                        "outline-variant": "#a9b4b9",
+                        "inverse-primary": "#f0f4fb",
+                        "secondary-container": "#dbe3ee",
+                        "primary": "#5a5f65",
+                        "secondary-fixed": "#dbe3ee",
+                        "on-surface": "#2a3439",
+                        "error": "#9f403d",
+                        "on-tertiary-container": "#50585f",
+                        "on-background": "#2a3439",
+                        "surface-container-low": "#f0f4f7",
+                        "primary-fixed": "#dee3e9",
+                        "surface-bright": "#f8f9fb",
+                        "surface-tint": "#5a5f65",
+                        "on-tertiary": "#f5f9ff",
+                        "on-surface-variant": "#566166"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 z-50 bg-[#f0f4f7] dark:bg-[#141719] border-r border-transparent">
+<div class="flex flex-col h-full py-6 px-4 space-y-1">
+<div class="mb-8 px-2 flex items-center space-x-3">
+<div class="w-8 h-8 rounded-md bg-surface-container-highest overflow-hidden">
+<img alt="Workspace Logo" class="w-full h-full object-cover" data-alt="Minimalist abstract geometric shape in soft gray tones representing a modern workspace logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR8fTspG2pzlV2stwPAZUqj3b67U5xDPNkcWXW5baeV19iWHQ5ogptV0IR9ttxfd5egsOIM4piV3L0kp4qO8kaK0e4Px8TncdvTlVrogM-rtZYfYrb-rcBknaiMTWWNffoG4vew33yejaoDJg0XeLZryMFhoERo56JCkwkIfiTwHkVp6O8yu9BlFNI5L_-Ivs-X-GPh6NbJ-Ez6g4pnhMlPXbXskPjtVHsbs_pxe-biWkDFe-b_X2bs9O2EOlgaRxxB7L03F4u"/>
+</div>
+<div>
+<h1 class="text-sm font-bold uppercase tracking-[0.05em] text-[#2a3439] dark:text-[#f4f8ff]">Editorial Workspace</h1>
+<p class="text-xs text-on-surface-variant">Production Stack</p>
+</div>
+</div>
+<button class="mb-6 w-full py-2 px-4 bg-primary text-on-primary rounded-md text-[13px] font-medium flex items-center justify-center space-x-2 shadow-sm transition-colors duration-200 hover:bg-primary-dim">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Page</span>
+</button>
+<div class="flex-1 space-y-1 overflow-y-auto">
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Tasks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">webhook</span>
+<span>Webhooks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">view_timeline</span>
+<span>Timeline</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<span>Team</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span>Docs</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+<span>Automations</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed bg-[#dee3e9] dark:bg-[#24292e] text-[#2a3439] dark:text-[#f4f8ff] font-medium rounded-md transition-all duration-200 scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="pt-4 border-t border-transparent space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span>Help &amp; Support</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 font-['Inter'] text-[13px] leading-relaxed text-[#566166] dark:text-[#889499] hover:bg-[#e8eff3] dark:hover:bg-[#1c2023] rounded-md transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+<span>Trash</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 z-40 w-[calc(100%-16rem)] bg-[#f8f9fb] dark:bg-[#0f1112]">
+<div class="flex justify-between items-center h-14 px-8">
+<div class="flex items-center text-[#5a5f65] dark:text-[#a9b4b9]">
+<span class="material-symbols-outlined mr-2">search</span>
+<span class="text-sm">Search...</span>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full flex items-center justify-center slow-linear-out">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full flex items-center justify-center slow-linear-out">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<button class="text-[#566166] dark:text-[#889499] hover:bg-[#f0f4f7] dark:hover:bg-[#1a1d1f] transition-colors duration-300 p-2 rounded-full flex items-center justify-center slow-linear-out">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden ml-2 cursor-pointer border border-transparent">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Portrait of a young professional man in a dark grey shirt against a plain light background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMSGV7SmMV-vGESaAj043x5VIFSNu5Yh_wJ0aGmWEEOvhJZPdLYOPRGgSL0nYUp7uxVltLiPJdPHXOqaf_mX4_VXocfRBK9OeIIF_XghyjXWF8ksGUNvwjrCNChp9UEa7Dm0tkcaHSRviANivRiwDc6aSF0_zzo8sbFhnWrSQBj0FBI3-qIKSljSJ4W4hBWZIRUfL8oqX4VUol-WY0ARzaN36gdnFwR9pz7i5dK6arDENajrN7LflfL5TLVMRDInQS3UADQ6CY"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="pt-24 px-12 pb-24 max-w-5xl mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-12">
+<h1 class="text-3xl font-headline font-bold tracking-tight text-on-surface mb-2">Workspace Settings</h1>
+<p class="text-body-md text-on-surface-variant max-w-2xl">Manage your team's core configurations, billing details, and access permissions in one central location.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Navigation Column -->
+<div class="lg:col-span-3">
+<nav class="space-y-1 sticky top-32">
+<a class="block px-4 py-2 text-sm font-medium text-on-surface bg-surface-container-low rounded-md transition-colors" href="#general">General</a>
+<a class="block px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#billing">Billing &amp; Plans</a>
+<a class="block px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#team">Team Members</a>
+<a class="block px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors" href="#security">Security</a>
+</nav>
+</div>
+<!-- Settings Content -->
+<div class="lg:col-span-9 space-y-16">
+<!-- General Settings Section -->
+<section class="scroll-mt-32" id="general">
+<div class="mb-6 border-b border-surface-container pb-4">
+<h2 class="text-xl font-headline font-semibold tracking-tight text-on-surface">General Information</h2>
+</div>
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)] border border-outline-variant/20">
+<form class="space-y-6">
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+<div>
+<label class="block text-xs font-label uppercase tracking-[0.05em] text-on-surface-variant mb-2" for="workspace-name">Workspace Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors" id="workspace-name" type="text" value="Editorial Stack"/>
+</div>
+<div>
+<label class="block text-xs font-label uppercase tracking-[0.05em] text-on-surface-variant mb-2" for="workspace-url">Workspace URL</label>
+<div class="flex rounded-md shadow-sm">
+<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-outline-variant/30 bg-surface-container-low text-on-surface-variant sm:text-sm">slate.app/</span>
+<input class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md bg-surface-container-lowest border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors" id="workspace-url" type="text" value="editorial"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-xs font-label uppercase tracking-[0.05em] text-on-surface-variant mb-2">Workspace Logo</label>
+<div class="mt-1 flex items-center space-x-5">
+<div class="h-16 w-16 bg-surface-container rounded-lg overflow-hidden flex items-center justify-center">
+<img alt="Workspace Logo Preview" class="w-full h-full object-cover" data-alt="Minimalist abstract geometric shape in soft gray tones representing a modern workspace logo preview" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCujP89g-kuhvDkzrO7fqdR_b7EYDsnWddi1lPtPIaC4iPlInvriiW5ll_K4lYf88T-eeAY7l5u6ow38EujpKwEX0GGVTlJtriuNZ95wrjMokjpWu2EnykllGPPsDbg_FlBSujSRfixggc7UsirN0eyYX8kkXmnfLtS8S2eMk8SKFvXu68v12g_Rz6AHyNrAbmKrKb1MQWDmBr-Smk9Wa7uk3J_fbMd_GtNokllSWK0xgigICTVHPbFTYKkr8xa6TtPvHIsX6xp"/>
+</div>
+<div class="flex space-x-3">
+<button class="bg-surface-container-low text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container transition-colors" type="button">Change</button>
+<button class="text-error px-4 py-2 rounded-md text-sm font-medium hover:bg-error-container/20 transition-colors" type="button">Remove</button>
+</div>
+</div>
+</div>
+<div class="pt-4 flex justify-end">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-md text-sm font-medium transition-colors hover:bg-primary-dim bg-gradient-to-b from-primary to-primary-dim" type="button">Save Changes</button>
+</div>
+</form>
+</div>
+</section>
+<!-- Billing Section -->
+<section class="scroll-mt-32" id="billing">
+<div class="mb-6 border-b border-surface-container pb-4">
+<h2 class="text-xl font-headline font-semibold tracking-tight text-on-surface">Billing &amp; Plans</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_-4px_rgba(42,52,57,0.04)] border border-outline-variant/20 overflow-hidden">
+<!-- Current Plan Header -->
+<div class="p-6 bg-surface-container-low border-b border-outline-variant/10 flex justify-between items-center">
+<div>
+<h3 class="text-sm font-semibold text-on-surface">Professional Plan</h3>
+<p class="text-xs text-on-surface-variant mt-1">Billed annually ($240/yr)</p>
+</div>
+<span class="bg-surface-container-high text-on-surface-variant text-xs px-3 py-1 rounded-full font-medium tracking-wide">Active</span>
+</div>
+<div class="p-6 space-y-6">
+<!-- Usage Bento-style -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface p-4 rounded-lg border border-outline-variant/10">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-label uppercase tracking-wider text-on-surface-variant">Team Members</span>
+<span class="text-sm font-medium text-on-surface">8 / 10</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 80%"></div>
+</div>
+</div>
+<div class="bg-surface p-4 rounded-lg border border-outline-variant/10">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-label uppercase tracking-wider text-on-surface-variant">Storage Space</span>
+<span class="text-sm font-medium text-on-surface">45GB / 100GB</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+<!-- Payment Method -->
+<div>
+<h4 class="text-xs font-label uppercase tracking-[0.05em] text-on-surface-variant mb-3">Payment Method</h4>
+<div class="flex items-center justify-between p-4 border border-outline-variant/20 rounded-md bg-surface">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-6 bg-surface-container-high rounded flex items-center justify-center text-[10px] font-bold text-on-surface-variant">VISA</div>
+<div>
+<p class="text-sm font-medium text-on-surface">•••• •••• •••• 4242</p>
+<p class="text-xs text-on-surface-variant">Expires 12/25</p>
+</div>
+</div>
+<button class="text-sm text-on-surface-variant hover:text-on-surface transition-colors font-medium">Edit</button>
+</div>
+</div>
+<div class="pt-2 flex justify-between items-center">
+<button class="text-sm text-on-surface-variant hover:text-on-surface transition-colors font-medium" type="button">View Invoice History</button>
+<button class="bg-surface-container-low text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container transition-colors border border-outline-variant/10" type="button">Manage Subscription</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

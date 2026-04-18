@@ -1,40 +1,44 @@
 :root {
-  /* Surface — Paper-and-Ink layering */
-  --surface: #f7f9fb;
+  /* Surface — Slate & Stone Editorial layering */
+  --surface: #f8f9fb;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f1f4f7;
-  --surface-container: #e9edf1;
-  --surface-container-high: #e1e7eb;
-  --surface-container-highest: #d6dde2;
+  --surface-container-low: #f0f4f7;
+  --surface-container: #e8eff3;
+  --surface-container-high: #dde5ea;
+  --surface-container-highest: #d4dde3;
+  --surface-dim: #cfdce3;
 
   /* Ink */
   --on-surface: #2a3439;
   --on-surface-variant: #566166;
-  --on-surface-muted: #6e7a80;
-  --on-surface-faint: #97a0a5;
+  --on-surface-muted: #7a868d;
+  --on-surface-faint: #a1abb1;
 
-  /* Brand — deep navy */
-  --primary: #3c608a;
-  --primary-dim: #2f547d;
-  --on-primary: #ffffff;
-  --primary-container: #d2e4ff;
-  --on-primary-container: #1a2e5b;
-  --primary-gradient: linear-gradient(135deg, #3c608a 0%, #2f547d 100%);
-  --primary-focus-ring: 0 0 0 3px rgba(60, 96, 138, 0.15);
+  /* Brand — milled stone */
+  --primary: #5a5f65;
+  --primary-dim: #4e5358;
+  --on-primary: #f4f8ff;
+  --primary-container: #dee3e9;
+  --on-primary-container: #4d5258;
+  --primary-gradient: linear-gradient(180deg, #5a5f65 0%, #4e5358 100%);
+  --primary-focus-ring: 0 0 0 3px rgba(90, 95, 101, 0.18);
 
-  /* Secondary / accents */
-  --secondary: #d2e4ff;
-  --on-secondary: #1a2e5b;
+  /* Secondary — quiet selection */
+  --secondary-container: #dbe3ee;
+  --on-secondary-container: #3d4651;
+
+  /* States */
   --error: #9f403d;
+  --error-container-soft: rgba(254, 137, 131, 0.1);
   --positive: #2f6b4a;
 
-  /* Outline — Ghost Border (15% opacity suggestion) */
+  /* Outline — Ghost Border (20% opacity) */
   --outline: #717c82;
-  --outline-variant: rgba(169, 180, 185, 0.15);
+  --outline-variant: rgba(169, 180, 185, 0.2);
 
-  /* Elevation — ultra-diffused only */
-  --shadow-ambient: 0 12px 32px rgba(42, 52, 57, 0.06);
-  --shadow-ambient-hover: 0 16px 40px rgba(42, 52, 57, 0.08);
+  /* Elevation — tinted on-surface */
+  --shadow-ambient: 0 12px 32px -4px rgba(42, 52, 57, 0.08);
+  --shadow-ambient-hover: 0 16px 40px -4px rgba(42, 52, 57, 0.1);
 
   /* Radius */
   --radius-sm: 0.25rem;
@@ -47,8 +51,8 @@
   --content-max-width: 1600px;
 
   /* Typography */
-  --font-body: "Manrope", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  --font-display: "Manrope", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-body: "Inter", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --font-display: "Inter", "Apple SD Gothic Neo", system-ui, sans-serif;
 }
 
 * {
@@ -84,12 +88,12 @@ button {
 }
 
 ::selection {
-  background: rgba(60, 96, 138, 0.18);
+  background: var(--secondary-container);
   color: var(--on-surface);
 }
 
 /* ============================================================
-   Sidebar — deep tonal shift (asymmetric authority)
+   Sidebar — surface-container-low
    ============================================================ */
 .sidebar {
   position: fixed;
@@ -98,7 +102,7 @@ button {
   width: var(--sidebar-width);
   height: 100vh;
   padding: 40px 20px;
-  background: var(--surface-container-highest);
+  background: var(--surface-container-low);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -131,7 +135,7 @@ button {
 .sidebar-brand p {
   margin: 6px 0 0;
   color: var(--on-surface-muted);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -139,7 +143,7 @@ button {
 
 .sidebar-nav {
   display: grid;
-  gap: 20px;
+  gap: 4px;
   padding: 0 4px;
 }
 
@@ -149,7 +153,7 @@ button {
 }
 
 .sidebar-nav-title {
-  margin: 8px 12px 6px;
+  margin: 12px 12px 6px;
   color: var(--on-surface-muted);
   font-size: 0.64rem;
   font-weight: 700;
@@ -171,20 +175,21 @@ button {
   color: var(--on-surface-variant);
   text-align: left;
   font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 180ms ease, color 180ms ease;
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .sidebar-nav-link:hover {
-  background: var(--surface-container-lowest);
+  background: var(--surface-container);
   color: var(--on-surface);
 }
 
 .sidebar-nav-link.active {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-weight: 600;
 }
 
 .sidebar-nav-label {
@@ -201,15 +206,15 @@ button {
   height: 20px;
   padding: 0 7px;
   border-radius: 999px;
-  background: var(--surface-container-lowest);
+  background: var(--surface-container-high);
   color: var(--on-surface-muted);
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .sidebar-nav-link.active .sidebar-nav-count {
-  background: rgba(26, 46, 91, 0.12);
-  color: var(--on-primary-container);
+  background: rgba(61, 70, 81, 0.12);
+  color: var(--on-secondary-container);
 }
 
 .sidebar-nav-empty {
@@ -222,31 +227,31 @@ button {
 .sidebar-footer {
   margin-top: auto;
   display: grid;
-  gap: 4px;
-  padding: 0 4px;
+  gap: 2px;
+  padding: 16px 4px 0;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  min-height: 42px;
+  min-height: 40px;
   padding: 0 14px;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--on-surface-variant);
+  color: var(--on-surface-muted);
   text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: background 180ms ease, color 180ms ease;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .sidebar-link:hover {
-  background: var(--surface-container-lowest);
-  color: var(--primary);
+  background: var(--surface-container);
+  color: var(--on-surface);
 }
 
 /* ============================================================
-   Shell & Topbar — airy surface
+   Shell & Topbar — glass surface
    ============================================================ */
 .app-shell {
   margin-left: var(--sidebar-width);
@@ -262,7 +267,7 @@ button {
   z-index: 20;
   min-height: 96px;
   padding: 24px 48px;
-  background: rgba(247, 249, 251, 0.88);
+  background: rgba(248, 249, 251, 0.8);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   display: flex;
@@ -284,7 +289,7 @@ button {
   font-weight: 800;
   font-size: 2rem;
   letter-spacing: -0.03em;
-  color: var(--on-primary-container);
+  color: var(--on-surface);
   line-height: 1.15;
 }
 
@@ -292,8 +297,8 @@ button {
   margin: 0;
   color: var(--on-surface-variant);
   font-size: 0.88rem;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .topbar-right {
@@ -328,18 +333,18 @@ button {
 .date-row input {
   height: 40px;
   border: none;
-  border-bottom: 2px solid var(--outline);
-  border-radius: 0;
-  background: transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
   color: var(--on-surface);
-  padding: 0 4px;
-  font-weight: 600;
-  transition: border-color 180ms ease;
+  padding: 0 12px;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  transition: box-shadow 300ms linear;
 }
 
 .date-row input:focus {
   outline: none;
-  border-bottom-color: var(--primary);
+  box-shadow: inset 0 0 0 1px rgba(90, 95, 101, 0.5);
 }
 
 .icon-button {
@@ -349,11 +354,12 @@ button {
   border-radius: var(--radius-md);
   background: var(--surface-container-lowest);
   color: var(--on-surface-variant);
-  transition: background 180ms ease, color 180ms ease;
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .icon-button:hover {
-  background: var(--surface-container-high);
+  background: var(--surface-container);
   color: var(--on-surface);
 }
 
@@ -365,7 +371,7 @@ button {
 }
 
 /* ============================================================
-   Content — generous margins (space is luxury)
+   Content
    ============================================================ */
 .content {
   padding: 0 48px 64px;
@@ -388,16 +394,16 @@ button {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   letter-spacing: -0.03em;
-  color: var(--on-primary-container);
+  color: var(--on-surface);
 }
 
 .page-header p {
   margin: 8px 0 0;
   color: var(--on-surface-variant);
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.92rem;
+  font-weight: 400;
 }
 
 .page-header-actions {
@@ -406,7 +412,7 @@ button {
 }
 
 /* ============================================================
-   Buttons — solid navy primary, primary_container secondary, ghost tertiary
+   Buttons — milled stone gradient primary
    ============================================================ */
 .primary-button,
 .secondary-button,
@@ -414,10 +420,10 @@ button {
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-body);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 180ms ease, transform 120ms ease;
+  transition: background 300ms linear, transform 200ms linear, color 300ms linear;
 }
 
 .primary-button {
@@ -446,24 +452,25 @@ button {
 }
 
 .secondary-button:hover {
-  background: #bed5f5;
+  background: var(--surface-container-high);
 }
 
 .text-button {
   background: transparent;
   padding: 0;
-  color: var(--on-primary-container);
+  color: var(--primary);
   font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .text-button:hover {
-  color: var(--primary);
+  color: var(--on-surface);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 
 /* ============================================================
-   Stats grid — KPI chips (surface_container_highest)
+   Stats grid
    ============================================================ */
 .stats-grid {
   display: grid;
@@ -473,7 +480,7 @@ button {
 
 .stat-card {
   padding: 28px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--surface-container-lowest);
   display: flex;
   flex-direction: column;
@@ -493,24 +500,9 @@ button {
   display: grid;
   place-items: center;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   background: var(--surface-container);
-}
-
-.stat-icon-primary {
-  color: var(--primary);
-}
-
-.stat-icon-positive {
-  color: var(--positive);
-}
-
-.stat-icon-info {
-  color: var(--primary);
-}
-
-.stat-icon-tertiary {
-  color: var(--on-primary-container);
+  color: var(--on-surface-variant);
 }
 
 .stat-pill {
@@ -518,18 +510,17 @@ button {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--surface-container-highest);
+  background: var(--surface-container-high);
   color: var(--on-surface-variant);
 }
 
 .stat-pill.positive {
   color: var(--positive);
-  background: rgba(47, 107, 74, 0.1);
 }
 
 .stat-pill.neutral {
@@ -538,15 +529,15 @@ button {
 
 .stat-pill.alert {
   color: var(--error);
-  background: rgba(159, 64, 61, 0.1);
+  background: var(--error-container-soft);
 }
 
 .stat-label {
   margin: 0 0 6px;
   color: var(--on-surface-muted);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -559,7 +550,7 @@ button {
 }
 
 /* ============================================================
-   Panels (Bento) — tonal layering, no borders
+   Panels — tonal layering, xl radius
    ============================================================ */
 .lower-grid {
   display: grid;
@@ -569,7 +560,7 @@ button {
 
 .panel {
   background: var(--surface-container-lowest);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 32px;
 }
 
@@ -588,7 +579,7 @@ button {
 .panel h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: -0.02em;
   color: var(--on-surface);
@@ -598,12 +589,12 @@ button {
   margin: 4px 0 0;
   color: var(--on-surface-variant);
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.55;
 }
 
 /* ============================================================
-   Inputs — executive notepad (2px bottom accent)
+   Inputs — ghost border, quiet focus
    ============================================================ */
 .task-form input,
 .task-form textarea,
@@ -612,13 +603,13 @@ button {
   width: 100%;
   margin-top: 6px;
   border: none;
-  border-bottom: 2px solid var(--outline);
-  border-radius: 0;
-  background: var(--surface-container-high);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
   color: var(--on-surface);
   padding: 11px 14px;
   font-size: 0.88rem;
-  transition: border-color 180ms ease, background 180ms ease;
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  transition: box-shadow 300ms linear;
 }
 
 .task-form input::placeholder,
@@ -632,12 +623,11 @@ button {
 .task-form select:focus,
 #daily-notes:focus {
   outline: none;
-  border-bottom-color: var(--primary);
-  background: var(--surface-container-low);
+  box-shadow: inset 0 0 0 1px rgba(90, 95, 101, 0.5);
 }
 
 /* ============================================================
-   Task Board — tonal alternation, no dividers
+   Task Board — no dividers, alternating whitespace
    ============================================================ */
 .board-grid {
   display: grid;
@@ -646,7 +636,7 @@ button {
 }
 
 .board-column {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   padding: 20px;
   background: var(--surface-container-low);
   min-height: 200px;
@@ -662,10 +652,11 @@ button {
 .board-column h4 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--on-surface);
-  letter-spacing: -0.01em;
+  color: var(--on-surface-variant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .column-count {
@@ -675,10 +666,10 @@ button {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: var(--surface-container-lowest);
+  background: var(--surface-container-high);
   color: var(--on-surface-variant);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .task-list {
@@ -688,7 +679,7 @@ button {
 
 .task-card {
   padding: 18px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface-container-lowest);
 }
 
@@ -709,7 +700,7 @@ button {
 .task-category {
   margin: 0 0 4px;
   color: var(--on-surface-muted);
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 600;
@@ -719,25 +710,26 @@ button {
   margin: 0;
   font-family: var(--font-display);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--on-surface);
   letter-spacing: -0.01em;
 }
 
 .task-priority,
 .task-flag {
-  border-radius: var(--radius-sm);
-  padding: 3px 8px;
+  border-radius: 999px;
+  padding: 3px 10px;
   font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--surface-container);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
 }
 
 .task-flag.overdue {
   color: var(--error);
-  background: rgba(159, 64, 61, 0.1);
+  background: var(--error-container-soft);
 }
 
 .task-flag.carryover {
@@ -747,16 +739,16 @@ button {
 
 .priority-high {
   color: var(--error);
-  background: rgba(159, 64, 61, 0.1);
+  background: var(--error-container-soft);
 }
 
 .priority-medium {
   color: var(--on-primary-container);
+  background: var(--primary-container);
 }
 
 .priority-low {
   color: var(--positive);
-  background: rgba(47, 107, 74, 0.1);
 }
 
 .task-note {
@@ -778,7 +770,7 @@ button {
 
 .task-deadline.is-overdue {
   color: var(--error);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .task-actions {
@@ -789,13 +781,13 @@ button {
 
 .task-action {
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-container);
   color: var(--on-surface-variant);
   padding: 6px 12px;
   font-size: 0.72rem;
-  font-weight: 600;
-  transition: background 180ms ease, color 180ms ease;
+  font-weight: 500;
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .task-action:hover {
@@ -808,7 +800,7 @@ button {
 }
 
 .task-action.delete:hover {
-  background: rgba(159, 64, 61, 0.1);
+  background: var(--error-container-soft);
 }
 
 /* ============================================================
@@ -823,7 +815,7 @@ button {
 }
 
 .utility-panel {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 32px;
   background: var(--surface-container-lowest);
 }
@@ -873,7 +865,7 @@ button {
 
 .github-meta strong {
   color: var(--on-surface);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .github-filters {
@@ -885,23 +877,24 @@ button {
 
 .github-filter-chip {
   border: none;
-  border-radius: var(--radius-md);
-  padding: 8px 16px;
-  background: var(--surface-container-low);
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: var(--surface-container-high);
   color: var(--on-surface-variant);
   font-size: 0.76rem;
-  font-weight: 600;
-  transition: background 180ms ease, color 180ms ease;
+  font-weight: 500;
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .github-filter-chip:hover {
-  background: var(--surface-container);
+  background: var(--surface-container-highest);
   color: var(--on-surface);
 }
 
 .github-filter-chip.active {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-weight: 600;
 }
 
 .github-detail-view {
@@ -912,7 +905,7 @@ button {
 
 .github-repo-card {
   padding: 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface-container-low);
   display: grid;
   gap: 16px;
@@ -929,7 +922,7 @@ button {
   margin: 0 0 4px;
   font-family: var(--font-display);
   font-size: 0.98rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--on-surface);
   letter-spacing: -0.01em;
 }
@@ -942,12 +935,12 @@ button {
 }
 
 .github-pr-badge {
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  background: var(--primary-container);
-  color: var(--on-primary-container);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -970,7 +963,7 @@ button {
 
 .github-commit-sha {
   font-family: "SF Mono", Menlo, monospace;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--on-surface-variant);
 }
 
@@ -982,16 +975,16 @@ button {
 .github-repo-links a,
 .github-event-link,
 .github-pr-summary-link {
-  color: var(--on-primary-container);
+  color: var(--primary);
   text-decoration: none;
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .github-repo-links a:hover,
 .github-event-link:hover,
 .github-pr-summary-link:hover {
-  color: var(--primary);
+  color: var(--on-surface);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1002,7 +995,7 @@ button {
 }
 
 .github-repo-section {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-container-lowest);
   padding: 16px;
 }
@@ -1013,7 +1006,7 @@ button {
 
 .github-repo-section h5 {
   margin: 0;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   color: var(--on-surface-muted);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1025,19 +1018,14 @@ button {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  padding: 12px 0;
-}
-
-.github-event-item + .github-event-item,
-.github-pr-summary-item + .github-pr-summary-item {
-  margin-top: 0;
+  padding: 10px 0;
 }
 
 .github-event-title,
 .github-pr-summary-title {
   margin: 0 0 3px;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--on-surface);
 }
 
@@ -1072,7 +1060,7 @@ button {
 }
 
 /* ============================================================
-   Notion updates — alternating surface rows (no dividers)
+   Notion updates
    ============================================================ */
 .notion-meta {
   display: flex;
@@ -1087,12 +1075,12 @@ button {
 
 .notion-meta strong {
   color: var(--on-surface);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .notion-updates-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .notion-update-item {
@@ -1101,17 +1089,17 @@ button {
   gap: 12px;
   padding: 16px 18px;
   border-radius: var(--radius-md);
-  background: var(--surface-container-low);
+  background: var(--surface-container-lowest);
 }
 
 .notion-update-item:nth-child(even) {
-  background: var(--surface-container);
+  background: var(--surface-container-low);
 }
 
 .notion-update-title {
   margin: 0 0 4px;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--on-surface);
 }
 
@@ -1137,32 +1125,32 @@ button {
 
 .notion-update-link {
   text-decoration: none;
-  color: var(--on-primary-container);
+  color: var(--primary);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .notion-update-link:hover {
-  color: var(--primary);
+  color: var(--on-surface);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .notion-load-more {
-  margin-top: 6px;
+  margin-top: 8px;
   padding: 12px 14px;
   border: none;
   border-radius: var(--radius-md);
-  background: var(--surface-container-low);
+  background: var(--surface-container);
   color: var(--on-surface-variant);
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 180ms ease, color 180ms ease;
+  transition: background 300ms linear, color 300ms linear;
 }
 
 .notion-load-more:hover:not(:disabled) {
-  background: var(--surface-container);
+  background: var(--surface-container-high);
   color: var(--on-surface);
 }
 
@@ -1172,7 +1160,7 @@ button {
 }
 
 /* ============================================================
-   Activity panel — tonal alternation
+   Activity panel — alternating subtle shift
    ============================================================ */
 .activity-panel {
   background: var(--surface-container-lowest);
@@ -1180,7 +1168,7 @@ button {
 
 .activity-list {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .activity-item {
@@ -1188,26 +1176,26 @@ button {
   grid-template-columns: 44px 1fr auto;
   gap: 18px;
   align-items: center;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-radius: var(--radius-md);
-  background: var(--surface-container-low);
+  background: transparent;
 }
 
 .activity-item:nth-child(even) {
-  background: var(--surface-container);
+  background: var(--surface-container-low);
 }
 
 .activity-icon {
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  background: var(--surface-container-lowest);
+  background: var(--surface-container);
 }
 
 .activity-title {
   margin: 0 0 2px;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--on-surface);
 }
 
@@ -1232,14 +1220,14 @@ button {
 
 .activity-badge {
   display: inline-block;
-  border-radius: var(--radius-sm);
-  padding: 3px 8px;
+  border-radius: 999px;
+  padding: 3px 10px;
   font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--primary-container);
-  color: var(--on-primary-container);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
 }
 
 /* ============================================================
@@ -1299,8 +1287,8 @@ button {
   }
 
   .content {
-    padding: 28px;
-    gap: 28px;
+    padding: 0 28px 48px;
+    gap: 24px;
   }
 
   .page-header {

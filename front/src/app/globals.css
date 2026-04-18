@@ -1,38 +1,42 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "../../styles.css";
 
 /* ============================================================
-   Modern Professionalist — Tailwind v4 theme tokens
-   Source: stitch_ 2/metric_executive/DESIGN.md
-   "Paper-and-Ink" light mode; spatial authority; no hard lines
+   Slate & Stone Editorial — Tailwind v4 theme tokens
+   Source: stitch_syncflow_task_dashboard/stone_ethos/DESIGN.md
+   "The Silent Architect" — calm, desaturated canvas
    ============================================================ */
 @theme {
   /* Surface hierarchy — physical paper layers */
-  --color-surface: #f7f9fb;
+  --color-surface: #f8f9fb;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f1f4f7;
-  --color-surface-container: #e9edf1;
-  --color-surface-container-high: #e1e7eb;
-  --color-surface-container-highest: #d6dde2;
+  --color-surface-container-low: #f0f4f7;
+  --color-surface-container: #e8eff3;
+  --color-surface-container-high: #dde5ea;
+  --color-surface-container-highest: #d4dde3;
+  --color-surface-dim: #cfdce3;
 
-  /* Ink — deep navy authority */
+  /* Ink */
   --color-on-surface: #2a3439;
   --color-on-surface-variant: #566166;
-  --color-on-surface-muted: #6e7a80;
-  --color-on-surface-faint: #97a0a5;
+  --color-on-surface-muted: #7a868d;
+  --color-on-surface-faint: #a1abb1;
 
-  /* Brand — brushed-metal navy */
-  --color-primary: #3c608a;
-  --color-primary-dim: #2f547d;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #d2e4ff;
-  --color-on-primary-container: #1a2e5b;
+  /* Brand — milled stone */
+  --color-primary: #5a5f65;
+  --color-primary-dim: #4e5358;
+  --color-on-primary: #f4f8ff;
+  --color-primary-container: #dee3e9;
+  --color-on-primary-container: #4d5258;
 
-  /* Secondary / accents */
-  --color-secondary: #d2e4ff;
-  --color-on-secondary: #1a2e5b;
+  /* Secondary — quiet selection */
+  --color-secondary-container: #dbe3ee;
+  --color-on-secondary-container: #3d4651;
+
+  /* States */
   --color-error: #9f403d;
+  --color-error-container: #fe8983;
   --color-positive: #2f6b4a;
 
   /* Outline */
@@ -45,11 +49,11 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
 
-  /* Typography — Manrope only (dual-typeface replaced) */
+  /* Typography — Inter only */
   --font-sans:
-    "Manrope", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    "Inter", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   --font-display:
-    "Manrope", "Apple SD Gothic Neo", system-ui, sans-serif;
+    "Inter", "Apple SD Gothic Neo", system-ui, sans-serif;
 }
 
 html,
