@@ -14,7 +14,6 @@ import {
   formatDateTime,
   getDay,
   getEffectivePriority,
-  isTaskOverdue,
   loadDaysFromStorage,
   parseDateKey,
   relativeTime,
@@ -85,7 +84,8 @@ export function WorkTrackingDashboard() {
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
-  const [githubFilter, setGithubFilter] = useState("all");
+  const [activeView, setActiveView] = useState<"dashboard" | "github">("dashboard");
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
@@ -252,15 +252,15 @@ export function WorkTrackingDashboard() {
   }, []);
 
   useEffect(() => {
-    if (githubFilter === "all") {
+    if (selectedRepo === null) {
       return;
     }
 
-    const filterStillExists = githubFeed.repos.some((repo) => repo.repo === githubFilter);
-    if (!filterStillExists) {
-      setGithubFilter("all");
+    const stillExists = githubFeed.repos.some((repo) => repo.repo === selectedRepo);
+    if (!stillExists) {
+      setSelectedRepo(null);
     }
-  }, [githubFeed.repos, githubFilter]);
+  }, [githubFeed.repos, selectedRepo]);
 
   const todoTasks = useMemo(
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "todo")),
@@ -285,23 +285,15 @@ export function WorkTrackingDashboard() {
         .slice(0, 5),
     [activeDay.tasks],
   );
-  const completion = activeDay.tasks.length
-    ? Math.round((doneTasks.length / activeDay.tasks.length) * 100)
-    : 0;
-  const overdueCount = useMemo(
-    () => activeDay.tasks.filter((task) => isTaskOverdue(task, activeDate)).length,
-    [activeDate, activeDay.tasks],
-  );
-
-  const githubFilters = useMemo(
-    () => ["all", ...githubFeed.repos.map((repo) => repo.repo).filter(Boolean)] as string[],
+  const repoList = useMemo(
+    () => githubFeed.repos.map((repo) => repo.repo).filter(Boolean),
     [githubFeed.repos],
   );
 
   const visibleRepos = useMemo(
     () =>
-      githubFeed.repos.filter((repo) => (githubFilter === "all" ? true : repo.repo === githubFilter)),
-    [githubFeed.repos, githubFilter],
+      githubFeed.repos.filter((repo) => (selectedRepo === null ? true : repo.repo === selectedRepo)),
+    [githubFeed.repos, selectedRepo],
   );
 
   function applyDashboardState(
@@ -563,6 +555,26 @@ export function WorkTrackingDashboard() {
           <p>WORK TRACKING SUITE</p>
         </div>
 
+        <nav className="sidebar-nav">
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "dashboard" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("dashboard")}
+          >
+            대시보드
+          </button>
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "github" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("github")}
+          >
+            GitHub Watch
+            {repoList.length > 0 ? (
+              <span className="sidebar-nav-count">{repoList.length}</span>
+            ) : null}
+          </button>
+        </nav>
+
         <div className="sidebar-footer">
           {QUICK_LINKS.map((link) => (
             <a
@@ -618,95 +630,80 @@ export function WorkTrackingDashboard() {
 
         <main className="content">
           <section className="page-header">
-            <div>
-              <h2>Work Tracking Dashboard</h2>
-              <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
-            </div>
-            <div className="page-header-actions">
-              <button className="secondary-button" type="button" onClick={clearCompleted}>
-                완료 항목 정리
-              </button>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => taskTitleRef.current?.focus()}
-              >
-                + 새 업무
-              </button>
-            </div>
+            {activeView === "dashboard" ? (
+              <>
+                <div>
+                  <h2>Work Tracking Dashboard</h2>
+                  <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
+                </div>
+                <div className="page-header-actions">
+                  <button className="secondary-button" type="button" onClick={clearCompleted}>
+                    완료 항목 정리
+                  </button>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => taskTitleRef.current?.focus()}
+                  >
+                    + 새 업무
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <h2>GitHub Watch</h2>
+                  <p>
+                    {selectedRepo === null
+                      ? "등록된 모든 레포의 최신 커밋과 PR 상태입니다."
+                      : `${selectedRepo} 상세 현황입니다.`}
+                  </p>
+                </div>
+                <div className="github-meta">
+                  <span>마지막 동기화</span>
+                  <strong>{syncLabel(githubFeed.lastSyncedAt)}</strong>
+                </div>
+              </>
+            )}
           </section>
 
-          <section className="stats-grid">
-            <StatCard
-              icon="▣"
-              pillClassName="neutral"
-              pillLabel={`${activeDay.tasks.length > 0 ? todoTasks.length + doingTasks.length : 0} 남음`}
-              label="전체 할 일"
-              value={String(activeDay.tasks.length)}
-              iconClassName="stat-icon-primary"
-            />
-            <StatCard
-              icon="✓"
-              pillClassName="positive"
-              pillLabel={`${completion}%`}
-              label="완료"
-              value={String(doneTasks.length)}
-              iconClassName="stat-icon-positive"
-            />
-            <StatCard
-              icon="↻"
-              pillClassName="neutral"
-              pillLabel={doingTasks.length > 0 ? "진행 중" : "Idle"}
-              label="진행 중"
-              value={String(doingTasks.length)}
-              iconClassName="stat-icon-info"
-            />
-            <StatCard
-              icon="◔"
-              pillClassName={overdueCount > 0 ? "alert" : "neutral"}
-              pillLabel={overdueCount > 0 ? `${overdueCount} 지연` : "정상"}
-              label="집중 시간"
-              value={`${activeDay.focusMinutes}분`}
-              iconClassName="stat-icon-tertiary"
-            />
-          </section>
-
-          <section className="panel github-panel">
-            <div className="panel-heading">
-              <div>
-                <h3>GitHub Watch</h3>
-                <p>대상 레포의 최신 커밋과 PR 상태입니다.</p>
-              </div>
-              <div className="github-meta">
-                <span>마지막 동기화</span>
-                <strong>{syncLabel(githubFeed.lastSyncedAt)}</strong>
-              </div>
-            </div>
-
-            <div className="github-filters">
-              {githubFilters.map((filter) => (
+          {activeView === "github" ? (
+            <section className="panel github-panel">
+              <div className="github-filters">
                 <button
-                  key={filter}
                   type="button"
-                  className={`github-filter-chip ${githubFilter === filter ? "active" : ""}`.trim()}
-                  onClick={() => setGithubFilter(filter)}
+                  className={`github-filter-chip ${selectedRepo === null ? "active" : ""}`.trim()}
+                  onClick={() => setSelectedRepo(null)}
                 >
-                  {filter === "all" ? "전체" : filter}
+                  전체
                 </button>
-              ))}
-            </div>
-
-            <div className="github-detail-view">
-              {visibleRepos.length === 0 ? (
-                <p className="empty-note">동기화된 GitHub 레포 현황이 없습니다.</p>
-              ) : (
-                visibleRepos.map((repo) => (
-                  <GithubRepoCard key={`${repo.repo}-${repo.defaultBranch}`} repo={repo} />
-                ))
-              )}
-            </div>
-          </section>
-
+                {repoList.map((repo) => (
+                  <button
+                    key={repo}
+                    type="button"
+                    className={`github-filter-chip ${selectedRepo === repo ? "active" : ""}`.trim()}
+                    onClick={() => setSelectedRepo(repo)}
+                  >
+                    {repo}
+                  </button>
+                ))}
+              </div>
+              <div className="github-detail-view">
+                {visibleRepos.length === 0 ? (
+                  <p className="empty-note">
+                    {selectedRepo === null
+                      ? "동기화된 GitHub 레포 현황이 없습니다."
+                      : `${selectedRepo}의 데이터를 찾을 수 없습니다.`}
+                  </p>
+                ) : (
+                  visibleRepos.map((repo) => (
+                    <GithubRepoCard key={`${repo.repo}-${repo.defaultBranch}`} repo={repo} />
+                  ))
+                )}
+              </div>
+            </section>
+          ) : (
+            <>
           <section className="lower-grid">
             <section className="panel board-panel">
               <div className="panel-heading">
@@ -926,36 +923,11 @@ export function WorkTrackingDashboard() {
               )}
             </div>
           </section>
+            </>
+          )}
         </main>
       </div>
     </>
-  );
-}
-
-function StatCard({
-  icon,
-  pillClassName,
-  pillLabel,
-  label,
-  value,
-  iconClassName,
-}: {
-  icon: string;
-  pillClassName: string;
-  pillLabel: string;
-  label: string;
-  value: string;
-  iconClassName: string;
-}) {
-  return (
-    <article className="stat-card">
-      <div className="stat-top">
-        <div className={`stat-icon ${iconClassName}`}>{icon}</div>
-        <span className={`stat-pill ${pillClassName}`}>{pillLabel}</span>
-      </div>
-      <p className="stat-label">{label}</p>
-      <strong className="stat-value">{value}</strong>
-    </article>
   );
 }
 
