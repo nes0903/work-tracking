@@ -735,7 +735,7 @@ export function WorkTrackingDashboard() {
                       <div>
                         <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
                         <p className="notion-update-subtitle">
-                          {[item.section, item.parent, item.editor].filter(Boolean).join(" · ") || "메타데이터 없음"}
+                          {[item.section, item.parent].filter(Boolean).join(" / ") || "경로 없음"}
                         </p>
                       </div>
                       <div className="notion-update-side">
