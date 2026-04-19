@@ -82,3 +82,36 @@ export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
+
+export function buildLineWorksDeepLink(channelId: string): string {
+  if (channelId.startsWith("dm:")) {
+    return `https://talk.worksmobile.com/#/direct/${encodeURIComponent(channelId.slice(3))}`;
+  }
+  return `https://talk.worksmobile.com/#/chat/${encodeURIComponent(channelId)}`;
+}
+
+export function buildMessageClipboardText(message: LineWorksArchiveMessage): string {
+  const lines: string[] = [];
+  if (message.text) {
+    lines.push(message.text);
+  }
+  for (const attachment of message.attachments) {
+    lines.push(`[첨부] ${attachment.fileName ?? "파일"}`);
+  }
+  for (const link of message.links) {
+    lines.push(link.url);
+  }
+  return lines.join("\n") || "(내용 없음)";
+}
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator === "undefined" || !navigator.clipboard) {
+    return false;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}

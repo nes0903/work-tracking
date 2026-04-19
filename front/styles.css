@@ -1355,6 +1355,59 @@ button {
   text-underline-offset: 3px;
 }
 
+.line-works-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 10px;
+  margin-top: 2px;
+  align-items: center;
+}
+
+.line-works-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 4px 2px;
+  color: var(--on-surface-variant);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 200ms linear;
+}
+
+.line-works-action + .line-works-action {
+  position: relative;
+  padding-left: 16px;
+}
+
+.line-works-action + .line-works-action::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 12px;
+  background: var(--outline-variant);
+  opacity: 1;
+}
+
+.line-works-action:hover {
+  color: var(--on-surface);
+}
+
+.line-works-action:first-of-type {
+  color: var(--primary);
+}
+
+.line-works-action:first-of-type:hover {
+  color: var(--on-surface);
+}
+
 /* ============================================================
    Activity panel — alternating subtle shift
    ============================================================ */

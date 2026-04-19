@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  buildLineWorksDeepLink,
+  buildMessageClipboardText,
+  copyToClipboard,
   emptyLineWorksArchive,
   fetchLineWorksArchive,
   formatFileSize,
   openLineWorksAttachment,
   type LineWorksArchive,
+  type LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
 import { GithubRepoCard } from "./GithubRepoCard";
@@ -526,6 +530,14 @@ export function WorkTrackingDashboard() {
     });
   }
 
+  async function handleCopyMessage(message: LineWorksArchiveMessage) {
+    const text = buildMessageClipboardText(message);
+    const ok = await copyToClipboard(text);
+    if (!ok) {
+      console.warn("[line-works] clipboard write failed");
+    }
+  }
+
   function clearNotes() {
     setNotesDraft("");
     void mutateDashboard(
@@ -909,6 +921,35 @@ export function WorkTrackingDashboard() {
                           ))}
                         </ul>
                       ) : null}
+
+                      <div className="line-works-message-actions">
+                        <a
+                          className="line-works-action"
+                          href={buildLineWorksDeepLink(message.channelId)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          💬 채팅방 열기
+                        </a>
+                        <button
+                          type="button"
+                          className="line-works-action"
+                          onClick={() => {
+                            void handleCopyMessage(message);
+                          }}
+                        >
+                          복사
+                        </button>
+                        <button
+                          type="button"
+                          className="line-works-action"
+                          onClick={() => {
+                            window.alert("태스크 연결 기능은 추후 구현 예정입니다.");
+                          }}
+                        >
+                          태스크 추가
+                        </button>
+                      </div>
                     </article>
                   ))
                 )}
