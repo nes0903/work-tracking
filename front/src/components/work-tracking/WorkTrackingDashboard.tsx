@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  emptyLineWorksArchive,
+  fetchLineWorksArchive,
+  formatFileSize,
+  openLineWorksAttachment,
+  type LineWorksArchive,
+} from "@/lib/line-works-archive";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { TaskCard, type TaskAction } from "./TaskCard";
@@ -84,11 +91,17 @@ export function WorkTrackingDashboard() {
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
-  const [activeView, setActiveView] = useState<"dashboard" | "github" | "notion">("dashboard");
+  const [activeView, setActiveView] = useState<
+    "dashboard" | "github" | "notion" | "line-works"
+  >("dashboard");
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+  const [lineWorksArchive, setLineWorksArchive] = useState<LineWorksArchive>(() =>
+    emptyLineWorksArchive(),
+  );
+  const [selectedLineWorksChannel, setSelectedLineWorksChannel] = useState<string | null>(null);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
 
   useEffect(() => {
@@ -274,6 +287,25 @@ export function WorkTrackingDashboard() {
       setSelectedRepo(null);
     }
   }, [githubFeed.repos, selectedRepo]);
+
+  useEffect(() => {
+    if (activeView !== "line-works") {
+      return;
+    }
+    let mounted = true;
+    void fetchLineWorksArchive(selectedLineWorksChannel)
+      .then((next) => {
+        if (mounted) {
+          setLineWorksArchive(next);
+        }
+      })
+      .catch((error) => {
+        console.error("[dashboard] failed to load line works archive", error);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [activeView, selectedLineWorksChannel]);
 
   const todoTasks = useMemo(
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "todo")),
@@ -584,6 +616,16 @@ export function WorkTrackingDashboard() {
               <span className="sidebar-nav-count">{notionFeed.items.length}</span>
             ) : null}
           </button>
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "line-works" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("line-works")}
+          >
+            LINE WORKS
+            {lineWorksArchive.items.length > 0 ? (
+              <span className="sidebar-nav-count">{lineWorksArchive.items.length}</span>
+            ) : null}
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -638,10 +680,19 @@ export function WorkTrackingDashboard() {
                     : `${selectedRepo} 상세 현황입니다.`}
                 </p>
               </>
-            ) : (
+            ) : activeView === "notion" ? (
               <>
                 <h2>Notion Updates</h2>
                 <p>플랫폼 본부 하위의 최근 변경 내역입니다.</p>
+              </>
+            ) : (
+              <>
+                <h2>LINE WORKS</h2>
+                <p>
+                  {selectedLineWorksChannel === null
+                    ? "수집된 채팅 메시지와 첨부를 전체 조회합니다."
+                    : `채팅방 ${selectedLineWorksChannel} 의 수신 내역입니다.`}
+                </p>
               </>
             )}
           </div>
@@ -650,7 +701,13 @@ export function WorkTrackingDashboard() {
               <div className="github-meta">
                 <span>마지막 동기화</span>
                 <strong>
-                  {syncLabel(activeView === "notion" ? notionFeed.lastSyncedAt : githubFeed.lastSyncedAt)}
+                  {syncLabel(
+                    activeView === "notion"
+                      ? notionFeed.lastSyncedAt
+                      : activeView === "github"
+                        ? githubFeed.lastSyncedAt
+                        : lineWorksArchive.lastReceivedAt,
+                  )}
                 </strong>
               </div>
             )}
@@ -761,6 +818,100 @@ export function WorkTrackingDashboard() {
                     {isLoadingMoreNotion ? "불러오는 중…" : "더보기"}
                   </button>
                 ) : null}
+              </div>
+            </section>
+          ) : activeView === "line-works" ? (
+            <section className="panel line-works-panel">
+              {lineWorksArchive.channels.length > 0 ? (
+                <div className="github-filters">
+                  <button
+                    type="button"
+                    className={`github-filter-chip ${selectedLineWorksChannel === null ? "active" : ""}`.trim()}
+                    onClick={() => setSelectedLineWorksChannel(null)}
+                  >
+                    전체
+                  </button>
+                  {lineWorksArchive.channels.map((channel) => (
+                    <button
+                      key={channel.channelId}
+                      type="button"
+                      className={`github-filter-chip ${selectedLineWorksChannel === channel.channelId ? "active" : ""}`.trim()}
+                      onClick={() => setSelectedLineWorksChannel(channel.channelId)}
+                      title={channel.channelId}
+                    >
+                      {shortChannelLabel(channel.channelId)} · {channel.count}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="line-works-messages">
+                {lineWorksArchive.items.length === 0 ? (
+                  <p className="empty-note">수신된 메시지가 없습니다.</p>
+                ) : (
+                  lineWorksArchive.items.map((message) => (
+                    <article key={message.messageId} className="line-works-message">
+                      <header className="line-works-message-head">
+                        <div className="line-works-message-meta">
+                          <span className="line-works-channel" title={message.channelId}>
+                            {shortChannelLabel(message.channelId)}
+                          </span>
+                          <span className="line-works-user">
+                            {message.userId ?? "unknown"}
+                          </span>
+                          <span className="line-works-time">
+                            {relativeTime(message.issuedAt ?? message.receivedAt)}
+                          </span>
+                        </div>
+                        <span className={`line-works-type type-${message.contentType}`}>
+                          {message.contentType}
+                        </span>
+                      </header>
+
+                      {message.text ? (
+                        <p className="line-works-text">{message.text}</p>
+                      ) : null}
+
+                      {message.attachments.length > 0 ? (
+                        <div className="line-works-attachments">
+                          {message.attachments.map((attachment) => (
+                            <button
+                              key={attachment.id}
+                              type="button"
+                              className="line-works-attachment"
+                              onClick={() => {
+                                void openLineWorksAttachment(attachment.id).catch((error) => {
+                                  console.error("[line-works] attachment open failed", error);
+                                });
+                              }}
+                            >
+                              <span className="line-works-attachment-name">
+                                📎 {attachment.fileName ?? "파일"}
+                              </span>
+                              {attachment.fileSize ? (
+                                <span className="line-works-attachment-size">
+                                  {formatFileSize(attachment.fileSize)}
+                                </span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {message.links.length > 0 ? (
+                        <ul className="line-works-links">
+                          {message.links.map((link) => (
+                            <li key={link.id}>
+                              <a href={link.url} target="_blank" rel="noreferrer">
+                                {link.url}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </article>
+                  ))
+                )}
               </div>
             </section>
           ) : (
@@ -975,4 +1126,11 @@ function TaskColumn({
 
 function syncLabel(value: string | null) {
   return value ? formatDateTime(value) : "아직 없음";
+}
+
+function shortChannelLabel(channelId: string): string {
+  if (channelId.length <= 14) {
+    return channelId;
+  }
+  return `${channelId.slice(0, 6)}…${channelId.slice(-4)}`;
 }

@@ -155,3 +155,178 @@ function hydrateAttachment(row: AttachmentDbRow): AttachmentRow {
     uploadedAt: row.uploaded_at,
   };
 }
+
+export interface ArchiveAttachment {
+  id: number;
+  fileName: string | null;
+  fileSize: number | null;
+  mimeType: string | null;
+}
+
+export interface ArchiveLink {
+  id: number;
+  url: string;
+}
+
+export interface ArchiveMessage {
+  messageId: string;
+  channelId: string;
+  userId: string | null;
+  contentType: string;
+  text: string | null;
+  issuedAt: string | null;
+  receivedAt: string;
+  attachments: ArchiveAttachment[];
+  links: ArchiveLink[];
+}
+
+export interface ArchiveChannelSummary {
+  channelId: string;
+  count: number;
+}
+
+export interface ArchiveResult {
+  items: ArchiveMessage[];
+  channels: ArchiveChannelSummary[];
+  lastReceivedAt: string | null;
+}
+
+interface MessageDbRow {
+  message_id: string;
+  channel_id: string;
+  user_id: string | null;
+  content_type: string;
+  text: string | null;
+  issued_at: string | null;
+  received_at: string;
+}
+
+interface AttachmentListRow {
+  id: number;
+  message_id: string;
+  file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+}
+
+interface LinkListRow {
+  id: number;
+  message_id: string;
+  url: string;
+}
+
+interface ChannelSummaryRow {
+  channel_id: string;
+  count: number;
+}
+
+export function listArchive(options?: {
+  channelId?: string;
+  limit?: number;
+}): ArchiveResult {
+  const db = getDatabase();
+  const rawLimit = options?.limit ?? 50;
+  const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 50, 1), 200);
+
+  const useChannelFilter = Boolean(options?.channelId);
+  const channelParams = useChannelFilter ? [options!.channelId!] : [];
+
+  const messages = db
+    .prepare(
+      `
+        SELECT message_id, channel_id, user_id, content_type, text, issued_at, received_at
+        FROM line_works_messages
+        ${useChannelFilter ? "WHERE channel_id = ?" : ""}
+        ORDER BY COALESCE(issued_at, received_at) DESC
+        LIMIT ?
+      `,
+    )
+    .all(...channelParams, limit) as unknown as MessageDbRow[];
+
+  const messageIds = messages.map((row) => row.message_id);
+
+  let attachments: AttachmentListRow[] = [];
+  let links: LinkListRow[] = [];
+
+  if (messageIds.length > 0) {
+    const placeholders = messageIds.map(() => "?").join(",");
+    attachments = db
+      .prepare(
+        `
+          SELECT id, message_id, file_name, file_size, mime_type
+          FROM line_works_attachments
+          WHERE message_id IN (${placeholders})
+          ORDER BY id ASC
+        `,
+      )
+      .all(...messageIds) as unknown as AttachmentListRow[];
+
+    links = db
+      .prepare(
+        `
+          SELECT id, message_id, url
+          FROM line_works_links
+          WHERE message_id IN (${placeholders})
+          ORDER BY id ASC
+        `,
+      )
+      .all(...messageIds) as unknown as LinkListRow[];
+  }
+
+  const attachmentsByMessage = new Map<string, ArchiveAttachment[]>();
+  for (const row of attachments) {
+    const list = attachmentsByMessage.get(row.message_id) ?? [];
+    list.push({
+      id: row.id,
+      fileName: row.file_name,
+      fileSize: row.file_size,
+      mimeType: row.mime_type,
+    });
+    attachmentsByMessage.set(row.message_id, list);
+  }
+
+  const linksByMessage = new Map<string, ArchiveLink[]>();
+  for (const row of links) {
+    const list = linksByMessage.get(row.message_id) ?? [];
+    list.push({ id: row.id, url: row.url });
+    linksByMessage.set(row.message_id, list);
+  }
+
+  const items: ArchiveMessage[] = messages.map((row) => ({
+    messageId: row.message_id,
+    channelId: row.channel_id,
+    userId: row.user_id,
+    contentType: row.content_type,
+    text: row.text,
+    issuedAt: row.issued_at,
+    receivedAt: row.received_at,
+    attachments: attachmentsByMessage.get(row.message_id) ?? [],
+    links: linksByMessage.get(row.message_id) ?? [],
+  }));
+
+  const channelsRaw = db
+    .prepare(
+      `
+        SELECT channel_id, COUNT(*) AS count
+        FROM line_works_messages
+        GROUP BY channel_id
+        ORDER BY count DESC
+      `,
+    )
+    .all() as unknown as ChannelSummaryRow[];
+
+  const channels: ArchiveChannelSummary[] = channelsRaw.map((row) => ({
+    channelId: row.channel_id,
+    count: row.count,
+  }));
+
+  const lastRow = db
+    .prepare(`SELECT MAX(received_at) AS last FROM line_works_messages`)
+    .get() as { last: string | null } | undefined;
+
+  return {
+    items,
+    channels,
+    lastReceivedAt: lastRow?.last ?? null,
+  };
+}
