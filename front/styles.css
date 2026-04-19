@@ -3350,6 +3350,300 @@ button {
   word-break: break-all;
 }
 
+/* ============================================================
+   Works 채팅 스트림
+   ============================================================ */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.chat-channel-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chat-channel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms linear, color 150ms linear, border-color 150ms linear;
+}
+
+.chat-channel-chip:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.chat-channel-chip.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.chat-channel-chip-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.chat-channel-chip.active .chat-channel-chip-count {
+  opacity: 0.9;
+}
+
+.chat-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 4px 4px;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.chat-date-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px 0 2px;
+  position: relative;
+}
+
+.chat-date-divider::before,
+.chat-date-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--outline-variant);
+  opacity: 0.6;
+}
+
+.chat-date-divider span {
+  padding: 2px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--on-surface-muted);
+  letter-spacing: 0.04em;
+}
+
+.chat-bubble-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.chat-bubble-row.mine {
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  display: grid;
+  place-items: center;
+  font-size: 0.86rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+}
+
+.chat-bubble-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(680px, 80%);
+  min-width: 0;
+}
+
+.chat-bubble-row.mine .chat-bubble-col {
+  align-items: flex-end;
+}
+
+.chat-bubble-head {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--on-surface-muted);
+  padding: 0 4px;
+}
+
+.chat-author {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.chat-channel-pill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-container);
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.chat-time {
+  opacity: 0.8;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: var(--surface-container);
+  color: var(--on-surface);
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  min-width: 0;
+}
+
+.chat-bubble-row.other .chat-bubble {
+  border-top-left-radius: 4px;
+}
+
+.chat-bubble-row.mine .chat-bubble {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: none;
+  border-top-right-radius: 4px;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.chat-bubble-empty {
+  margin: 0;
+  font-style: italic;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.chat-bubble-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chat-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms linear;
+}
+
+.chat-attachment:hover {
+  background: var(--surface-container-high);
+}
+
+.chat-bubble-row.mine .chat-attachment {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--on-primary);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.chat-bubble-row.mine .chat-attachment:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.chat-attachment-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.chat-attachment-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-attachment-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.chat-attachment-meta {
+  font-size: 0.72rem;
+  color: var(--on-surface-muted);
+}
+
+.chat-bubble-row.mine .chat-attachment-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-bubble-links {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-bubble-links a {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+  font-size: 0.82rem;
+}
+
+.chat-bubble-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 150ms linear;
+}
+
+.chat-bubble-row:hover .chat-bubble-actions,
+.chat-bubble-row:focus-within .chat-bubble-actions {
+  opacity: 1;
+}
+
+.chat-bubble-action {
+  border: none;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  transition: background 150ms linear, color 150ms linear;
+}
+
+.chat-bubble-action:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
 .calendar-day-item-main.as-button {
   background: transparent;
   border: none;
