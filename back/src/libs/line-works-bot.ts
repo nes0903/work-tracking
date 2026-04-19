@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 const TOKEN_URL = "https://auth.worksmobile.com/oauth2/v2.0/token";
 const ATTACHMENT_URL = (botId: string, fileId: string) =>
   `https://www.worksapis.com/v1.0/bots/${encodeURIComponent(botId)}/attachments/${encodeURIComponent(fileId)}`;
+const CHANNEL_INFO_URL = (botId: string, channelId: string) =>
+  `https://www.worksapis.com/v1.0/bots/${encodeURIComponent(botId)}/channels/${encodeURIComponent(channelId)}`;
+const USER_INFO_URL = (userId: string) =>
+  `https://www.worksapis.com/v1.0/users/${encodeURIComponent(userId)}`;
 
 const ACCESS_TOKEN_SAFETY_WINDOW_MS = 5 * 60 * 1000;
 
@@ -244,6 +248,79 @@ export async function fetchAttachmentStream(
     contentLength: contentLengthRaw ? Number(contentLengthRaw) : null,
     fileName: extractFileNameFromHeader(disposition),
   };
+}
+
+export interface ChannelInfo {
+  channelId: string;
+  title: string | null;
+  channelType: string | null;
+}
+
+interface ChannelInfoResponse {
+  channelId?: string;
+  title?: string;
+  channelType?: { type?: string };
+}
+
+export async function fetchChannelInfo(
+  config: BotConfig,
+  channelId: string,
+): Promise<ChannelInfo | null> {
+  try {
+    const token = await issueAccessToken(config);
+    const response = await fetch(CHANNEL_INFO_URL(config.botId, channelId), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        clearAccessTokenCache();
+      }
+      return null;
+    }
+    const payload = (await response.json()) as ChannelInfoResponse;
+    return {
+      channelId,
+      title: (payload.title ?? "").trim() || null,
+      channelType: payload.channelType?.type ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+interface UserInfoResponse {
+  userId?: string;
+  userName?: { firstName?: string; lastName?: string };
+  email?: string;
+}
+
+function combineUserName(user: UserInfoResponse): string | null {
+  const name = user.userName;
+  if (!name) return null;
+  const combined = `${name.lastName ?? ""}${name.firstName ?? ""}`.trim();
+  return combined || null;
+}
+
+export async function fetchBotScopedUserName(
+  config: BotConfig,
+  userId: string,
+): Promise<string | null> {
+  try {
+    const token = await issueAccessToken(config);
+    const response = await fetch(USER_INFO_URL(userId), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        clearAccessTokenCache();
+      }
+      return null;
+    }
+    const payload = (await response.json()) as UserInfoResponse;
+    return combineUserName(payload);
+  } catch {
+    return null;
+  }
 }
 
 const URL_REGEX = /\bhttps?:\/\/[^\s<>"']+/gi;

@@ -13,6 +13,8 @@ export interface LineWorksArchiveLink {
 export interface LineWorksArchiveMessage {
   messageId: string;
   channelId: string;
+  channelTitle: string | null;
+  channelType: string | null;
   userId: string | null;
   contentType: string;
   text: string | null;
@@ -24,6 +26,8 @@ export interface LineWorksArchiveMessage {
 
 export interface LineWorksArchiveChannelSummary {
   channelId: string;
+  title: string | null;
+  channelType: string | null;
   count: number;
 }
 

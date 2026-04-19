@@ -53,13 +53,30 @@ function sanitizeFileName(fileName: string | undefined): string {
   return fileName.replace(/[^\w.\-가-힣\s()\[\]]/g, "_").slice(0, 200);
 }
 
-export function buildAttachmentObjectKey(
-  prefix: string,
-  fileId: string,
-  fileName?: string,
-): string {
+export function sanitizeChannelSegment(segment: string): string {
+  return segment.replace(/[^\w.\-가-힣]/g, "_");
+}
+
+function toDateFolder(value: string | null | undefined): string {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+export function buildAttachmentObjectKey(params: {
+  prefix: string;
+  channelId: string;
+  issuedAt?: string | null;
+  fileId: string;
+  fileName?: string;
+}): string {
+  const { prefix, channelId, issuedAt, fileId, fileName } = params;
+  const dateFolder = toDateFolder(issuedAt);
+  const channelFolder = sanitizeChannelSegment(channelId);
   const safeFileName = sanitizeFileName(fileName);
-  return `${prefix}${fileId}/${safeFileName}`;
+  return `${prefix}${channelFolder}/${dateFolder}/${fileId}-${safeFileName}`;
 }
 
 async function bodyToBuffer(body: ReadableStream | Readable | Blob | Uint8Array): Promise<Buffer> {

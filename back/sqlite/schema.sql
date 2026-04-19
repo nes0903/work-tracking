@@ -320,6 +320,14 @@ CREATE TABLE IF NOT EXISTS line_works_links (
 CREATE INDEX IF NOT EXISTS idx_line_works_links_message
   ON line_works_links(message_id);
 
+CREATE TABLE IF NOT EXISTS line_works_channels (
+  channel_id       TEXT PRIMARY KEY,
+  title            TEXT,
+  channel_type     TEXT,
+  user_id          TEXT,
+  last_fetched_at  TEXT
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS task_references (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id        TEXT NOT NULL,

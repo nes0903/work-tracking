@@ -2,14 +2,18 @@ import { Injectable, Logger } from "@nestjs/common";
 import {
   extractLinksFromText,
   fetchAttachmentStream,
+  fetchBotScopedUserName,
+  fetchChannelInfo,
   isChannelAllowed,
   loadBotConfig,
   verifyCallbackSignature,
   type BotConfig,
 } from "@libs/line-works-bot";
 import {
+  getChannelMeta,
   insertAttachment,
   insertLinks,
+  upsertChannelMeta,
   upsertMessage,
 } from "@libs/line-works-bot-db";
 import {
@@ -82,6 +86,11 @@ export class LineWorksBotService {
       };
     }
 
+    // 채널 메타 캐시가 없으면 비동기로 fetch (응답 지연 최소화)
+    void this.ensureChannelMeta(botConfig, channelId, event).catch((err) => {
+      this.logger.warn(`channel meta fetch failed: ${(err as Error).message}`);
+    });
+
     try {
       const stored = await this.persistEvent(botConfig, rawBody, event, channelId);
       return { status: 200, body: { ok: true, ...stored } };
@@ -89,6 +98,37 @@ export class LineWorksBotService {
       this.logger.error("Failed to persist LINE WORKS event", err as Error);
       return { status: 500, body: { ok: false, error: "Failed to persist event" } };
     }
+  }
+
+  private async ensureChannelMeta(
+    botConfig: BotConfig,
+    channelId: string,
+    event: LineWorksCallbackEvent,
+  ): Promise<void> {
+    const existing = getChannelMeta(channelId);
+    if (existing?.title) {
+      return;
+    }
+
+    if (channelId.startsWith("dm:")) {
+      const userId = channelId.slice(3);
+      const name = await fetchBotScopedUserName(botConfig, userId);
+      upsertChannelMeta({
+        channelId,
+        title: name,
+        channelType: "SINGLE_USER",
+        userId,
+      });
+      return;
+    }
+
+    const info = await fetchChannelInfo(botConfig, channelId);
+    upsertChannelMeta({
+      channelId,
+      title: info?.title ?? existing?.title ?? null,
+      channelType: info?.channelType ?? existing?.channelType ?? null,
+      userId: event.source?.userId ?? existing?.userId ?? null,
+    });
   }
 
   private async persistEvent(
@@ -121,11 +161,19 @@ export class LineWorksBotService {
     }
 
     const fileId = event.content?.fileId ?? event.content?.resourceId ?? null;
-    const downloadable = fileId && (contentType === "image" || contentType === "file");
+    const downloadable =
+      fileId !== null &&
+      ["image", "file", "video", "audio"].includes(contentType);
 
     let attachmentId: number | null = null;
-    if (downloadable) {
-      const uploaded = await this.uploadAttachment(botConfig, messageId, event, fileId);
+    if (downloadable && fileId) {
+      const uploaded = await this.uploadAttachment(
+        botConfig,
+        messageId,
+        event,
+        fileId,
+        channelId,
+      );
       attachmentId = uploaded?.id ?? null;
     }
 
@@ -143,6 +191,7 @@ export class LineWorksBotService {
     messageId: string,
     event: LineWorksCallbackEvent,
     fileId: string,
+    channelId: string,
   ): Promise<{ id: number } | null> {
     const s3Config = loadS3Config();
     if (!s3Config) {
@@ -152,7 +201,13 @@ export class LineWorksBotService {
 
     const stream = await fetchAttachmentStream(botConfig, fileId);
     const fileName = event.content?.fileName ?? stream.fileName ?? `${fileId}.bin`;
-    const key = buildAttachmentObjectKey(s3Config.prefix, fileId, fileName);
+    const key = buildAttachmentObjectKey({
+      prefix: s3Config.prefix,
+      channelId,
+      issuedAt: event.issuedTime,
+      fileId,
+      fileName,
+    });
 
     const { bucket, key: savedKey } = await putAttachmentObject({
       key,

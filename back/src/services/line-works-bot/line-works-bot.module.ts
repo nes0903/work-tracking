@@ -3,12 +3,14 @@ import { LineWorksBotService } from "./applications/line-works-bot.service";
 import { LineWorksArchiveController } from "./controllers/line-works-archive.controller";
 import { LineWorksAttachmentsController } from "./controllers/line-works-attachments.controller";
 import { LineWorksBotWebhookController } from "./controllers/line-works-bot-webhook.controller";
+import { LineWorksChannelsController } from "./controllers/line-works-channels.controller";
 
 @Module({
   controllers: [
     LineWorksBotWebhookController,
     LineWorksAttachmentsController,
     LineWorksArchiveController,
+    LineWorksChannelsController,
   ],
   providers: [LineWorksBotService],
 })

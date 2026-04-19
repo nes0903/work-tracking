@@ -10,17 +10,35 @@ export interface StorageItem {
   uploadedAt: string | null;
 }
 
-export async function fetchStorageItems(): Promise<StorageItem[]> {
+export interface ChannelLabel {
+  channelId: string;
+  title: string | null;
+  channelType: string | null;
+}
+
+export type ChannelLabelMap = Record<string, ChannelLabel>;
+
+export interface StorageBundle {
+  items: StorageItem[];
+  channelLabels: ChannelLabelMap;
+}
+
+export async function fetchStorageBundle(): Promise<StorageBundle> {
   try {
     const response = await fetch("/api/storage/files", { cache: "no-store" });
-    if (!response.ok) return [];
+    if (!response.ok) return { items: [], channelLabels: {} };
     const payload = (await response.json()) as {
       ok: boolean;
       items?: StorageItem[];
+      channelLabels?: ChannelLabelMap;
     };
-    return payload.ok && Array.isArray(payload.items) ? payload.items : [];
+    if (!payload.ok) return { items: [], channelLabels: {} };
+    return {
+      items: Array.isArray(payload.items) ? payload.items : [],
+      channelLabels: payload.channelLabels ?? {},
+    };
   } catch {
-    return [];
+    return { items: [], channelLabels: {} };
   }
 }
 

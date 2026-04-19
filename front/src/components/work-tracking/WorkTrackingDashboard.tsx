@@ -20,7 +20,8 @@ import {
 } from "@/lib/task-references";
 import {
   deleteStorageItem,
-  fetchStorageItems,
+  fetchStorageBundle,
+  type ChannelLabelMap,
   type StorageItem,
 } from "@/lib/storage";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
@@ -127,6 +128,7 @@ export function WorkTrackingDashboard() {
   const [pendingUrlDraft, setPendingUrlDraft] = useState("");
   const [pendingTitleDraft, setPendingTitleDraft] = useState("");
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
+  const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
 
   useEffect(() => {
@@ -350,8 +352,9 @@ export function WorkTrackingDashboard() {
   }, [hasHydrated, reloadTaskReferences]);
 
   const reloadStorage = useCallback(async () => {
-    const items = await fetchStorageItems();
-    setStorageItems(items);
+    const bundle = await fetchStorageBundle();
+    setStorageItems(bundle.items);
+    setStorageChannelLabels(bundle.channelLabels);
   }, []);
 
   useEffect(() => {
@@ -886,7 +889,12 @@ export function WorkTrackingDashboard() {
                 <p>
                   {selectedLineWorksChannel === null
                     ? "수집된 채팅 메시지와 첨부를 전체 조회합니다."
-                    : `채팅방 ${selectedLineWorksChannel} 의 수신 내역입니다.`}
+                    : `채팅방 ${shortChannelLabel(
+                        selectedLineWorksChannel,
+                        lineWorksArchive.channels.find(
+                          (channel) => channel.channelId === selectedLineWorksChannel,
+                        )?.title,
+                      )} 의 수신 내역입니다.`}
                 </p>
               </>
             ) : (
@@ -1051,6 +1059,7 @@ export function WorkTrackingDashboard() {
             <section className="panel storage-panel">
               <StorageTreeView
                 items={storageItems}
+                channelLabels={storageChannelLabels}
                 onOpen={handleStorageOpen}
                 onDelete={handleStorageDelete}
               />
@@ -1074,7 +1083,7 @@ export function WorkTrackingDashboard() {
                       onClick={() => setSelectedLineWorksChannel(channel.channelId)}
                       title={channel.channelId}
                     >
-                      {shortChannelLabel(channel.channelId)} · {channel.count}
+                      {shortChannelLabel(channel.channelId, channel.title)} · {channel.count}
                     </button>
                   ))}
                 </div>
@@ -1089,7 +1098,7 @@ export function WorkTrackingDashboard() {
                       <header className="line-works-message-head">
                         <div className="line-works-message-meta">
                           <span className="line-works-channel" title={message.channelId}>
-                            {shortChannelLabel(message.channelId)}
+                            {shortChannelLabel(message.channelId, message.channelTitle)}
                           </span>
                           <span className="line-works-user">
                             {message.userId ?? "unknown"}
@@ -1186,7 +1195,7 @@ export function WorkTrackingDashboard() {
                               externalId: message.messageId,
                               title:
                                 message.text?.slice(0, 60) ??
-                                `[${message.contentType}] ${shortChannelLabel(message.channelId)}`,
+                                `[${message.contentType}] ${shortChannelLabel(message.channelId, message.channelTitle)}`,
                               excerpt: message.text,
                               metadata: {
                                 channelId: message.channelId,
@@ -1530,7 +1539,10 @@ function syncLabel(value: string | null) {
   return value ? formatDateTime(value) : "아직 없음";
 }
 
-function shortChannelLabel(channelId: string): string {
+function shortChannelLabel(channelId: string, title?: string | null): string {
+  if (title && title.trim()) {
+    return channelId.startsWith("dm:") ? `DM · ${title}` : title;
+  }
   if (channelId.startsWith("dm:")) {
     const userId = channelId.slice(3);
     return userId.length <= 10 ? `DM · ${userId}` : `DM · ${userId.slice(0, 4)}…${userId.slice(-4)}`;

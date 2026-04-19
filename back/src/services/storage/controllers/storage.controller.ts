@@ -12,8 +12,15 @@ import {
   deleteAttachmentRow,
   getAttachmentById,
   listAllAttachments,
+  listChannelMeta,
 } from "@libs/line-works-bot-db";
-import { deleteObject } from "@libs/s3";
+import { deleteObject, sanitizeChannelSegment } from "@libs/s3";
+
+interface ChannelLabel {
+  channelId: string;
+  title: string | null;
+  channelType: string | null;
+}
 
 @Controller("api/storage")
 @UseGuards(AuthGuard)
@@ -21,6 +28,17 @@ export class StorageController {
   @Get("files")
   async list() {
     const rows = listAllAttachments();
+
+    const channelLabels: Record<string, ChannelLabel> = {};
+    for (const meta of listChannelMeta()) {
+      const key = sanitizeChannelSegment(meta.channelId);
+      channelLabels[key] = {
+        channelId: meta.channelId,
+        title: meta.title,
+        channelType: meta.channelType,
+      };
+    }
+
     return {
       ok: true,
       items: rows.map((row) => ({
@@ -34,6 +52,7 @@ export class StorageController {
         s3Key: row.s3Key,
         uploadedAt: row.uploadedAt,
       })),
+      channelLabels,
     };
   }
 

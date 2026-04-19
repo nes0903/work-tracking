@@ -153,6 +153,84 @@ export function deleteAttachmentRow(id: number): boolean {
   return result.changes > 0;
 }
 
+export interface ChannelMetaRow {
+  channelId: string;
+  title: string | null;
+  channelType: string | null;
+  userId: string | null;
+  lastFetchedAt: string | null;
+}
+
+interface ChannelMetaDbRow {
+  channel_id: string;
+  title: string | null;
+  channel_type: string | null;
+  user_id: string | null;
+  last_fetched_at: string | null;
+}
+
+function hydrateChannelMeta(row: ChannelMetaDbRow): ChannelMetaRow {
+  return {
+    channelId: row.channel_id,
+    title: row.title,
+    channelType: row.channel_type,
+    userId: row.user_id,
+    lastFetchedAt: row.last_fetched_at,
+  };
+}
+
+export function getChannelMeta(channelId: string): ChannelMetaRow | null {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT channel_id, title, channel_type, user_id, last_fetched_at
+         FROM line_works_channels WHERE channel_id = ?`,
+    )
+    .get(channelId) as ChannelMetaDbRow | undefined;
+  return row ? hydrateChannelMeta(row) : null;
+}
+
+export function listChannelMeta(channelIds?: string[]): ChannelMetaRow[] {
+  const db = getDatabase();
+  if (channelIds && channelIds.length > 0) {
+    const placeholders = channelIds.map(() => "?").join(",");
+    const rows = db
+      .prepare(
+        `SELECT channel_id, title, channel_type, user_id, last_fetched_at
+           FROM line_works_channels WHERE channel_id IN (${placeholders})`,
+      )
+      .all(...channelIds) as unknown as ChannelMetaDbRow[];
+    return rows.map(hydrateChannelMeta);
+  }
+  const rows = db
+    .prepare(
+      `SELECT channel_id, title, channel_type, user_id, last_fetched_at
+         FROM line_works_channels`,
+    )
+    .all() as unknown as ChannelMetaDbRow[];
+  return rows.map(hydrateChannelMeta);
+}
+
+export function upsertChannelMeta(input: {
+  channelId: string;
+  title: string | null;
+  channelType: string | null;
+  userId: string | null;
+}): void {
+  const db = getDatabase();
+  db.prepare(
+    `
+      INSERT INTO line_works_channels (channel_id, title, channel_type, user_id, last_fetched_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(channel_id) DO UPDATE SET
+        title = excluded.title,
+        channel_type = excluded.channel_type,
+        user_id = excluded.user_id,
+        last_fetched_at = excluded.last_fetched_at
+    `,
+  ).run(input.channelId, input.title, input.channelType, input.userId);
+}
+
 interface AttachmentDbRow {
   id: number;
   message_id: string;
@@ -194,6 +272,8 @@ export interface ArchiveLink {
 export interface ArchiveMessage {
   messageId: string;
   channelId: string;
+  channelTitle: string | null;
+  channelType: string | null;
   userId: string | null;
   contentType: string;
   text: string | null;
@@ -205,6 +285,8 @@ export interface ArchiveMessage {
 
 export interface ArchiveChannelSummary {
   channelId: string;
+  title: string | null;
+  channelType: string | null;
   count: number;
 }
 
@@ -240,6 +322,13 @@ interface LinkListRow {
 
 interface ChannelSummaryRow {
   channel_id: string;
+  count: number;
+}
+
+interface ChannelSummaryRowWithMeta {
+  channel_id: string;
+  title: string | null;
+  channel_type: string | null;
   count: number;
 }
 
@@ -315,31 +404,49 @@ export function listArchive(options?: {
     linksByMessage.set(row.message_id, list);
   }
 
-  const items: ArchiveMessage[] = messages.map((row) => ({
-    messageId: row.message_id,
-    channelId: row.channel_id,
-    userId: row.user_id,
-    contentType: row.content_type,
-    text: row.text,
-    issuedAt: row.issued_at,
-    receivedAt: row.received_at,
-    attachments: attachmentsByMessage.get(row.message_id) ?? [],
-    links: linksByMessage.get(row.message_id) ?? [],
-  }));
+  // channel meta 한꺼번에 로드
+  const channelIdsToResolve = Array.from(
+    new Set(messages.map((row) => row.channel_id)),
+  );
+  const metaMap = new Map<string, ChannelMetaRow>();
+  for (const meta of listChannelMeta(channelIdsToResolve)) {
+    metaMap.set(meta.channelId, meta);
+  }
+
+  const items: ArchiveMessage[] = messages.map((row) => {
+    const meta = metaMap.get(row.channel_id);
+    return {
+      messageId: row.message_id,
+      channelId: row.channel_id,
+      channelTitle: meta?.title ?? null,
+      channelType: meta?.channelType ?? null,
+      userId: row.user_id,
+      contentType: row.content_type,
+      text: row.text,
+      issuedAt: row.issued_at,
+      receivedAt: row.received_at,
+      attachments: attachmentsByMessage.get(row.message_id) ?? [],
+      links: linksByMessage.get(row.message_id) ?? [],
+    };
+  });
 
   const channelsRaw = db
     .prepare(
       `
-        SELECT channel_id, COUNT(*) AS count
-        FROM line_works_messages
-        GROUP BY channel_id
+        SELECT m.channel_id, COUNT(*) AS count,
+               c.title, c.channel_type
+        FROM line_works_messages m
+        LEFT JOIN line_works_channels c ON c.channel_id = m.channel_id
+        GROUP BY m.channel_id, c.title, c.channel_type
         ORDER BY count DESC
       `,
     )
-    .all() as unknown as ChannelSummaryRow[];
+    .all() as unknown as ChannelSummaryRowWithMeta[];
 
   const channels: ArchiveChannelSummary[] = channelsRaw.map((row) => ({
     channelId: row.channel_id,
+    title: row.title,
+    channelType: row.channel_type,
     count: row.count,
   }));
 
