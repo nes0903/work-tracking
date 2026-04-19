@@ -10,7 +10,7 @@ export interface SessionRow {
   expiresAt: string;
 }
 
-const SESSION_TTL_DAYS = 14;
+const SESSION_TTL_HOURS = 24;
 const OAUTH_STATE_TTL_MINUTES = 10;
 
 export function generateToken(bytes = 32): string {
@@ -25,7 +25,7 @@ export function createSession(input: {
 }): SessionRow {
   const db = getDatabase();
   const id = generateToken(32);
-  const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86_400_000).toISOString();
+  const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3_600_000).toISOString();
 
   db.prepare(
     `
@@ -118,4 +118,4 @@ export function consumeOAuthState(state: string): { redirectTo: string } | null 
   return { redirectTo: row.redirect_to };
 }
 
-export const SESSION_TTL_SECONDS = SESSION_TTL_DAYS * 24 * 60 * 60;
+export const SESSION_TTL_SECONDS = SESSION_TTL_HOURS * 60 * 60;

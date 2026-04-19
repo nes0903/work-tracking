@@ -7,10 +7,10 @@ import {
   emptyLineWorksArchive,
   fetchLineWorksArchive,
   formatFileSize,
-  openLineWorksAttachment,
   type LineWorksArchive,
   type LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
+import { isOfficeFile } from "@/lib/file-preview";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
 import {
   attachReference,
@@ -26,6 +26,7 @@ import {
 } from "@/lib/storage";
 import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
+import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
@@ -110,7 +111,7 @@ export function WorkTrackingDashboard() {
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [activeView, setActiveView] = useState<
-    "dashboard" | "github" | "notion" | "line-works" | "storage"
+    "dashboard" | "task-create" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -130,6 +131,9 @@ export function WorkTrackingDashboard() {
   const [pendingTitleDraft, setPendingTitleDraft] = useState("");
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
+  const [previewState, setPreviewState] = useState<
+    { fileName: string | null; url: string } | null
+  >(null);
   const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
   const [lastSeenLineWorks, setLastSeenLineWorks] = useState<number>(0);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
@@ -451,19 +455,52 @@ export function WorkTrackingDashboard() {
     }
   }
 
-  async function handleStorageOpen(id: number) {
+  async function resolveAttachmentUrl(
+    id: number,
+  ): Promise<{ url: string; fileName: string | null; mimeType: string | null } | null> {
     try {
       const response = await fetch(`/api/line-works-attachments/${id}`, {
         cache: "no-store",
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
-      const payload = (await response.json()) as { ok: boolean; url?: string };
-      if (payload.ok && payload.url) {
-        window.open(payload.url, "_blank", "noopener");
-      }
+      const payload = (await response.json()) as {
+        ok: boolean;
+        url?: string;
+        attachment?: {
+          fileName?: string | null;
+          mimeType?: string | null;
+        };
+      };
+      if (!payload.ok || !payload.url) return null;
+      return {
+        url: payload.url,
+        fileName: payload.attachment?.fileName ?? null,
+        mimeType: payload.attachment?.mimeType ?? null,
+      };
     } catch (error) {
-      console.error("[storage] failed to get presigned url", error);
+      console.error("[attachment] failed to get presigned url", error);
+      return null;
     }
+  }
+
+  async function openAttachment(
+    id: number,
+    hintedFileName?: string | null,
+    hintedMimeType?: string | null,
+  ) {
+    const resolved = await resolveAttachmentUrl(id);
+    if (!resolved) return;
+    const fileName = resolved.fileName ?? hintedFileName ?? null;
+    const mimeType = resolved.mimeType ?? hintedMimeType ?? null;
+    if (isOfficeFile(fileName, mimeType)) {
+      setPreviewState({ fileName, url: resolved.url });
+    } else {
+      window.open(resolved.url, "_blank", "noopener");
+    }
+  }
+
+  async function handleStorageOpen(id: number) {
+    await openAttachment(id);
   }
 
   async function handleRemoveReference(referenceId: number, taskId: string) {
@@ -862,6 +899,13 @@ export function WorkTrackingDashboard() {
           </button>
           <button
             type="button"
+            className={`sidebar-nav-link ${activeView === "task-create" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("task-create")}
+          >
+            태스크 생성
+          </button>
+          <button
+            type="button"
             className={`sidebar-nav-link ${activeView === "github" ? "active" : ""}`.trim()}
             onClick={() => setActiveView("github")}
           >
@@ -944,6 +988,11 @@ export function WorkTrackingDashboard() {
               <>
                 <h2>Work Tracking Dashboard</h2>
                 <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
+              </>
+            ) : activeView === "task-create" ? (
+              <>
+                <h2>태스크 생성</h2>
+                <p>새 업무를 등록하고 참조 링크까지 한 번에 추가합니다.</p>
               </>
             ) : activeView === "github" ? (
               <>
@@ -1136,6 +1185,140 @@ export function WorkTrackingDashboard() {
                 ) : null}
               </div>
             </section>
+          ) : activeView === "task-create" ? (
+            <section className="panel task-create-panel">
+              <form className="task-form" onSubmit={handleCreateTask}>
+                <label>
+                  <span className="field-label">업무명</span>
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="예: 통계 API 검증"
+                    value={taskForm.title}
+                    onChange={(event) => setTaskForm((current) => ({ ...current, title: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label>
+                  <span className="field-label">카테고리</span>
+                  <input
+                    type="text"
+                    name="category"
+                    placeholder="예: 백엔드, 회의, 문서"
+                    value={taskForm.category}
+                    onChange={(event) => setTaskForm((current) => ({ ...current, category: event.target.value }))}
+                  />
+                </label>
+                <div className="split-fields">
+                  <label>
+                    <span className="field-label">우선순위</span>
+                    <select
+                      name="priority"
+                      value={taskForm.priority}
+                      onChange={(event) =>
+                        setTaskForm((current) => ({
+                          ...current,
+                          priority: event.target.value as TaskPriority,
+                        }))
+                      }
+                    >
+                      <option value="high">높음</option>
+                      <option value="medium">중간</option>
+                      <option value="low">낮음</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span className="field-label">마감일</span>
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={taskForm.dueDate}
+                      onChange={(event) => setTaskForm((current) => ({ ...current, dueDate: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span className="field-label">예상(분)</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="5"
+                      name="estimate"
+                      value={taskForm.estimate}
+                      onChange={(event) => setTaskForm((current) => ({ ...current, estimate: event.target.value }))}
+                    />
+                  </label>
+                </div>
+                <label>
+                  <span className="field-label">메모</span>
+                  <textarea
+                    name="note"
+                    rows={4}
+                    placeholder="이 업무에서 꼭 확인할 점을 적으세요."
+                    value={taskForm.note}
+                    onChange={(event) => setTaskForm((current) => ({ ...current, note: event.target.value }))}
+                  />
+                </label>
+
+                <div className="pending-references">
+                  <span className="field-label">참조 링크 (선택)</span>
+                  {pendingReferences.length > 0 ? (
+                    <ul className="pending-references-list">
+                      {pendingReferences.map((ref, index) => (
+                        <li key={`${ref.url}-${index}`} className="pending-reference-item">
+                          <span className="pending-reference-title">{ref.title || ref.url}</span>
+                          <span className="pending-reference-url">{ref.url}</span>
+                          <button
+                            type="button"
+                            className="pending-reference-remove"
+                            onClick={() => removePendingReference(index)}
+                            aria-label="링크 제거"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <div className="pending-reference-input-row">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={pendingUrlDraft}
+                      onChange={(event) => setPendingUrlDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addPendingReference();
+                        }
+                      }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="표시 이름 (선택)"
+                      value={pendingTitleDraft}
+                      onChange={(event) => setPendingTitleDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addPendingReference();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={addPendingReference}
+                    >
+                      + 추가
+                    </button>
+                  </div>
+                </div>
+
+                <button className="primary-button" type="submit">
+                  업무 추가
+                </button>
+              </form>
+            </section>
           ) : activeView === "storage" ? (
             <section className="panel storage-panel">
               <StorageTreeView
@@ -1210,9 +1393,11 @@ export function WorkTrackingDashboard() {
                                 type="button"
                                 className="line-works-attachment"
                                 onClick={() => {
-                                  void openLineWorksAttachment(attachment.id).catch((error) => {
-                                    console.error("[line-works] attachment open failed", error);
-                                  });
+                                  void openAttachment(
+                                    attachment.id,
+                                    attachment.fileName,
+                                    attachment.mimeType,
+                                  );
                                 }}
                               >
                                 <span className="line-works-attachment-name">
@@ -1353,146 +1538,6 @@ export function WorkTrackingDashboard() {
               <section className="utility-panel">
                 <div className="panel-heading compact">
                   <div>
-                    <h3>오늘 할 일 추가</h3>
-                    <p>작은 메모까지 같이 저장합니다.</p>
-                  </div>
-                </div>
-                <form className="task-form" onSubmit={handleCreateTask}>
-                  <label>
-                    <span className="field-label">업무명</span>
-                    <input
-                      type="text"
-                      name="title"
-                      placeholder="예: 통계 API 검증"
-                      value={taskForm.title}
-                      onChange={(event) => setTaskForm((current) => ({ ...current, title: event.target.value }))}
-                      required
-                    />
-                  </label>
-                  <label>
-                    <span className="field-label">카테고리</span>
-                    <input
-                      type="text"
-                      name="category"
-                      placeholder="예: 백엔드, 회의, 문서"
-                      value={taskForm.category}
-                      onChange={(event) => setTaskForm((current) => ({ ...current, category: event.target.value }))}
-                    />
-                  </label>
-                  <div className="split-fields">
-                    <label>
-                      <span className="field-label">우선순위</span>
-                      <select
-                        name="priority"
-                        value={taskForm.priority}
-                        onChange={(event) =>
-                          setTaskForm((current) => ({
-                            ...current,
-                            priority: event.target.value as TaskPriority,
-                          }))
-                        }
-                      >
-                        <option value="high">높음</option>
-                        <option value="medium">중간</option>
-                        <option value="low">낮음</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span className="field-label">마감일</span>
-                      <input
-                        type="date"
-                        name="dueDate"
-                        value={taskForm.dueDate}
-                        onChange={(event) => setTaskForm((current) => ({ ...current, dueDate: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      <span className="field-label">예상(분)</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="5"
-                        name="estimate"
-                        value={taskForm.estimate}
-                        onChange={(event) => setTaskForm((current) => ({ ...current, estimate: event.target.value }))}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    <span className="field-label">메모</span>
-                    <textarea
-                      name="note"
-                      rows={3}
-                      placeholder="오늘 이 업무에서 꼭 확인할 점을 적으세요."
-                      value={taskForm.note}
-                      onChange={(event) => setTaskForm((current) => ({ ...current, note: event.target.value }))}
-                    />
-                  </label>
-
-                  <div className="pending-references">
-                    <span className="field-label">참조 링크 (선택)</span>
-                    {pendingReferences.length > 0 ? (
-                      <ul className="pending-references-list">
-                        {pendingReferences.map((ref, index) => (
-                          <li key={`${ref.url}-${index}`} className="pending-reference-item">
-                            <span className="pending-reference-title">{ref.title || ref.url}</span>
-                            <span className="pending-reference-url">{ref.url}</span>
-                            <button
-                              type="button"
-                              className="pending-reference-remove"
-                              onClick={() => removePendingReference(index)}
-                              aria-label="링크 제거"
-                            >
-                              ×
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    <div className="pending-reference-input-row">
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={pendingUrlDraft}
-                        onChange={(event) => setPendingUrlDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            addPendingReference();
-                          }
-                        }}
-                      />
-                      <input
-                        type="text"
-                        placeholder="표시 이름 (선택)"
-                        value={pendingTitleDraft}
-                        onChange={(event) => setPendingTitleDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            addPendingReference();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={addPendingReference}
-                      >
-                        + 추가
-                      </button>
-                    </div>
-                  </div>
-
-                  <button className="primary-button" type="submit">
-                    업무 추가
-                  </button>
-                </form>
-              </section>
-
-              <section className="utility-panel">
-                <div className="panel-heading compact">
-                  <div>
                     <h3>Daily Notes</h3>
                     <p>회고, 막힌 점, 다음 액션을 짧게 정리합니다.</p>
                   </div>
@@ -1572,6 +1617,13 @@ export function WorkTrackingDashboard() {
             void reloadTaskReferences();
           }}
           onCreateQuickTask={quickCreateTask}
+        />
+      ) : null}
+      {previewState ? (
+        <FilePreviewModal
+          fileName={previewState.fileName}
+          sourceUrl={previewState.url}
+          onClose={() => setPreviewState(null)}
         />
       ) : null}
     </>
