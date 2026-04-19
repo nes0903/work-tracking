@@ -57,12 +57,20 @@ export function sanitizeChannelSegment(segment: string): string {
   return segment.replace(/[^\w.\-가-힣]/g, "_");
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function toKstDateFolder(date: Date): string {
+  // KST(UTC+9) 기준의 YYYY-MM-DD 를 반환.
+  // Date 객체에 KST 오프셋을 더한 뒤 toISOString 의 날짜 부분만 잘라 쓴다.
+  return new Date(date.getTime() + KST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 function toDateFolder(value: string | null | undefined): string {
   const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) {
-    return new Date().toISOString().slice(0, 10);
+    return toKstDateFolder(new Date());
   }
-  return date.toISOString().slice(0, 10);
+  return toKstDateFolder(date);
 }
 
 export function buildAttachmentObjectKey(params: {
