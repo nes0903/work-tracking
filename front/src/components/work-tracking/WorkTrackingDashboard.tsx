@@ -26,6 +26,7 @@ import {
 } from "@/lib/storage";
 import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
+import { CalendarView } from "./CalendarView";
 import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
@@ -99,7 +100,7 @@ export function WorkTrackingDashboard() {
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [activeView, setActiveView] = useState<
-    "dashboard" | "github" | "notion" | "line-works" | "storage"
+    "dashboard" | "calendar" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
@@ -934,6 +935,13 @@ export function WorkTrackingDashboard() {
           </button>
           <button
             type="button"
+            className={`sidebar-nav-link ${activeView === "calendar" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("calendar")}
+          >
+            Calendar
+          </button>
+          <button
+            type="button"
             className={`sidebar-nav-link ${activeView === "github" ? "active" : ""}`.trim()}
             onClick={() => setActiveView("github")}
           >
@@ -1017,6 +1025,11 @@ export function WorkTrackingDashboard() {
                 <h2>Work Tracking Dashboard</h2>
                 <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
               </>
+            ) : activeView === "calendar" ? (
+              <>
+                <h2>Calendar</h2>
+                <p>월간 달력에서 모든 이벤트를 한눈에 확인합니다.</p>
+              </>
             ) : activeView === "github" ? (
               <>
                 <h2>GitHub Watch</h2>
@@ -1053,7 +1066,7 @@ export function WorkTrackingDashboard() {
             )}
           </div>
           <div className="topbar-right">
-            {activeView === "dashboard" ? null : (
+            {activeView === "dashboard" || activeView === "calendar" ? null : (
               <div className="github-meta">
                 <span>마지막 동기화</span>
                 <strong>
@@ -1101,7 +1114,9 @@ export function WorkTrackingDashboard() {
 
         <main className="content">
 
-          {activeView === "github" ? (
+          {activeView === "calendar" ? (
+            <CalendarView onOpenAttachment={openAttachment} />
+          ) : activeView === "github" ? (
             <section className="panel github-panel">
               <div className="github-filters">
                 <button

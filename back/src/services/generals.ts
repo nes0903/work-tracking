@@ -1,5 +1,6 @@
 import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
+import { CalendarModule } from "./calendar/calendar.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { FeedsModule } from "./feeds/feeds.module";
 import { GithubModule } from "./github/github.module";
@@ -24,4 +25,5 @@ export default [
   UsersModule,
   AdminModule,
   TasksModule,
+  CalendarModule,
 ];
