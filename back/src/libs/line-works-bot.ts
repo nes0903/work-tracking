@@ -133,7 +133,8 @@ async function requestAccessToken(config: BotConfig): Promise<CachedAccessToken>
     grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
     client_id: config.clientId,
     client_secret: config.clientSecret,
-    scope: "bot",
+    // bot: 첨부 다운로드/채널 조회 / user.read: 1:1 유저 이름 조회
+    scope: "bot user.read",
   });
 
   const response = await fetch(TOKEN_URL, {
