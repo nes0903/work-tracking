@@ -194,11 +194,34 @@ export async function fetchAttachmentStream(
   fileId: string,
 ): Promise<AttachmentStreamResult> {
   const token = await issueAccessToken(config);
-  const response = await fetch(ATTACHMENT_URL(config.botId, fileId), {
+  const authHeader = { Authorization: `Bearer ${token}` };
+
+  let currentUrl = ATTACHMENT_URL(config.botId, fileId);
+  let response = await fetch(currentUrl, {
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-    redirect: "follow",
+    headers: authHeader,
+    redirect: "manual",
   });
+
+  // LINE WORKS attachment endpoint 302-redirects to apis-storage.worksmobile.com,
+  // a different origin. Node's built-in fetch strips the Authorization header on
+  // cross-origin redirects, so follow redirects manually and re-attach the token.
+  for (let hops = 0; hops < 5; hops += 1) {
+    if (response.status < 300 || response.status >= 400) {
+      break;
+    }
+    const location = response.headers.get("location");
+    if (!location) {
+      break;
+    }
+    await response.body?.cancel().catch(() => undefined);
+    currentUrl = new URL(location, currentUrl).toString();
+    response = await fetch(currentUrl, {
+      method: "GET",
+      headers: authHeader,
+      redirect: "manual",
+    });
+  }
 
   if (response.status === 401 || response.status === 403) {
     clearAccessTokenCache();
