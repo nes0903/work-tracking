@@ -127,17 +127,11 @@ async function main() {
       continue;
     }
 
-    // 구 포맷 판별: 마지막 세그먼트가 "<fileId>-..." 로 시작하는지
+    // 새 포맷의 base key 를 매번 계산한 뒤, oldKey 와 다르면 이사.
+    // ─ sanitize 규칙이 바뀐 경우(한글 보존 등)에도 자동으로 재이사.
     const lastSlash = oldKey.lastIndexOf("/");
-    const lastSegment = oldKey.slice(lastSlash + 1);
-    const fileIdPrefix = `${row.file_id}-`;
-    if (!lastSegment.startsWith(fileIdPrefix)) {
-      skipped++;
-      continue;
-    }
-
-    // 새 base key — 채널 이름이 있으면 그걸로 폴더 구성
-    const fileName = row.file_name ?? lastSegment.slice(fileIdPrefix.length);
+    const lastSegmentFallback = oldKey.slice(lastSlash + 1);
+    const fileName = row.file_name ?? lastSegmentFallback;
     const baseKey = s3lib.buildAttachmentObjectKey({
       prefix: s3Config.prefix,
       channelId,

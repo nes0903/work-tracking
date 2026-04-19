@@ -46,15 +46,23 @@ export function getS3Client(): S3Client {
   return globalThis.__workTrackingS3Client__;
 }
 
+/**
+ * S3 객체 키로 쓰기 전에 파일명을 정제한다.
+ * 원본의 한글·공백·괄호·일본어·이모지 등은 **그대로 보존**.
+ * S3 경로를 깨뜨리는 경로 구분자(`/`, `\`)와 제어문자만 `_` 로 치환.
+ * 저장소에 NFD 로 들어온 한글 자모는 NFC 로 합성하여 저장한다.
+ */
 function sanitizeFileName(fileName: string | undefined): string {
   if (!fileName) {
     return "attachment.bin";
   }
-  return fileName.replace(/[^\w.\-가-힣\s()\[\]]/g, "_").slice(0, 200);
+  // eslint-disable-next-line no-control-regex
+  return fileName.normalize("NFC").replace(/[\x00-\x1f/\\]/g, "_").slice(0, 200);
 }
 
 export function sanitizeChannelSegment(segment: string): string {
-  return segment.replace(/[^\w.\-가-힣]/g, "_");
+  // eslint-disable-next-line no-control-regex
+  return segment.normalize("NFC").replace(/[\x00-\x1f/\\]/g, "_");
 }
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
