@@ -130,6 +130,29 @@ export function getAttachmentById(id: number): AttachmentRow | null {
   return hydrateAttachment(row);
 }
 
+export function listAllAttachments(): AttachmentRow[] {
+  const db = getDatabase();
+  const rows = db
+    .prepare(
+      `
+        SELECT id, message_id, file_id, file_name, file_size, mime_type,
+               s3_bucket, s3_key, uploaded_at
+        FROM line_works_attachments
+        ORDER BY uploaded_at DESC
+      `,
+    )
+    .all() as unknown as AttachmentDbRow[];
+  return rows.map(hydrateAttachment);
+}
+
+export function deleteAttachmentRow(id: number): boolean {
+  const db = getDatabase();
+  const result = db
+    .prepare(`DELETE FROM line_works_attachments WHERE id = ?`)
+    .run(id);
+  return result.changes > 0;
+}
+
 interface AttachmentDbRow {
   id: number;
   message_id: string;

@@ -1,5 +1,10 @@
 import { Readable } from "node:stream";
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 declare global {
@@ -121,5 +126,11 @@ export async function presignGetUrl(
     getS3Client(),
     new GetObjectCommand({ Bucket: bucket, Key: key }),
     { expiresIn: ttl },
+  );
+}
+
+export async function deleteObject(bucket: string, key: string): Promise<void> {
+  await getS3Client().send(
+    new DeleteObjectCommand({ Bucket: bucket, Key: key }),
   );
 }

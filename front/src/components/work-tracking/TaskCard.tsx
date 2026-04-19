@@ -10,6 +10,7 @@ import {
   priorityLabel,
   type Task,
 } from "@/lib/work-tracking";
+import { sourceIcon, sourceLabel, type TaskReference } from "@/lib/task-references";
 
 export interface TaskAction {
   label: string;
@@ -21,11 +22,20 @@ interface TaskCardProps {
   task: Task;
   activeDate: string;
   actions: TaskAction[];
+  references?: TaskReference[];
+  onRemoveReference?: (referenceId: number, taskId: string) => void;
 }
 
-export function TaskCard({ task, activeDate, actions }: TaskCardProps) {
+export function TaskCard({
+  task,
+  activeDate,
+  actions,
+  references,
+  onRemoveReference,
+}: TaskCardProps) {
   const effectivePriority = getEffectivePriority(task);
   const flagInfo = getTaskFlag(task, activeDate);
+  const refList = references ?? [];
 
   return (
     <article className="task-card">
@@ -45,6 +55,46 @@ export function TaskCard({ task, activeDate, actions }: TaskCardProps) {
       </div>
 
       <p className="task-note">{task.note || "메모 없음"}</p>
+
+      {refList.length > 0 ? (
+        <div className="task-references">
+          {refList.map((reference) => (
+            <div key={reference.id} className="task-reference">
+              <span className="task-reference-icon">{sourceIcon(reference.source)}</span>
+              {reference.externalUrl ? (
+                <a
+                  className="task-reference-title"
+                  href={reference.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={reference.excerpt ?? reference.title ?? ""}
+                >
+                  {reference.title ?? reference.externalId}
+                </a>
+              ) : (
+                <span
+                  className="task-reference-title"
+                  title={reference.excerpt ?? reference.title ?? ""}
+                >
+                  {reference.title ?? reference.externalId}
+                </span>
+              )}
+              <span className="task-reference-source">{sourceLabel(reference.source)}</span>
+              {onRemoveReference ? (
+                <button
+                  type="button"
+                  className="task-reference-remove"
+                  onClick={() => onRemoveReference(reference.id, task.id)}
+                  aria-label="참조 해제"
+                  title="참조 해제"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="task-meta">
         <span className="task-estimate">예상 {task.estimate}분</span>

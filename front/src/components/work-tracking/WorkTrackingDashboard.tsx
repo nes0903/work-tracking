@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   buildMessageClipboardText,
   copyToClipboard,
@@ -12,7 +12,20 @@ import {
   type LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
+import {
+  attachReference,
+  detachReference,
+  fetchReferencesForTasks,
+  type TaskReference,
+} from "@/lib/task-references";
+import {
+  deleteStorageItem,
+  fetchStorageItems,
+  type StorageItem,
+} from "@/lib/storage";
+import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
 import { GithubRepoCard } from "./GithubRepoCard";
+import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
 import {
   activityColor,
@@ -95,7 +108,7 @@ export function WorkTrackingDashboard() {
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [activeView, setActiveView] = useState<
-    "dashboard" | "github" | "notion" | "line-works"
+    "dashboard" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -105,6 +118,15 @@ export function WorkTrackingDashboard() {
     emptyLineWorksArchive(),
   );
   const [selectedLineWorksChannel, setSelectedLineWorksChannel] = useState<string | null>(null);
+  const [taskReferences, setTaskReferences] = useState<Record<string, TaskReference[]>>({});
+  const [attachCandidate, setAttachCandidate] = useState<AttachCandidate | null>(null);
+  const [attachModalOpen, setAttachModalOpen] = useState(false);
+  const [pendingReferences, setPendingReferences] = useState<
+    Array<{ url: string; title: string }>
+  >([]);
+  const [pendingUrlDraft, setPendingUrlDraft] = useState("");
+  const [pendingTitleDraft, setPendingTitleDraft] = useState("");
+  const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
 
   useEffect(() => {
@@ -310,6 +332,77 @@ export function WorkTrackingDashboard() {
     };
   }, [activeView, selectedLineWorksChannel]);
 
+  const reloadTaskReferences = useCallback(async () => {
+    const taskIds = activeDay.tasks.map((task) => task.id);
+    if (taskIds.length === 0) {
+      setTaskReferences({});
+      return;
+    }
+    const result = await fetchReferencesForTasks(taskIds);
+    setTaskReferences(result);
+  }, [activeDay.tasks]);
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+    void reloadTaskReferences();
+  }, [hasHydrated, reloadTaskReferences]);
+
+  const reloadStorage = useCallback(async () => {
+    const items = await fetchStorageItems();
+    setStorageItems(items);
+  }, []);
+
+  useEffect(() => {
+    if (activeView !== "storage") {
+      return;
+    }
+    void reloadStorage();
+  }, [activeView, reloadStorage]);
+
+  async function handleStorageDelete(id: number) {
+    const confirmed = window.confirm("이 파일을 S3와 DB에서 영구 삭제합니다. 진행할까요?");
+    if (!confirmed) return;
+    const ok = await deleteStorageItem(id);
+    if (ok) {
+      setStorageItems((prev) => prev.filter((item) => item.id !== id));
+    } else {
+      window.alert("삭제 실패. 다시 시도하세요.");
+    }
+  }
+
+  async function handleStorageOpen(id: number) {
+    try {
+      const response = await fetch(`/api/line-works-attachments/${id}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const payload = (await response.json()) as { ok: boolean; url?: string };
+      if (payload.ok && payload.url) {
+        window.open(payload.url, "_blank", "noopener");
+      }
+    } catch (error) {
+      console.error("[storage] failed to get presigned url", error);
+    }
+  }
+
+  async function handleRemoveReference(referenceId: number, taskId: string) {
+    const ok = await detachReference(referenceId);
+    if (ok) {
+      setTaskReferences((prev) => {
+        const next = { ...prev };
+        const list = (next[taskId] ?? []).filter((ref) => ref.id !== referenceId);
+        if (list.length === 0) {
+          delete next[taskId];
+        } else {
+          next[taskId] = list;
+        }
+        return next;
+      });
+    }
+  }
+
   const todoTasks = useMemo(
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "todo")),
     [activeDay.tasks],
@@ -472,28 +565,65 @@ export function WorkTrackingDashboard() {
   async function handleCreateTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      await mutateDashboard(
-        {
-          action: "createTask",
-          date: activeDate,
-          task: {
-            title: taskForm.title,
-            category: taskForm.category,
-            priority: taskForm.priority,
-            dueDate: taskForm.dueDate || activeDate,
-            estimate: Number(taskForm.estimate || 0),
-            note: taskForm.note,
-          },
+      const result = await postDashboardAction({
+        action: "createTask",
+        date: activeDate,
+        task: {
+          title: taskForm.title,
+          category: taskForm.category,
+          priority: taskForm.priority,
+          dueDate: taskForm.dueDate || activeDate,
+          estimate: Number(taskForm.estimate || 0),
+          note: taskForm.note,
         },
-        {
-          date: activeDate,
-          resetTaskForm: true,
-          syncNotes: false,
-        },
-      );
+      });
+      applyDashboardState(activeDate, result.days, {
+        resetTaskForm: true,
+        syncNotes: false,
+      });
+
+      if (pendingReferences.length > 0) {
+        const tasksForDate = getDay(result.days, activeDate).tasks;
+        const latest = tasksForDate.reduce<Task | null>((acc, task) => {
+          if (!acc) return task;
+          return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
+            ? task
+            : acc;
+        }, null);
+        if (latest) {
+          for (const ref of pendingReferences) {
+            await attachReference({
+              taskId: latest.id,
+              source: "url",
+              externalId: ref.url,
+              title: ref.title || ref.url,
+              externalUrl: ref.url,
+            });
+          }
+          setPendingReferences([]);
+          setPendingUrlDraft("");
+          setPendingTitleDraft("");
+          void reloadTaskReferences();
+        }
+      }
     } catch (error) {
       console.error("[dashboard] failed to create task", error);
     }
+  }
+
+  function addPendingReference() {
+    const url = pendingUrlDraft.trim();
+    if (!url) return;
+    setPendingReferences((prev) => [
+      ...prev,
+      { url, title: pendingTitleDraft.trim() },
+    ]);
+    setPendingUrlDraft("");
+    setPendingTitleDraft("");
+  }
+
+  function removePendingReference(index: number) {
+    setPendingReferences((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateTaskStatus(taskId: string, nextStatus: TaskStatus) {
@@ -534,6 +664,50 @@ export function WorkTrackingDashboard() {
     const ok = await copyToClipboard(text);
     if (!ok) {
       console.warn("[line-works] clipboard write failed");
+    }
+  }
+
+  function openAttachCandidate(candidate: AttachCandidate) {
+    setAttachCandidate(candidate);
+    setAttachModalOpen(true);
+  }
+
+  function openUrlAttachModal() {
+    setAttachCandidate(null);
+    setAttachModalOpen(true);
+  }
+
+  function closeAttachModal() {
+    setAttachModalOpen(false);
+    setAttachCandidate(null);
+  }
+
+  async function quickCreateTask(payload: {
+    title: string;
+    category: string;
+    priority: TaskPriority;
+    dueDate: string;
+    estimate: number;
+    note: string;
+  }): Promise<{ taskId: string } | null> {
+    try {
+      const result = await postDashboardAction({
+        action: "createTask",
+        date: activeDate,
+        task: payload,
+      });
+      applyDashboardState(activeDate, result.days, { syncNotes: false });
+      const tasksForDate = getDay(result.days, activeDate).tasks;
+      const latest = tasksForDate.reduce<Task | null>((acc, task) => {
+        if (!acc) return task;
+        return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
+          ? task
+          : acc;
+      }, null);
+      return latest ? { taskId: latest.id } : null;
+    } catch (error) {
+      console.error("[dashboard] quick task creation failed", error);
+      return null;
     }
   }
 
@@ -637,6 +811,16 @@ export function WorkTrackingDashboard() {
               <span className="sidebar-nav-count">{lineWorksArchive.items.length}</span>
             ) : null}
           </button>
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "storage" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("storage")}
+          >
+            파일 저장소
+            {storageItems.length > 0 ? (
+              <span className="sidebar-nav-count">{storageItems.length}</span>
+            ) : null}
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -696,7 +880,7 @@ export function WorkTrackingDashboard() {
                 <h2>Notion Updates</h2>
                 <p>플랫폼 본부 하위의 최근 변경 내역입니다.</p>
               </>
-            ) : (
+            ) : activeView === "line-works" ? (
               <>
                 <h2>LINE WORKS</h2>
                 <p>
@@ -704,6 +888,11 @@ export function WorkTrackingDashboard() {
                     ? "수집된 채팅 메시지와 첨부를 전체 조회합니다."
                     : `채팅방 ${selectedLineWorksChannel} 의 수신 내역입니다.`}
                 </p>
+              </>
+            ) : (
+              <>
+                <h2>파일 저장소</h2>
+                <p>S3 에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이 발급됩니다.</p>
               </>
             )}
           </div>
@@ -812,9 +1001,36 @@ export function WorkTrackingDashboard() {
                         <span className="notion-update-time">
                           {item.editedAt ? relativeTime(item.editedAt) : "시간 없음"}
                         </span>
-                        <a className="notion-update-link" href={item.url || "#"} target="_blank" rel="noreferrer">
-                          열기
-                        </a>
+                        <div className="notion-update-actions">
+                          <a className="notion-update-link" href={item.url || "#"} target="_blank" rel="noreferrer">
+                            열기
+                          </a>
+                          {item.url ? (
+                            <button
+                              type="button"
+                              className="notion-update-link as-button"
+                              onClick={() =>
+                                openAttachCandidate({
+                                  source: "notion_page",
+                                  externalId: item.url!,
+                                  title: item.title || "Notion 페이지",
+                                  excerpt:
+                                    [item.section, item.parent].filter(Boolean).join(" / ") ||
+                                    null,
+                                  externalUrl: item.url!,
+                                  metadata: {
+                                    section: item.section,
+                                    parent: item.parent,
+                                    editor: item.editor,
+                                    editedAt: item.editedAt,
+                                  },
+                                })
+                              }
+                            >
+                              태스크 추가
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     </article>
                   ))
@@ -830,6 +1046,14 @@ export function WorkTrackingDashboard() {
                   </button>
                 ) : null}
               </div>
+            </section>
+          ) : activeView === "storage" ? (
+            <section className="panel storage-panel">
+              <StorageTreeView
+                items={storageItems}
+                onOpen={handleStorageOpen}
+                onDelete={handleStorageDelete}
+              />
             </section>
           ) : activeView === "line-works" ? (
             <section className="panel line-works-panel">
@@ -886,25 +1110,47 @@ export function WorkTrackingDashboard() {
                       {message.attachments.length > 0 ? (
                         <div className="line-works-attachments">
                           {message.attachments.map((attachment) => (
-                            <button
-                              key={attachment.id}
-                              type="button"
-                              className="line-works-attachment"
-                              onClick={() => {
-                                void openLineWorksAttachment(attachment.id).catch((error) => {
-                                  console.error("[line-works] attachment open failed", error);
-                                });
-                              }}
-                            >
-                              <span className="line-works-attachment-name">
-                                📎 {attachment.fileName ?? "파일"}
-                              </span>
-                              {attachment.fileSize ? (
-                                <span className="line-works-attachment-size">
-                                  {formatFileSize(attachment.fileSize)}
+                            <div key={attachment.id} className="line-works-attachment-row">
+                              <button
+                                type="button"
+                                className="line-works-attachment"
+                                onClick={() => {
+                                  void openLineWorksAttachment(attachment.id).catch((error) => {
+                                    console.error("[line-works] attachment open failed", error);
+                                  });
+                                }}
+                              >
+                                <span className="line-works-attachment-name">
+                                  📎 {attachment.fileName ?? "파일"}
                                 </span>
-                              ) : null}
-                            </button>
+                                {attachment.fileSize ? (
+                                  <span className="line-works-attachment-size">
+                                    {formatFileSize(attachment.fileSize)}
+                                  </span>
+                                ) : null}
+                              </button>
+                              <button
+                                type="button"
+                                className="line-works-attach-tiny"
+                                onClick={() =>
+                                  openAttachCandidate({
+                                    source: "line_works_attachment",
+                                    externalId: String(attachment.id),
+                                    title: attachment.fileName ?? "첨부 파일",
+                                    excerpt: attachment.mimeType,
+                                    metadata: {
+                                      fileSize: attachment.fileSize,
+                                      mimeType: attachment.mimeType,
+                                      messageId: message.messageId,
+                                      channelId: message.channelId,
+                                    },
+                                  })
+                                }
+                                title="이 파일을 태스크에 연결"
+                              >
+                                + 태스크
+                              </button>
+                            </div>
                           ))}
                         </div>
                       ) : null}
@@ -934,9 +1180,22 @@ export function WorkTrackingDashboard() {
                         <button
                           type="button"
                           className="line-works-action"
-                          onClick={() => {
-                            window.alert("태스크 연결 기능은 추후 구현 예정입니다.");
-                          }}
+                          onClick={() =>
+                            openAttachCandidate({
+                              source: "line_works_message",
+                              externalId: message.messageId,
+                              title:
+                                message.text?.slice(0, 60) ??
+                                `[${message.contentType}] ${shortChannelLabel(message.channelId)}`,
+                              excerpt: message.text,
+                              metadata: {
+                                channelId: message.channelId,
+                                userId: message.userId,
+                                contentType: message.contentType,
+                                issuedAt: message.issuedAt,
+                              },
+                            })
+                          }
                         >
                           태스크 추가
                         </button>
@@ -955,12 +1214,43 @@ export function WorkTrackingDashboard() {
                   <h3>Task Board</h3>
                   <p>오늘 업무를 상태별로 관리합니다.</p>
                 </div>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={openUrlAttachModal}
+                >
+                  + 링크 참조 추가
+                </button>
               </div>
 
               <div className="board-grid">
-                <TaskColumn title="할 일" count={todoTasks.length} tasks={todoTasks} activeDate={activeDate} buildActions={buildActions} />
-                <TaskColumn title="진행 중" count={doingTasks.length} tasks={doingTasks} activeDate={activeDate} buildActions={buildActions} />
-                <TaskColumn title="완료" count={doneTasks.length} tasks={doneTasks} activeDate={activeDate} buildActions={buildActions} />
+                <TaskColumn
+                  title="할 일"
+                  count={todoTasks.length}
+                  tasks={todoTasks}
+                  activeDate={activeDate}
+                  buildActions={buildActions}
+                  taskReferences={taskReferences}
+                  onRemoveReference={handleRemoveReference}
+                />
+                <TaskColumn
+                  title="진행 중"
+                  count={doingTasks.length}
+                  tasks={doingTasks}
+                  activeDate={activeDate}
+                  buildActions={buildActions}
+                  taskReferences={taskReferences}
+                  onRemoveReference={handleRemoveReference}
+                />
+                <TaskColumn
+                  title="완료"
+                  count={doneTasks.length}
+                  tasks={doneTasks}
+                  activeDate={activeDate}
+                  buildActions={buildActions}
+                  taskReferences={taskReferences}
+                  onRemoveReference={handleRemoveReference}
+                />
               </div>
             </section>
 
@@ -1043,6 +1333,62 @@ export function WorkTrackingDashboard() {
                       onChange={(event) => setTaskForm((current) => ({ ...current, note: event.target.value }))}
                     />
                   </label>
+
+                  <div className="pending-references">
+                    <span className="field-label">참조 링크 (선택)</span>
+                    {pendingReferences.length > 0 ? (
+                      <ul className="pending-references-list">
+                        {pendingReferences.map((ref, index) => (
+                          <li key={`${ref.url}-${index}`} className="pending-reference-item">
+                            <span className="pending-reference-title">{ref.title || ref.url}</span>
+                            <span className="pending-reference-url">{ref.url}</span>
+                            <button
+                              type="button"
+                              className="pending-reference-remove"
+                              onClick={() => removePendingReference(index)}
+                              aria-label="링크 제거"
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <div className="pending-reference-input-row">
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={pendingUrlDraft}
+                        onChange={(event) => setPendingUrlDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addPendingReference();
+                          }
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="표시 이름 (선택)"
+                        value={pendingTitleDraft}
+                        onChange={(event) => setPendingTitleDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addPendingReference();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={addPendingReference}
+                      >
+                        + 추가
+                      </button>
+                    </div>
+                  </div>
+
                   <button className="primary-button" type="submit">
                     업무 추가
                   </button>
@@ -1120,6 +1466,19 @@ export function WorkTrackingDashboard() {
           )}
         </main>
       </div>
+
+      {attachModalOpen ? (
+        <AttachToTaskModal
+          candidate={attachCandidate}
+          tasks={activeDay.tasks}
+          activeDate={activeDate}
+          onClose={closeAttachModal}
+          onAttached={() => {
+            void reloadTaskReferences();
+          }}
+          onCreateQuickTask={quickCreateTask}
+        />
+      ) : null}
     </>
   );
 }
@@ -1130,12 +1489,16 @@ function TaskColumn({
   tasks,
   activeDate,
   buildActions,
+  taskReferences,
+  onRemoveReference,
 }: {
   title: string;
   count: number;
   tasks: Task[];
   activeDate: string;
   buildActions: (task: Task) => TaskAction[];
+  taskReferences: Record<string, TaskReference[]>;
+  onRemoveReference: (referenceId: number, taskId: string) => void;
 }) {
   return (
     <section className="board-column">
@@ -1148,7 +1511,14 @@ function TaskColumn({
           <p className="task-note">아직 항목이 없습니다.</p>
         ) : (
           tasks.map((task) => (
-            <TaskCard key={task.id} task={task} activeDate={activeDate} actions={buildActions(task)} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              activeDate={activeDate}
+              actions={buildActions(task)}
+              references={taskReferences[task.id]}
+              onRemoveReference={onRemoveReference}
+            />
           ))
         )}
       </div>

@@ -320,4 +320,27 @@ CREATE TABLE IF NOT EXISTS line_works_links (
 CREATE INDEX IF NOT EXISTS idx_line_works_links_message
   ON line_works_links(message_id);
 
+CREATE TABLE IF NOT EXISTS task_references (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id        TEXT NOT NULL,
+  source         TEXT NOT NULL,
+  external_id    TEXT NOT NULL,
+  title          TEXT,
+  excerpt        TEXT,
+  external_url   TEXT,
+  metadata_json  TEXT,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by     TEXT,
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_task_references_task
+  ON task_references(task_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_task_references_source
+  ON task_references(source, external_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_task_references_dedupe
+  ON task_references(task_id, source, external_id);
+
 COMMIT;
