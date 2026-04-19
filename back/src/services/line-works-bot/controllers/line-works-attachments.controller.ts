@@ -31,14 +31,7 @@ export class LineWorksAttachmentsController {
       );
     }
 
-    const [url, downloadUrl] = await Promise.all([
-      presignGetUrl(row.s3Bucket, row.s3Key),
-      presignGetUrl(row.s3Bucket, row.s3Key, {
-        disposition: "attachment",
-        fileName: row.fileName,
-      }),
-    ]);
-
+    const url = await presignGetUrl(row.s3Bucket, row.s3Key);
     return {
       ok: true,
       attachment: {
@@ -49,7 +42,6 @@ export class LineWorksAttachmentsController {
         messageId: row.messageId,
       },
       url,
-      downloadUrl,
     };
   }
 }

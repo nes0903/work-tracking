@@ -10,6 +10,7 @@ import {
   type LineWorksArchive,
   type LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
+import { isOfficeFile } from "@/lib/file-preview";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
 import {
   attachReference,
@@ -123,12 +124,7 @@ export function WorkTrackingDashboard() {
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
   const [previewState, setPreviewState] = useState<
-    {
-      fileName: string | null;
-      url: string;
-      downloadUrl: string | null;
-      mimeType: string | null;
-    } | null
+    { fileName: string | null; url: string } | null
   >(null);
   const [messagePreview, setMessagePreview] = useState<MessagePreview | null>(null);
   const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
@@ -564,12 +560,7 @@ export function WorkTrackingDashboard() {
 
   async function resolveAttachmentUrl(
     id: number,
-  ): Promise<{
-    url: string;
-    downloadUrl: string | null;
-    fileName: string | null;
-    mimeType: string | null;
-  } | null> {
+  ): Promise<{ url: string; fileName: string | null; mimeType: string | null } | null> {
     try {
       const response = await fetch(`/api/line-works-attachments/${id}`, {
         cache: "no-store",
@@ -578,7 +569,6 @@ export function WorkTrackingDashboard() {
       const payload = (await response.json()) as {
         ok: boolean;
         url?: string;
-        downloadUrl?: string;
         attachment?: {
           fileName?: string | null;
           mimeType?: string | null;
@@ -587,7 +577,6 @@ export function WorkTrackingDashboard() {
       if (!payload.ok || !payload.url) return null;
       return {
         url: payload.url,
-        downloadUrl: payload.downloadUrl ?? null,
         fileName: payload.attachment?.fileName ?? null,
         mimeType: payload.attachment?.mimeType ?? null,
       };
@@ -602,21 +591,32 @@ export function WorkTrackingDashboard() {
     hintedFileName?: string | null,
     hintedMimeType?: string | null,
   ) {
+    // Office 파일이 아닐 가능성을 대비해 클릭 시점에 빈 탭을 먼저 열어둠(팝업 차단 회피).
+    // 주의: `noopener` 를 주면 window.open 반환값이 null 이 되어 이후 location.href 주입이
+    // 불가능하므로, 여기서는 `noopener` 를 빼고 직접 opener 를 끊는다.
+    const officeHint = isOfficeFile(hintedFileName ?? null, hintedMimeType ?? null);
+    const pendingTab = officeHint ? null : window.open("about:blank", "_blank");
+
     const resolved = await resolveAttachmentUrl(id);
     if (!resolved) {
-      window.alert("파일 URL 발급에 실패했습니다. 잠시 후 다시 시도하세요.");
+      pendingTab?.close();
       return;
     }
     const fileName = resolved.fileName ?? hintedFileName ?? null;
     const mimeType = resolved.mimeType ?? hintedMimeType ?? null;
-    // 모든 첨부를 미리보기 모달로 연다. 미지원 형식은 모달 내부에서
-    // "미리보기 불가" 안내 + 다운로드 버튼을 보여준다.
-    setPreviewState({
-      fileName,
-      url: resolved.url,
-      downloadUrl: resolved.downloadUrl,
-      mimeType,
-    });
+    if (isOfficeFile(fileName, mimeType)) {
+      pendingTab?.close();
+      setPreviewState({ fileName, url: resolved.url });
+    } else if (pendingTab) {
+      try {
+        pendingTab.opener = null;
+      } catch {
+        // cross-origin 등으로 opener 를 set 할 수 없는 경우 무시
+      }
+      pendingTab.location.href = resolved.url;
+    } else {
+      window.open(resolved.url, "_blank", "noopener");
+    }
   }
 
   async function handleStorageOpen(id: number) {
@@ -1522,8 +1522,6 @@ export function WorkTrackingDashboard() {
         <FilePreviewModal
           fileName={previewState.fileName}
           sourceUrl={previewState.url}
-          downloadUrl={previewState.downloadUrl}
-          mimeType={previewState.mimeType}
           onClose={() => setPreviewState(null)}
         />
       ) : null}
