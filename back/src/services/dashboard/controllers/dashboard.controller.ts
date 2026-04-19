@@ -6,10 +6,13 @@ import {
   HttpStatus,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
+import { AuthGuard } from "@common/auth.guard";
 import { DashboardService } from "../applications/dashboard.service";
 
 @Controller("api/dashboard")
+@UseGuards(AuthGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 

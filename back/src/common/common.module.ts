@@ -1,4 +1,9 @@
-import { Module } from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { SessionMiddleware } from "./session.middleware";
 
 @Module({})
-export class CommonModule {}
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(SessionMiddleware).forRoutes("*");
+  }
+}

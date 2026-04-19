@@ -1,5 +1,6 @@
-import { Controller, Get, Query, Sse, MessageEvent } from "@nestjs/common";
+import { Controller, Get, Query, Sse, MessageEvent, UseGuards } from "@nestjs/common";
 import { Observable } from "rxjs";
+import { AuthGuard } from "@common/auth.guard";
 import { FeedsService } from "../applications/feeds.service";
 import { onFeedUpdate, type FeedUpdateEvent } from "@libs/feed-events";
 
@@ -8,6 +9,7 @@ export class FeedsController {
   constructor(private readonly feedsService: FeedsService) {}
 
   @Get("notion-updates")
+  @UseGuards(AuthGuard)
   async getNotionFeed(
     @Query("limit") limit?: string,
     @Query("cursor") cursor?: string,
@@ -20,11 +22,13 @@ export class FeedsController {
   }
 
   @Get("github-updates")
+  @UseGuards(AuthGuard)
   async getGithubFeed() {
     return this.feedsService.getGithubFeed();
   }
 
   @Sse("events")
+  @UseGuards(AuthGuard)
   streamFeedEvents(): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       subscriber.next({

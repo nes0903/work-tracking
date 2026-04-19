@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { TaskCard, type TaskAction } from "./TaskCard";
 import {
@@ -87,6 +88,7 @@ export function WorkTrackingDashboard() {
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
 
   useEffect(() => {
@@ -247,6 +249,18 @@ export function WorkTrackingDashboard() {
     return () => {
       mounted = false;
       eventSource.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    void fetchCurrentUser().then((user) => {
+      if (mounted) {
+        setCurrentUser(user);
+      }
+    });
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -584,6 +598,26 @@ export function WorkTrackingDashboard() {
               {link.label}
             </a>
           ))}
+
+          {currentUser ? (
+            <div className="sidebar-user">
+              <div className="sidebar-user-info">
+                <p className="sidebar-user-name">{currentUser.userName ?? "조직 구성원"}</p>
+                {currentUser.email ? (
+                  <p className="sidebar-user-email">{currentUser.email}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="sidebar-user-logout"
+                onClick={() => {
+                  void logout();
+                }}
+              >
+                로그아웃
+              </button>
+            </div>
+          ) : null}
         </div>
       </aside>
 
