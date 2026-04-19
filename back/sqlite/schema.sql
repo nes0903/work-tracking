@@ -368,4 +368,15 @@ CREATE INDEX IF NOT EXISTS idx_task_references_source
 CREATE UNIQUE INDEX IF NOT EXISTS idx_task_references_dedupe
   ON task_references(task_id, source, external_id);
 
+CREATE TABLE IF NOT EXISTS site_links (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  label      TEXT NOT NULL,
+  url        TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_site_links_order ON site_links(sort_order);
+
 COMMIT;

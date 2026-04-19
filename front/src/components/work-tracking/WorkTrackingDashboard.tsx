@@ -31,6 +31,7 @@ import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { Pagination } from "./Pagination";
+import { SiteLinksModal } from "./SiteLinksModal";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
 import {
@@ -70,33 +71,6 @@ import {
   type WorkDayMap,
 } from "@/lib/work-tracking";
 
-const QUICK_LINKS = [
-  {
-    label: "Library Hub 열기",
-    href: "https://dobedub.vogopang.com/library-hub",
-  },
-  {
-    label: "푸딩툰 이용자",
-    href: "https://www.puddingtoon.com/home",
-  },
-  {
-    label: "푸딩툰 관리자",
-    href: "https://admin2.puddingtoon.org",
-  },
-  {
-    label: "덥라이트 운영",
-    href: "https://staging.dubright.org",
-  },
-  {
-    label: "픽미툰 이용자",
-    href: "https://www.pickmetoon.com",
-  },
-  {
-    label: "픽미툰 관리자",
-    href: "https://admin.pickmetoon.com",
-  },
-] as const;
-
 export function WorkTrackingDashboard() {
   const initialDate = todayKey();
   const [days, setDays] = useState<WorkDayMap>({});
@@ -110,6 +84,7 @@ export function WorkTrackingDashboard() {
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
   const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(null);
   const [refAddTaskId, setRefAddTaskId] = useState<string | null>(null);
+  const [siteLinksOpen, setSiteLinksOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
@@ -1055,17 +1030,13 @@ export function WorkTrackingDashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          {QUICK_LINKS.map((link) => (
-            <a
-              key={link.href}
-              className="sidebar-link"
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {link.label}
-            </a>
-          ))}
+          <button
+            type="button"
+            className="sidebar-link sidebar-site-links-trigger"
+            onClick={() => setSiteLinksOpen(true)}
+          >
+            🔗 사이트 링크
+          </button>
 
           {currentUser ? (
             <div className="sidebar-user">
@@ -1586,6 +1557,10 @@ export function WorkTrackingDashboard() {
         lineWorksChannels={lineWorksArchive.channels}
         storageItems={storageItems}
         channelLabels={storageChannelLabels}
+      />
+      <SiteLinksModal
+        open={siteLinksOpen}
+        onClose={() => setSiteLinksOpen(false)}
       />
     </>
   );

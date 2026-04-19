@@ -49,6 +49,38 @@ function runColumnMigrations(db: DatabaseSync): void {
   if (!tableHasColumn(db, "tasks", "due_time")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN due_time TEXT`);
   }
+
+  seedSiteLinksIfEmpty(db);
+}
+
+function seedSiteLinksIfEmpty(db: DatabaseSync): void {
+  const count = (db
+    .prepare(`SELECT COUNT(*) AS c FROM site_links`)
+    .get() as { c: number } | undefined)?.c ?? 0;
+  if (count > 0) return;
+
+  const seeds: Array<{ label: string; url: string }> = [
+    { label: "보고팡 운영", url: "https://dobedub.vogopang.com/library-hub" },
+    { label: "보고팡 개발", url: "https://dev.vogopang.com/login?reason=auth_required&redirect=%2F" },
+    { label: "보고팡 브로셔", url: "https://senior.dobedub.org/home" },
+    { label: "푸딩툰 이용자", url: "https://www.puddingtoon.com/home" },
+    { label: "푸딩툰 이용자 개발", url: "https://test.puddingtoon.org/home" },
+    { label: "푸딩툰 관리자", url: "https://admin2.puddingtoon.org" },
+    { label: "푸딩툰 관리자 개발", url: "https://dev-admin.puddingtoon.org/login" },
+    { label: "픽미툰 이용자", url: "https://www.pickmetoon.com" },
+    { label: "픽미툰 이용자 개발", url: "https://dev.pickmetoon.com" },
+    { label: "픽미툰 관리자", url: "https://admin.pickmetoon.com" },
+    { label: "픽미툰 관리자 개발", url: "https://admindev.pickmetoon.com" },
+    { label: "덥라이트 운영", url: "https://staging.dubright.org" },
+    { label: "덥라이트 개발", url: "https://test2.dubright.org" },
+  ];
+
+  const stmt = db.prepare(
+    `INSERT INTO site_links (label, url, sort_order) VALUES (?, ?, ?)`,
+  );
+  for (let i = 0; i < seeds.length; i++) {
+    stmt.run(seeds[i].label, seeds[i].url, i);
+  }
 }
 
 export function withTransaction<T>(callback: (db: DatabaseSync) => T): T {

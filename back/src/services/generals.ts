@@ -2,6 +2,7 @@ import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
 import { CalendarModule } from "./calendar/calendar.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { SiteLinksModule } from "./site-links/site-links.module";
 import { FeedsModule } from "./feeds/feeds.module";
 import { GithubModule } from "./github/github.module";
 import { LastSeenModule } from "./last-seen/last-seen.module";
@@ -26,4 +27,5 @@ export default [
   AdminModule,
   TasksModule,
   CalendarModule,
+  SiteLinksModule,
 ];
