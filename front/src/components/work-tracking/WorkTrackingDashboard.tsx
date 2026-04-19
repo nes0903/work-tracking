@@ -968,15 +968,8 @@ export function WorkTrackingDashboard() {
     <>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/dobedub-logo.jpg"
-            alt="DOBE DUB"
-            className="sidebar-brand-logo"
-            width={200}
-            height={64}
-          />
-          <p>Work Tracking Suite</p>
+          <h1>Executive</h1>
+          <p>WORK TRACKING SUITE</p>
         </div>
 
         <nav className="sidebar-nav">

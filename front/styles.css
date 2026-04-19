@@ -120,24 +120,20 @@ button {
 }
 
 .sidebar-brand {
-  padding: 4px 14px 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  padding: 0 14px 48px;
 }
 
-.sidebar-brand-logo {
-  display: block;
-  width: auto;
-  height: 36px;
-  max-width: 100%;
-  user-select: none;
-  -webkit-user-drag: none;
+.sidebar-brand h1 {
+  margin: 0;
+  color: var(--on-surface);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
 }
 
 .sidebar-brand p {
-  margin: 0;
+  margin: 6px 0 0;
   color: var(--on-surface-muted);
   font-size: 0.66rem;
   font-weight: 600;
@@ -3055,25 +3051,14 @@ button {
 
 .login-card {
   width: 100%;
-  max-width: 440px;
-  padding: 44px 40px 40px;
+  max-width: 420px;
+  padding: 48px 40px;
   border-radius: var(--radius-xl);
   background: var(--surface-container-lowest);
   display: flex;
   flex-direction: column;
   gap: 14px;
   text-align: left;
-  box-shadow: var(--shadow-ambient, 0 20px 40px -20px rgba(0, 0, 0, 0.18));
-}
-
-.login-logo {
-  align-self: center;
-  width: 220px;
-  max-width: 70%;
-  height: auto;
-  margin-bottom: 12px;
-  user-select: none;
-  -webkit-user-drag: none;
 }
 
 .login-kicker {
