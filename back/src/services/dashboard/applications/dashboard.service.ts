@@ -26,11 +26,13 @@ export class DashboardService {
         );
       case "createTask": {
         const assigneeFromPayload = payload?.task?.assigneeUserId;
+        const rawDueTime = payload?.task?.dueTime;
         return this.dashboardRepository.createTask(date, {
           title: String(payload?.task?.title ?? ""),
           category: String(payload?.task?.category ?? ""),
           priority: payload?.task?.priority,
           dueDate: String(payload?.task?.dueDate ?? date),
+          dueTime: typeof rawDueTime === "string" && rawDueTime ? rawDueTime : null,
           estimate: Number(payload?.task?.estimate ?? 0),
           note: String(payload?.task?.note ?? ""),
           createdByUserId: sessionUserId ?? null,

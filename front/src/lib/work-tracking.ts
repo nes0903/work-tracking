@@ -10,6 +10,7 @@ export interface Task {
   category: string;
   priority: TaskPriority;
   dueDate: string;
+  dueTime: string | null;
   estimate: number;
   note: string;
   status: TaskStatus;
@@ -192,6 +193,10 @@ export function normalizeTask(task: unknown, dateKey: string): Task {
     category: typeof value.category === "string" ? value.category : "",
     priority: isTaskPriority(value.priority) ? value.priority : "medium",
     dueDate: isDateKey(value.dueDate) ? value.dueDate : dateKey,
+    dueTime:
+      typeof value.dueTime === "string" && /^\d{2}:\d{2}$/.test(value.dueTime)
+        ? value.dueTime
+        : null,
     estimate: Math.max(0, Number(value.estimate) || 0),
     note: typeof value.note === "string" ? value.note : "",
     status: isTaskStatus(value.status) ? value.status : "todo",

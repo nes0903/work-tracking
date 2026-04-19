@@ -29,6 +29,7 @@ export interface TaskListItem {
   status: TaskStatus;
   workDate: string;
   dueDate: string;
+  dueTime: string | null;
   estimate: number;
   note: string;
   createdAt: string;
@@ -65,6 +66,7 @@ interface TaskQueryRow {
   category: string;
   priority: TaskPriority;
   due_date: string;
+  due_time: string | null;
   estimate_minutes: number;
   note: string;
   status: TaskStatus;
@@ -209,6 +211,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
           t.category,
           t.priority,
           t.due_date,
+          t.due_time,
           t.estimate_minutes,
           t.note,
           t.status,
@@ -240,6 +243,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
     status: row.status,
     workDate: row.work_date,
     dueDate: row.due_date,
+    dueTime: row.due_time,
     estimate: row.estimate_minutes,
     note: row.note,
     createdAt: row.created_at,

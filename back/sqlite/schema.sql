@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   category TEXT NOT NULL DEFAULT '',
   priority TEXT NOT NULL DEFAULT 'medium',
   due_date TEXT NOT NULL,
+  due_time TEXT,
   estimate_minutes INTEGER NOT NULL DEFAULT 30,
   note TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'todo',

@@ -15,6 +15,7 @@ export interface TaskListItem {
   status: TaskStatus;
   workDate: string;
   dueDate: string;
+  dueTime: string | null;
   estimate: number;
   note: string;
   createdAt: string;

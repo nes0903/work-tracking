@@ -8,6 +8,7 @@ export interface Task {
   category: string;
   priority: TaskPriority;
   dueDate: string;
+  dueTime: string | null;
   estimate: number;
   note: string;
   status: TaskStatus;
@@ -165,6 +166,7 @@ function normalizeTask(task: unknown, dateKey: string): Task {
     category: typeof value.category === "string" ? value.category : "",
     priority: isTaskPriority(value.priority) ? value.priority : "medium",
     dueDate: isDateKey(value.dueDate) ? value.dueDate : dateKey,
+    dueTime: isDueTime(value.dueTime) ? value.dueTime : null,
     estimate: Math.max(0, Number(value.estimate) || 0),
     note: typeof value.note === "string" ? value.note : "",
     status: isTaskStatus(value.status) ? value.status : "todo",
@@ -184,6 +186,10 @@ function clamp(value: number, min: number, max: number) {
 
 function isDateKey(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isDueTime(value: unknown): value is string {
+  return typeof value === "string" && /^\d{2}:\d{2}$/.test(value);
 }
 
 function isValidDateTime(value: unknown): value is string {

@@ -15,7 +15,7 @@ export interface TaskCreateSubmit {
   category: string;
   priority: TaskPriority;
   dueDate: string;
-  estimate: number;
+  dueTime: string | null;
   note: string;
   pendingReferences: PendingReference[];
 }
@@ -37,8 +37,7 @@ interface FormState {
   category: string;
   priority: TaskPriority;
   dueDate: string;
-  estimateHours: string;
-  estimateMinutes: string;
+  dueTime: string;
   note: string;
 }
 
@@ -48,8 +47,7 @@ function initialForm(dueDate: string): FormState {
     category: "",
     priority: "medium",
     dueDate,
-    estimateHours: "0",
-    estimateMinutes: "30",
+    dueTime: "",
     note: "",
   };
 }
@@ -83,9 +81,7 @@ export function TaskCreateModal({
     event.preventDefault();
     if (submitting) return;
 
-    const hours = Number(form.estimateHours || 0);
-    const minutes = Number(form.estimateMinutes || 0);
-    const estimate = Math.max(0, hours) * 60 + Math.max(0, minutes);
+    const dueTime = /^\d{2}:\d{2}$/.test(form.dueTime.trim()) ? form.dueTime.trim() : null;
 
     setSubmitting(true);
     try {
@@ -94,7 +90,7 @@ export function TaskCreateModal({
         category: form.category,
         priority: form.priority,
         dueDate: form.dueDate || defaultDueDate,
-        estimate,
+        dueTime,
         note: form.note,
         pendingReferences,
       });
@@ -157,7 +153,7 @@ export function TaskCreateModal({
             />
           </label>
 
-          <div className="split-fields">
+          <div className="split-fields due-split">
             <label>
               <span className="field-label">우선순위</span>
               <select
@@ -186,33 +182,14 @@ export function TaskCreateModal({
                 }
               />
             </label>
-          </div>
-
-          <div className="split-fields time-split">
             <label>
-              <span className="field-label">예상 시간</span>
+              <span className="field-label">마감 시각</span>
               <input
-                type="number"
-                min="0"
-                step="1"
-                name="estimateHours"
-                value={form.estimateHours}
+                type="time"
+                name="dueTime"
+                value={form.dueTime}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, estimateHours: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              <span className="field-label">예상 분</span>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                step="5"
-                name="estimateMinutes"
-                value={form.estimateMinutes}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, estimateMinutes: event.target.value }))
+                  setForm((current) => ({ ...current, dueTime: event.target.value }))
                 }
               />
             </label>

@@ -753,7 +753,8 @@ export function WorkTrackingDashboard() {
         category: payload.category,
         priority: payload.priority,
         dueDate: payload.dueDate || activeDate,
-        estimate: payload.estimate,
+        dueTime: payload.dueTime,
+        estimate: 0,
         note: payload.note,
       },
     });
@@ -1066,13 +1067,6 @@ export function WorkTrackingDashboard() {
                 </strong>
               </div>
             )}
-            <button
-              type="button"
-              className="primary-button task-create-trigger"
-              onClick={openTaskCreateModal}
-            >
-              + 태스크 생성
-            </button>
             <div className="date-panel">
               <div className="date-row">
                 <button
@@ -1388,6 +1382,16 @@ export function WorkTrackingDashboard() {
                 users={taskQuery?.users ?? []}
                 counts={taskQuery?.counts ?? { todo: 0, doing: 0, done: 0, total: 0 }}
               />
+
+              <div className="dashboard-tasks-toolbar">
+                <button
+                  type="button"
+                  className="primary-button task-create-trigger"
+                  onClick={openTaskCreateModal}
+                >
+                  + 태스크 생성
+                </button>
+              </div>
 
               <section className="panel dashboard-tasks-panel">
                 {taskLoading && !taskQuery ? (

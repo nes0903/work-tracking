@@ -148,6 +148,7 @@ interface TaskRow {
   category: string;
   priority: TaskPriority;
   due_date: string;
+  due_time: string | null;
   estimate_minutes: number;
   note: string;
   status: TaskStatus;
@@ -174,6 +175,7 @@ export interface CreateTaskInput {
   category: string;
   priority: TaskPriority;
   dueDate: string;
+  dueTime?: string | null;
   estimate: number;
   note: string;
   createdByUserId?: string | null;
@@ -239,12 +241,12 @@ export function createTaskForDate(
     db.prepare(
       `
         INSERT INTO tasks (
-          id, lineage_id, work_date, title, category, priority, due_date,
+          id, lineage_id, work_date, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, sort_order, carryover_count,
           carried_from_date, created_at, updated_at, completed_at,
           created_by_user_id, assignee_user_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, 0, NULL, ?, ?, NULL, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, 0, NULL, ?, ?, NULL, ?, ?)
       `,
     ).run(
       lineageId,
@@ -254,6 +256,7 @@ export function createTaskForDate(
       input.category.trim(),
       input.priority,
       input.dueDate || dateKey,
+      normalizeDueTime(input.dueTime),
       Math.max(0, Number(input.estimate) || 0),
       input.note.trim(),
       timestamp,
@@ -435,7 +438,7 @@ function selectDays(db: DatabaseSync): WorkDayMap {
     .prepare(
       `
         SELECT
-          id, lineage_id, work_date, title, category, priority, due_date,
+          id, lineage_id, work_date, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, created_at, updated_at,
           carryover_count, carried_from_date, completed_at
         FROM tasks
@@ -494,7 +497,7 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
     .prepare(
       `
         SELECT
-          id, lineage_id, work_date, title, category, priority, due_date,
+          id, lineage_id, work_date, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, created_at, updated_at,
           carryover_count, carried_from_date, completed_at,
           created_by_user_id, assignee_user_id
@@ -511,12 +514,12 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
   const insertStatement = db.prepare(
     `
       INSERT INTO tasks (
-        id, lineage_id, work_date, title, category, priority, due_date,
+        id, lineage_id, work_date, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order, carryover_count,
         carried_from_date, created_at, updated_at, completed_at,
         created_by_user_id, assignee_user_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, NULL, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, NULL, ?, ?)
     `,
   );
   const deleteStatement = db.prepare("DELETE FROM tasks WHERE id = ?");
@@ -535,6 +538,7 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
       row.category,
       "high",
       row.due_date,
+      row.due_time,
       row.estimate_minutes,
       row.note,
       row.status,
@@ -590,11 +594,11 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
   db.prepare(
     `
       INSERT INTO tasks (
-        id, lineage_id, work_date, title, category, priority, due_date,
+        id, lineage_id, work_date, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order, carryover_count,
         carried_from_date, created_at, updated_at, completed_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         lineage_id = excluded.lineage_id,
         work_date = excluded.work_date,
@@ -602,6 +606,7 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
         category = excluded.category,
         priority = excluded.priority,
         due_date = excluded.due_date,
+        due_time = excluded.due_time,
         estimate_minutes = excluded.estimate_minutes,
         note = excluded.note,
         status = excluded.status,
@@ -619,6 +624,7 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
     task.category,
     task.priority,
     task.dueDate,
+    task.dueTime ?? null,
     task.estimate,
     task.note,
     task.status,
@@ -638,6 +644,7 @@ function mapTaskRow(row: TaskRow): Task {
     category: row.category,
     priority: row.priority,
     dueDate: row.due_date,
+    dueTime: row.due_time,
     estimate: row.estimate_minutes,
     note: row.note,
     status: row.status,
@@ -647,4 +654,10 @@ function mapTaskRow(row: TaskRow): Task {
     carriedFromDate: row.carried_from_date,
     completedAt: row.completed_at,
   };
+}
+
+function normalizeDueTime(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^\d{2}:\d{2}$/.test(trimmed) ? trimmed : null;
 }

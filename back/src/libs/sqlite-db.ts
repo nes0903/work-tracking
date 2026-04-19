@@ -45,6 +45,10 @@ function runColumnMigrations(db: DatabaseSync): void {
   if (!tableHasColumn(db, "tasks", "assignee_user_id")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN assignee_user_id TEXT`);
   }
+  // tasks: due_time (마감 시각, HH:MM)
+  if (!tableHasColumn(db, "tasks", "due_time")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN due_time TEXT`);
+  }
 }
 
 export function withTransaction<T>(callback: (db: DatabaseSync) => T): T {

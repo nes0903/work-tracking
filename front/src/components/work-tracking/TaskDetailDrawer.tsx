@@ -98,9 +98,11 @@ export function TaskDetailDrawer({
           <h3 className="task-drawer-title">{task.title || "제목 없음"}</h3>
           <div className="task-drawer-meta">
             {task.category ? <span>📂 {task.category}</span> : null}
-            <span>📅 {task.workDate}</span>
+            <span>
+              📅 {task.workDate}
+              {task.dueTime ? ` ${task.dueTime}` : ""}
+            </span>
             <span className={`tone-${badge.tone}`}>⏰ {badge.text}</span>
-            {task.estimate > 0 ? <span>⌛ {task.estimate}분</span> : null}
           </div>
         </header>
 

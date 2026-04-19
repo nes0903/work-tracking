@@ -231,12 +231,18 @@ Phase 별 개선 추가 검토 (필수 아님):
 - `activeView` 타입에서 `"task-create"` 제거
 - 모달 저장 성공 시 **대시보드 태스크 리스트 자동 reload**
 
-**예상 시간 필드 리뉴얼**:
-- 기존 단일 `예상(분)` 입력 → **`시간` + `분` 두 개의 number 입력**
-- `TaskFormState`: `estimate: string` → `estimateHours: string, estimateMinutes: string`
-- 제출 시 `Number(hours) * 60 + Number(minutes)` 로 계산해서 기존 API `estimate` 필드에 전달
-- 기본값: `hours=0, minutes=30` (기존 30분 유지)
-- UI: 두 input 을 나란히, 각각 라벨 "시간 / 분" 표기
+**마감 시각 필드 (2026-04-20 재정의)**:
+- 예상 시간/분 개념 **폐기** (프론트에서 제거, 저장 시 estimate=0 하드코딩)
+- 대신 **마감 시각**(`dueTime`, `HH:MM`) 을 마감일 옆에 배치
+- `TaskFormState`: `dueTime: string` (빈 문자열 허용)
+- 제출 시 `HH:MM` 정규식 검증 후 `dueTime | null` 로 전송
+- UI: `[우선순위] [마감일] [마감 시각]` 3열 split-fields
+- **백엔드 변경**:
+  - `tasks.due_time TEXT NULL` 컬럼 추가 (스키마 + ALTER 마이그레이션)
+  - `CreateTaskInput.dueTime`, INSERT/upsert/롤오버 경로 모두 전파
+  - `Task.dueTime: string | null`, `TaskListItem.dueTime: string | null`
+  - `dashboard.service.ts createTask` 에서 payload.task.dueTime → repository 로 전달
+- Task 디테일 drawer 에 `📅 YYYY-MM-DD HH:MM` 형태로 표시
 
 **파일 변경**:
 - [신규] `TaskCreateModal.tsx` — 백드롭 + 카드 + 폼

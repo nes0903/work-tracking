@@ -3131,6 +3131,12 @@ button {
 /* ============================================================
    Task create modal
    ============================================================ */
+.dashboard-tasks-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
 .task-create-trigger {
   white-space: nowrap;
   padding: 8px 16px;
@@ -3179,8 +3185,8 @@ button {
   gap: 14px;
 }
 
-.task-create-modal-form .split-fields.time-split {
-  grid-template-columns: 1fr 1fr;
+.task-create-modal-form .split-fields.due-split {
+  grid-template-columns: 1fr 1.2fr 1fr;
   gap: 12px;
 }
 
@@ -3198,7 +3204,7 @@ button {
     max-width: 100%;
   }
 
-  .task-create-modal-form .split-fields.time-split {
+  .task-create-modal-form .split-fields.due-split {
     grid-template-columns: 1fr;
   }
 }
