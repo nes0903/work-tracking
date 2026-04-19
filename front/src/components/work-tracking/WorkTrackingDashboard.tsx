@@ -1338,53 +1338,159 @@ export function WorkTrackingDashboard() {
               />
             </section>
           ) : activeView === "line-works" ? (
-            <section className="panel line-works-panel chat-panel">
+            <section className="panel line-works-panel">
               {lineWorksArchive.channels.length > 0 ? (
-                <div className="chat-channel-filters">
+                <div className="github-filters">
                   <button
                     type="button"
-                    className={`chat-channel-chip ${selectedLineWorksChannel === null ? "active" : ""}`.trim()}
+                    className={`github-filter-chip ${selectedLineWorksChannel === null ? "active" : ""}`.trim()}
                     onClick={() => setSelectedLineWorksChannel(null)}
                   >
-                    전체 <span className="chat-channel-chip-count">{lineWorksArchive.items.length}</span>
+                    전체
                   </button>
-                  {lineWorksArchive.channels.map((channel) => {
-                    const label = displayChannelName(channel.channelId, channel.title, channel.channelType);
-                    return (
-                      <button
-                        key={channel.channelId}
-                        type="button"
-                        className={`chat-channel-chip ${selectedLineWorksChannel === channel.channelId ? "active" : ""}`.trim()}
-                        onClick={() => setSelectedLineWorksChannel(channel.channelId)}
-                      >
-                        {label} <span className="chat-channel-chip-count">{channel.count}</span>
-                      </button>
-                    );
-                  })}
+                  {lineWorksArchive.channels.map((channel) => (
+                    <button
+                      key={channel.channelId}
+                      type="button"
+                      className={`github-filter-chip ${selectedLineWorksChannel === channel.channelId ? "active" : ""}`.trim()}
+                      onClick={() => setSelectedLineWorksChannel(channel.channelId)}
+                      title={channel.channelId}
+                    >
+                      {shortChannelLabel(channel.channelId, channel.title)} · {channel.count}
+                    </button>
+                  ))}
                 </div>
               ) : null}
 
-              <div className="chat-stream">
+              <div className="line-works-messages">
                 {lineWorksArchive.items.length === 0 ? (
                   <p className="empty-note">수신된 메시지가 없습니다.</p>
                 ) : (
-                  renderChatStream({
-                    items: lineWorksArchive.items,
-                    currentUserId: currentUser?.userId ?? null,
-                    showChannel: selectedLineWorksChannel === null,
-                    isNew: (iss, rec) => isLineWorksItemNew(iss, rec),
-                    onOpenAttachment: (attachment) => {
-                      void openAttachment(
-                        attachment.id,
-                        attachment.fileName,
-                        attachment.mimeType,
-                      );
-                    },
-                    onAttachReference: (candidate) => openAttachCandidate(candidate),
-                    onCopyMessage: (msg) => {
-                      void handleCopyMessage(msg);
-                    },
-                  })
+                  lineWorksArchive.items.map((message) => (
+                    <article key={message.messageId} className="line-works-message">
+                      <header className="line-works-message-head">
+                        <div className="line-works-message-meta">
+                          <span className="line-works-channel" title={message.channelId}>
+                            {shortChannelLabel(message.channelId, message.channelTitle)}
+                          </span>
+                          <span className="line-works-user">
+                            {message.userId ?? "unknown"}
+                          </span>
+                          <span className="line-works-time">
+                            {relativeTime(message.issuedAt ?? message.receivedAt)}
+                          </span>
+                        </div>
+                        <div className="line-works-message-tags">
+                          {isLineWorksItemNew(message.issuedAt, message.receivedAt) ? (
+                            <span className="new-pill">NEW</span>
+                          ) : null}
+                          <span className={`line-works-type type-${message.contentType}`}>
+                            {message.contentType}
+                          </span>
+                        </div>
+                      </header>
+
+                      {message.text ? (
+                        <p className="line-works-text">{message.text}</p>
+                      ) : null}
+
+                      {message.attachments.length > 0 ? (
+                        <div className="line-works-attachments">
+                          {message.attachments.map((attachment) => (
+                            <div key={attachment.id} className="line-works-attachment-row">
+                              <button
+                                type="button"
+                                className="line-works-attachment"
+                                onClick={() => {
+                                  void openAttachment(
+                                    attachment.id,
+                                    attachment.fileName,
+                                    attachment.mimeType,
+                                  );
+                                }}
+                              >
+                                <span className="line-works-attachment-name">
+                                  📎 {attachment.fileName ?? "파일"}
+                                </span>
+                                {attachment.fileSize ? (
+                                  <span className="line-works-attachment-size">
+                                    {formatFileSize(attachment.fileSize)}
+                                  </span>
+                                ) : null}
+                              </button>
+                              <button
+                                type="button"
+                                className="line-works-attach-tiny"
+                                onClick={() =>
+                                  openAttachCandidate({
+                                    source: "line_works_attachment",
+                                    externalId: String(attachment.id),
+                                    title: attachment.fileName ?? "첨부 파일",
+                                    excerpt: attachment.mimeType,
+                                    metadata: {
+                                      fileSize: attachment.fileSize,
+                                      mimeType: attachment.mimeType,
+                                      messageId: message.messageId,
+                                      channelId: message.channelId,
+                                    },
+                                  })
+                                }
+                                title="이 파일을 태스크에 연결"
+                              >
+                                + 태스크
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {message.links.length > 0 ? (
+                        <ul className="line-works-links">
+                          {message.links.map((link) => (
+                            <li key={link.id}>
+                              <a href={link.url} target="_blank" rel="noreferrer">
+                                {link.url}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+
+                      <div className="line-works-message-actions">
+                        <button
+                          type="button"
+                          className="line-works-action"
+                          onClick={() => {
+                            void handleCopyMessage(message);
+                          }}
+                        >
+                          복사
+                        </button>
+                        <button
+                          type="button"
+                          className="line-works-action"
+                          onClick={() =>
+                            openAttachCandidate({
+                              source: "line_works_message",
+                              externalId: message.messageId,
+                              title:
+                                message.text?.slice(0, 60) ??
+                                `[${message.contentType}] ${shortChannelLabel(message.channelId, message.channelTitle)}`,
+                              excerpt: message.text,
+                              metadata: {
+                                channelId: message.channelId,
+                                userId: message.userId,
+                                contentType: message.contentType,
+                                issuedAt: message.issuedAt,
+                              },
+                            })
+                          }
+                        >
+                          태스크 추가
+                        </button>
+                      </div>
+                    </article>
+                  ))
                 )}
               </div>
             </section>
@@ -1584,260 +1690,3 @@ function shortChannelLabel(channelId: string, title?: string | null): string {
   return `${channelId.slice(0, 6)}…${channelId.slice(-4)}`;
 }
 
-/**
- * 채팅방 이름만 보여주기. channelId 는 완전히 숨긴다.
- * title 없으면: DM → "DM", 그 외 → "채팅방"
- */
-function displayChannelName(
-  channelId: string,
-  title: string | null | undefined,
-  channelType: string | null | undefined,
-): string {
-  const t = typeof title === "string" ? title.trim() : "";
-  if (t) {
-    if (channelType === "SINGLE_USER" || channelId.startsWith("dm:")) {
-      return `DM · ${t}`;
-    }
-    return t;
-  }
-  if (channelType === "SINGLE_USER" || channelId.startsWith("dm:")) return "DM";
-  return "채팅방";
-}
-
-function displayUserName(userId: string | null | undefined): string {
-  if (!userId) return "알 수 없음";
-  // UUID 형태면 앞 4 + 뒤 4 로 축약, 그 외엔 그대로
-  if (userId.length > 14 && /-/.test(userId)) {
-    return `${userId.slice(0, 4)}…${userId.slice(-4)}`;
-  }
-  return userId;
-}
-
-function initialOf(userId: string | null | undefined): string {
-  if (!userId) return "?";
-  const trimmed = userId.trim();
-  if (!trimmed) return "?";
-  return trimmed[0].toUpperCase();
-}
-
-function formatChatTime(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const h = String(date.getHours()).padStart(2, "0");
-  const m = String(date.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
-}
-
-function formatChatDateDivider(dateKey: string): string {
-  // dateKey: "YYYY-MM-DD"
-  const today = new Date();
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
-    2,
-    "0",
-  )}-${String(today.getDate()).padStart(2, "0")}`;
-  if (dateKey === todayKey) return "오늘";
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(
-    2,
-    "0",
-  )}-${String(yesterday.getDate()).padStart(2, "0")}`;
-  if (dateKey === yKey) return "어제";
-  const [y, m, d] = dateKey.split("-").map((n) => Number(n));
-  if (!y || !m || !d) return dateKey;
-  const weekday = ["일", "월", "화", "수", "목", "금", "토"][
-    new Date(y, m - 1, d).getDay()
-  ];
-  return `${y}년 ${m}월 ${d}일 (${weekday})`;
-}
-
-interface RenderChatStreamArgs {
-  items: LineWorksArchiveMessage[];
-  currentUserId: string | null;
-  showChannel: boolean;
-  isNew: (issuedAt: string | null, receivedAt: string) => boolean;
-  onOpenAttachment: (
-    attachment: { id: number; fileName: string | null; mimeType: string | null },
-  ) => void;
-  onAttachReference: (candidate: AttachCandidate) => void;
-  onCopyMessage: (message: LineWorksArchiveMessage) => void;
-}
-
-function renderChatStream({
-  items,
-  currentUserId,
-  showChannel,
-  isNew,
-  onOpenAttachment,
-  onAttachReference,
-  onCopyMessage,
-}: RenderChatStreamArgs): React.ReactNode {
-  // 원본은 최신순(DESC) — 채팅 UI 는 오래된 것 위, 새 것 아래
-  const asc = [...items].reverse();
-
-  const out: React.ReactNode[] = [];
-  let lastDateKey: string | null = null;
-
-  asc.forEach((msg) => {
-    const ts = msg.issuedAt ?? msg.receivedAt;
-    const dateKey = ts ? ts.slice(0, 10) : "";
-    if (dateKey && dateKey !== lastDateKey) {
-      out.push(
-        <div key={`divider-${dateKey}`} className="chat-date-divider">
-          <span>{formatChatDateDivider(dateKey)}</span>
-        </div>,
-      );
-      lastDateKey = dateKey;
-    }
-
-    const mine = Boolean(currentUserId && msg.userId === currentUserId);
-    const channelLabel = displayChannelName(
-      msg.channelId,
-      msg.channelTitle,
-      msg.channelType,
-    );
-    const author = mine ? "나" : displayUserName(msg.userId);
-    const isFresh = isNew(msg.issuedAt, msg.receivedAt);
-    const hasContent = Boolean(msg.text && msg.text.trim());
-
-    out.push(
-      <div
-        key={msg.messageId}
-        className={`chat-bubble-row ${mine ? "mine" : "other"}`.trim()}
-      >
-        {!mine ? (
-          <div className="chat-avatar" aria-hidden>
-            {initialOf(msg.userId)}
-          </div>
-        ) : null}
-        <div className="chat-bubble-col">
-          <div className="chat-bubble-head">
-            {!mine ? <span className="chat-author">{author}</span> : null}
-            {showChannel ? (
-              <span className="chat-channel-pill">{channelLabel}</span>
-            ) : null}
-            <span className="chat-time">{formatChatTime(ts)}</span>
-            {isFresh ? <span className="new-pill">NEW</span> : null}
-          </div>
-          <div className="chat-bubble">
-            {hasContent ? (
-              <p className="chat-bubble-text">{msg.text}</p>
-            ) : null}
-
-            {msg.attachments.length > 0 ? (
-              <div className="chat-bubble-attachments">
-                {msg.attachments.map((att) => (
-                  <button
-                    key={att.id}
-                    type="button"
-                    className="chat-attachment"
-                    onClick={() =>
-                      onOpenAttachment({
-                        id: att.id,
-                        fileName: att.fileName,
-                        mimeType: att.mimeType,
-                      })
-                    }
-                  >
-                    <span className="chat-attachment-icon">📎</span>
-                    <span className="chat-attachment-main">
-                      <span className="chat-attachment-name">
-                        {att.fileName ?? "파일"}
-                      </span>
-                      <span className="chat-attachment-meta">
-                        {[att.mimeType, att.fileSize ? formatFileSize(att.fileSize) : null]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {msg.links.length > 0 ? (
-              <ul className="chat-bubble-links">
-                {msg.links.map((link) => (
-                  <li key={link.id}>
-                    <a href={link.url} target="_blank" rel="noreferrer">
-                      {link.url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            {!hasContent && msg.attachments.length === 0 && msg.links.length === 0 ? (
-              <p className="chat-bubble-empty">[{msg.contentType}]</p>
-            ) : null}
-          </div>
-          <div className="chat-bubble-actions">
-            <button
-              type="button"
-              className="chat-bubble-action"
-              onClick={() => onCopyMessage(msg)}
-              title="내용 복사"
-            >
-              복사
-            </button>
-            <button
-              type="button"
-              className="chat-bubble-action"
-              onClick={() =>
-                onAttachReference({
-                  source: "line_works_message",
-                  externalId: msg.messageId,
-                  title:
-                    (msg.text?.slice(0, 60) ?? `[${msg.contentType}] ${channelLabel}`) as string,
-                  excerpt: msg.text,
-                  metadata: {
-                    channelId: msg.channelId,
-                    channelTitle: msg.channelTitle,
-                    channelType: msg.channelType,
-                    userId: msg.userId,
-                    contentType: msg.contentType,
-                    issuedAt: msg.issuedAt,
-                    text: msg.text,
-                  },
-                })
-              }
-              title="이 메시지를 태스크에 연결"
-            >
-              태스크 추가
-            </button>
-            {msg.attachments.map((att) => (
-              <button
-                key={`attach-${att.id}`}
-                type="button"
-                className="chat-bubble-action"
-                onClick={() =>
-                  onAttachReference({
-                    source: "line_works_attachment",
-                    externalId: String(att.id),
-                    title: att.fileName ?? "첨부 파일",
-                    excerpt: att.mimeType,
-                    metadata: {
-                      attachmentId: att.id,
-                      fileName: att.fileName,
-                      fileSize: att.fileSize,
-                      mimeType: att.mimeType,
-                      messageId: msg.messageId,
-                      channelId: msg.channelId,
-                      channelTitle: msg.channelTitle,
-                    },
-                  })
-                }
-                title={`첨부 "${att.fileName ?? "파일"}" 태스크 추가`}
-              >
-                📎 첨부 추가
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>,
-    );
-  });
-
-  return out;
-}
