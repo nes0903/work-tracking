@@ -37,6 +37,14 @@ function channelIdFromKey(s3Key: string): string | null {
   return parts[1] ?? null;
 }
 
+/**
+ * 한국어 파일명 검색을 위해 NFC 정규화 + 소문자화.
+ * macOS 업로드 파일명은 NFD 로 저장되는 경우가 있어 검색어(NFC)와 매칭 실패할 수 있음.
+ */
+function normalize(s: string): string {
+  return s.normalize("NFC").toLowerCase();
+}
+
 export function StorageTreeView({
   items,
   channelLabels = {},
@@ -44,7 +52,9 @@ export function StorageTreeView({
   onDelete,
 }: Props) {
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
+  const rawQ = query.trim();
+  const q = normalize(rawQ);
+  const qNoDot = q.startsWith(".") ? q.slice(1) : q;
   const searchMode = q.length > 0;
 
   // 전체 트리는 항상 유지 — 검색 시에도 A/B/C 폴더는 모두 보여야 함
@@ -61,18 +71,17 @@ export function StorageTreeView({
     const ids = new Set<number>();
     const paths = new Set<string>();
     for (const file of items) {
-      const channelId = channelIdFromKey(file.s3Key);
-      const channelName = channelDisplay(channelId, channelLabels).toLowerCase();
-      const matches =
-        (file.fileName ?? "").toLowerCase().includes(q) ||
-        (file.mimeType ?? "").toLowerCase().includes(q) ||
-        file.s3Key.toLowerCase().includes(q) ||
-        channelName.includes(q);
-      if (!matches) continue;
+      const name = normalize(file.fileName ?? "");
+      const dotIdx = name.lastIndexOf(".");
+      const ext = dotIdx >= 0 ? name.slice(dotIdx + 1) : "";
+
+      const matchesName = name.includes(q);
+      const matchesExt = qNoDot.length > 0 && ext.length > 0 && ext.includes(qNoDot);
+      if (!matchesName && !matchesExt) continue;
+
       ids.add(file.id);
-      // 파일의 부모 폴더 체인을 모두 열어둠
       const parts = file.s3Key.split("/").filter(Boolean);
-      parts.pop(); // 마지막 세그먼트는 파일명
+      parts.pop();
       let accumulated = "";
       for (const segment of parts) {
         accumulated = accumulated ? `${accumulated}/${segment}` : segment;
@@ -80,14 +89,14 @@ export function StorageTreeView({
       }
     }
     return { matchedIds: ids, expandedPaths: paths, matchCount: ids.size };
-  }, [items, channelLabels, q, searchMode]);
+  }, [items, q, qNoDot, searchMode]);
 
   return (
     <div className="storage-view">
       <div className="storage-search">
         <input
           type="text"
-          placeholder="파일명·MIME·채팅방·경로 검색"
+          placeholder="파일명 또는 확장자(예: pdf, .xlsx, 계약서)"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -109,8 +118,8 @@ export function StorageTreeView({
           {searchMode ? (
             <p className="field-label storage-search-count">
               {matchCount > 0
-                ? `"${query}" 매칭 ${matchCount}건 — 해당 폴더 자동 펼침 (다른 폴더는 그대로)`
-                : `"${query}" 검색 결과가 없습니다.`}
+                ? `"${rawQ}" 매칭 ${matchCount}건 — 해당 폴더 자동 펼침`
+                : `"${rawQ}" 검색 결과가 없습니다.`}
             </p>
           ) : null}
           <div

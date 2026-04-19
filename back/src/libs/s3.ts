@@ -77,14 +77,40 @@ export function buildAttachmentObjectKey(params: {
   prefix: string;
   channelId: string;
   issuedAt?: string | null;
-  fileId: string;
   fileName?: string;
+  /** 사용되지 않지만 과거 호출부 호환을 위해 남겨둠. */
+  fileId?: string;
 }): string {
-  const { prefix, channelId, issuedAt, fileId, fileName } = params;
+  const { prefix, channelId, issuedAt, fileName } = params;
   const dateFolder = toDateFolder(issuedAt);
   const channelFolder = sanitizeChannelSegment(channelId);
   const safeFileName = sanitizeFileName(fileName);
-  return `${prefix}${channelFolder}/${dateFolder}/${fileId}-${safeFileName}`;
+  // 신규 규칙: <prefix>line-works/<channelId>/<YYYY-MM-DD>/<fileName>
+  // 충돌 방지는 호출부(uploadAttachment)에서 resolveUniqueAttachmentKey 로 처리.
+  return `${prefix}${channelFolder}/${dateFolder}/${safeFileName}`;
+}
+
+/**
+ * 같은 날짜·같은 파일명이 이미 존재하는 경우 "name(1).ext", "name(2).ext" 식으로
+ * 고유 key 를 만들어낸다. 존재 여부는 호출자가 주입한 `exists(key)` 콜백으로 판단.
+ */
+export function resolveUniqueAttachmentKey(
+  baseKey: string,
+  exists: (key: string) => boolean,
+): string {
+  if (!exists(baseKey)) return baseKey;
+  const slashIdx = baseKey.lastIndexOf("/");
+  const dir = slashIdx >= 0 ? baseKey.slice(0, slashIdx + 1) : "";
+  const name = slashIdx >= 0 ? baseKey.slice(slashIdx + 1) : baseKey;
+  const dotIdx = name.lastIndexOf(".");
+  const stem = dotIdx > 0 ? name.slice(0, dotIdx) : name;
+  const ext = dotIdx > 0 ? name.slice(dotIdx) : "";
+  for (let i = 1; i < 1000; i++) {
+    const candidate = `${dir}${stem}(${i})${ext}`;
+    if (!exists(candidate)) return candidate;
+  }
+  // 비상: 1000개 이상 충돌 — 타임스탬프 suffix 로 강제 고유화
+  return `${dir}${stem}-${Date.now()}${ext}`;
 }
 
 async function bodyToBuffer(body: ReadableStream | Readable | Blob | Uint8Array): Promise<Buffer> {

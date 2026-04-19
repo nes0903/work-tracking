@@ -10,6 +10,8 @@ import {
   type BotConfig,
 } from "@libs/line-works-bot";
 import {
+  attachmentS3KeyExists,
+  findAttachmentByFileId,
   getChannelMeta,
   insertAttachment,
   insertLinks,
@@ -21,6 +23,7 @@ import {
   buildAttachmentObjectKey,
   loadS3Config,
   putAttachmentObject,
+  resolveUniqueAttachmentKey,
 } from "@libs/s3";
 
 interface CallbackSource {
@@ -201,15 +204,24 @@ export class LineWorksBotService {
       return null;
     }
 
+    // 멱등: 같은 (fileId, messageId) 로 이미 업로드한 이력이 있으면 재업로드 skip
+    const existing = findAttachmentByFileId(fileId, messageId);
+    if (existing) {
+      return { id: existing.id };
+    }
+
     const stream = await fetchAttachmentStream(botConfig, fileId);
     const fileName = event.content?.fileName ?? stream.fileName ?? `${fileId}.bin`;
-    const key = buildAttachmentObjectKey({
+    const baseKey = buildAttachmentObjectKey({
       prefix: s3Config.prefix,
       channelId,
       issuedAt: event.issuedTime,
-      fileId,
       fileName,
     });
+    // 같은 날짜·같은 파일명 충돌 시 "(1)", "(2)" 접미사
+    const key = resolveUniqueAttachmentKey(baseKey, (candidate) =>
+      attachmentS3KeyExists(s3Config.bucket, candidate),
+    );
 
     const { bucket, key: savedKey } = await putAttachmentObject({
       key,

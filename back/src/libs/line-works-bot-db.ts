@@ -61,6 +61,46 @@ export interface AttachmentRow {
   uploadedAt: string | null;
 }
 
+export function findAttachmentByFileId(
+  fileId: string,
+  messageId: string,
+): AttachmentRow | null {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT id, message_id, file_id, file_name, file_size, mime_type,
+              s3_bucket, s3_key, uploaded_at
+         FROM line_works_attachments
+        WHERE file_id = ? AND message_id = ?
+        LIMIT 1`,
+    )
+    .get(fileId, messageId) as unknown as AttachmentDbRow | undefined;
+  if (!row) return null;
+  return {
+    id: row.id,
+    messageId: row.message_id,
+    fileId: row.file_id,
+    fileName: row.file_name,
+    fileSize: row.file_size,
+    mimeType: row.mime_type,
+    s3Bucket: row.s3_bucket,
+    s3Key: row.s3_key,
+    uploadedAt: row.uploaded_at,
+  };
+}
+
+export function attachmentS3KeyExists(bucket: string, key: string): boolean {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT 1 AS found FROM line_works_attachments
+        WHERE s3_bucket = ? AND s3_key = ?
+        LIMIT 1`,
+    )
+    .get(bucket, key) as { found: number } | undefined;
+  return !!row;
+}
+
 export function insertAttachment(input: InsertAttachmentInput): AttachmentRow {
   const db = getDatabase();
   const row = db
