@@ -15,9 +15,15 @@ interface Props {
   dateKey: string;
   bucket: CalendarDayBucket;
   onOpenAttachment: (id: number, fileName: string | null, mimeType: string | null) => void;
+  onOpenMessage: (message: CalendarLineWorksSummary) => void;
 }
 
-export function DayDetailPanel({ dateKey, bucket, onOpenAttachment }: Props) {
+export function DayDetailPanel({
+  dateKey,
+  bucket,
+  onOpenAttachment,
+  onOpenMessage,
+}: Props) {
   const total =
     bucket.tasks.length +
     bucket.notion.length +
@@ -50,9 +56,13 @@ export function DayDetailPanel({ dateKey, bucket, onOpenAttachment }: Props) {
         ))}
       </Section>
 
-      <Section title="LINE WORKS" count={bucket.lineWorks.length}>
+      <Section title="Works" count={bucket.lineWorks.length}>
         {bucket.lineWorks.map((item) => (
-          <LineWorksItem key={item.messageId} item={item} />
+          <LineWorksItem
+            key={item.messageId}
+            item={item}
+            onOpen={() => onOpenMessage(item)}
+          />
         ))}
       </Section>
 
@@ -156,20 +166,32 @@ function GithubItem({ item }: { item: CalendarGithubSummary }) {
   );
 }
 
-function LineWorksItem({ item }: { item: CalendarLineWorksSummary }) {
-  const channel = item.channelTitle ?? (item.channelId.startsWith("dm:") ? "DM" : item.channelId);
+function LineWorksItem({
+  item,
+  onOpen,
+}: {
+  item: CalendarLineWorksSummary;
+  onOpen: () => void;
+}) {
+  const channel =
+    item.channelTitle ?? (item.channelId.startsWith("dm:") ? "DM" : "채팅방");
+  const body = item.text ?? "";
+  const trimmed = body.replace(/\s+/g, " ").trim();
+  const preview = trimmed
+    ? trimmed.length > 120
+      ? `${trimmed.slice(0, 120)}…`
+      : trimmed
+    : `[${item.contentType}]`;
+
   return (
     <li className="calendar-day-item">
       <span className="calendar-day-item-icon">💬</span>
-      <div className="calendar-day-item-main">
-        <span className="calendar-day-item-title">
-          {item.text || `[${item.contentType}]`}
-        </span>
+      <button type="button" className="calendar-day-item-main as-button" onClick={onOpen}>
+        <span className="calendar-day-item-title">{preview}</span>
         <span className="calendar-day-item-meta">
           <span>{channel}</span>
-          {item.userId ? <span>· {item.userId}</span> : null}
         </span>
-      </div>
+      </button>
     </li>
   );
 }

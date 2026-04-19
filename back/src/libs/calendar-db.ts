@@ -279,7 +279,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       channelTitle: row.channel_title,
       userId: row.user_id,
       contentType: row.content_type,
-      text: row.text ? row.text.slice(0, 80) : null,
+      text: row.text,
       issuedAt: row.issued_at,
     });
   }

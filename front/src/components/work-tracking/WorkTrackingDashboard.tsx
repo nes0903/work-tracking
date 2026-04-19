@@ -623,6 +623,29 @@ export function WorkTrackingDashboard() {
     await openAttachment(id);
   }
 
+  function handleOpenCalendarMessage(message: {
+    channelId: string;
+    channelTitle: string | null;
+    userId: string | null;
+    text: string | null;
+    issuedAt: string | null;
+  }) {
+    const body = message.text ?? "";
+    const trimmed = body.trim();
+    const urlOnlyMatch = trimmed.match(/^(https?:\/\/\S+)$/);
+    if (urlOnlyMatch) {
+      window.open(urlOnlyMatch[1], "_blank", "noopener");
+      return;
+    }
+    setMessagePreview({
+      channelTitle: message.channelTitle,
+      channelId: message.channelId,
+      userName: message.userId,
+      issuedAt: message.issuedAt,
+      text: body,
+    });
+  }
+
   async function handleRemoveReference(referenceId: number, taskId: string) {
     const ok = await detachReference(referenceId);
     if (ok) {
@@ -1194,7 +1217,10 @@ export function WorkTrackingDashboard() {
         <main className="content">
 
           {activeView === "calendar" ? (
-            <CalendarView onOpenAttachment={openAttachment} />
+            <CalendarView
+              onOpenAttachment={openAttachment}
+              onOpenMessage={handleOpenCalendarMessage}
+            />
           ) : activeView === "github" ? (
             <section className="panel github-panel">
               <div className="github-filters">

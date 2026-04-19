@@ -11,16 +11,18 @@ import {
   monthLabel,
   parseDateKey,
   type CalendarDayBucket,
+  type CalendarLineWorksSummary,
 } from "@/lib/calendar-api";
 import { DayDetailPanel } from "./DayDetailPanel";
 
 interface Props {
   onOpenAttachment: (id: number, fileName: string | null, mimeType: string | null) => void;
+  onOpenMessage: (message: CalendarLineWorksSummary) => void;
 }
 
 const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"] as const;
 
-export function CalendarView({ onOpenAttachment }: Props) {
+export function CalendarView({ onOpenAttachment, onOpenMessage }: Props) {
   const [anchor, setAnchor] = useState<Date>(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -142,6 +144,7 @@ export function CalendarView({ onOpenAttachment }: Props) {
         dateKey={selected}
         bucket={selectedBucket ?? emptyDayBucket()}
         onOpenAttachment={onOpenAttachment}
+        onOpenMessage={onOpenMessage}
       />
     </section>
   );
