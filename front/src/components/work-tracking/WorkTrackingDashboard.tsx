@@ -1376,11 +1376,6 @@ export function WorkTrackingDashboard() {
                               <span className="new-pill">NEW</span>
                             ) : null}
                             <span className="line-works-title-text">{view.title}</span>
-                            {view.channelLabel ? (
-                              <span className="line-works-channel-pill">
-                                {view.channelLabel}
-                              </span>
-                            ) : null}
                           </h4>
                           {view.subtitle ? (
                             <p className="line-works-message-subtitle">{view.subtitle}</p>
@@ -1422,6 +1417,15 @@ export function WorkTrackingDashboard() {
                                 </a>
                               );
                             })()}
+                            <button
+                              type="button"
+                              className="line-works-link as-button"
+                              onClick={() => {
+                                void handleCopyMessage(message);
+                              }}
+                            >
+                              복사
+                            </button>
                             <button
                               type="button"
                               className="line-works-link as-button"
@@ -1646,7 +1650,7 @@ function formatUnknownUserId(userId: string): string {
 
 interface LineWorksView {
   title: string;
-  channelLabel: string | null;
+  /** "채팅방 / 작성자 / contentType" 형태의 좌측 하단 메타 */
   subtitle: string | null;
   openAction:
     | {
@@ -1696,42 +1700,25 @@ function buildLineWorksView(message: LineWorksArchiveMessage): LineWorksView {
     title = `[${message.contentType}]`;
   }
 
-  // 2) 채널 라벨: title 이 있으면 그대로, 없으면 DM/채팅방 fallback.
-  //    ID 는 노출하지 않음.
-  const rawTitle =
-    typeof message.channelTitle === "string" ? message.channelTitle.trim() : "";
-  const channelLabel = rawTitle
-    ? isDM
-      ? `DM · ${rawTitle}`
-      : rawTitle
-    : isDM
-      ? "DM"
-      : null; // 그룹채팅인데 title 없으면 label 생략 (subtitle 에 작성자 표시로 대체)
+  // 2) subtitle: "채팅방 / 작성자 / contentType" (없는 값은 skip)
+  const channelName = (() => {
+    const raw =
+      typeof message.channelTitle === "string" ? message.channelTitle.trim() : "";
+    if (raw) return isDM ? `DM · ${raw}` : raw;
+    return isDM ? "DM" : "채팅방";
+  })();
+  const authorName =
+    (message.userName && message.userName.trim()) ||
+    (message.userId ? formatUnknownUserId(message.userId) : "") ||
+    "";
 
-  // 3) 서브타이틀: 그룹채팅이면 작성자 이름, 첨부·링크 추가 개수
-  const subtitleParts: string[] = [];
-  if (!isDM) {
-    const author =
-      (message.userName && message.userName.trim()) ||
-      (message.userId && formatUnknownUserId(message.userId)) ||
-      null;
-    if (author) subtitleParts.push(`👤 ${author}`);
-  }
-  const extraAttachments = message.attachments.length - (title === firstAttachment?.fileName ? 1 : 0);
-  if (extraAttachments > 0 && text) {
-    subtitleParts.push(`📎 첨부 ${message.attachments.length}개`);
-  } else if (extraAttachments > 0 && !text) {
-    subtitleParts.push(`📎 외 ${extraAttachments}개`);
-  }
-  const extraLinks = message.links.length - (openAction?.kind === "link" ? 1 : 0);
-  if (extraLinks > 0) {
-    subtitleParts.push(`🔗 링크 ${message.links.length}개`);
-  }
+  const parts = [channelName, authorName, message.contentType].filter(
+    (v): v is string => Boolean(v && v.trim()),
+  );
 
   return {
     title,
-    channelLabel,
-    subtitle: subtitleParts.length > 0 ? subtitleParts.join(" · ") : null,
+    subtitle: parts.length > 0 ? parts.join(" / ") : null,
     openAction,
   };
 }
