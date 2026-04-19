@@ -47,7 +47,11 @@ function loginErrorRedirect(error: string) {
 @Controller("api/auth")
 export class AuthController {
   @Get("line-works/login")
-  login(@Query("redirect") redirect: string | undefined, @Res() res: Response) {
+  login(
+    @Query("redirect") redirect: string | undefined,
+    @Query("prompt") prompt: string | undefined,
+    @Res() res: Response,
+  ) {
     const config = loadLineWorksConfig();
     if (!config) {
       throw new HttpException(
@@ -57,7 +61,7 @@ export class AuthController {
     }
 
     const state = createOAuthState(safeRedirect(redirect));
-    const url = buildAuthorizeUrl(config, state);
+    const url = buildAuthorizeUrl(config, state, { forcePrompt: prompt !== "none" });
     res.redirect(url);
   }
 

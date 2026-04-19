@@ -31,7 +31,15 @@ export function loadLineWorksConfig(): LineWorksConfig | null {
   };
 }
 
-export function buildAuthorizeUrl(config: LineWorksConfig, state: string): string {
+export interface AuthorizeOptions {
+  forcePrompt?: boolean;
+}
+
+export function buildAuthorizeUrl(
+  config: LineWorksConfig,
+  state: string,
+  options: AuthorizeOptions = {},
+): string {
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
@@ -39,6 +47,9 @@ export function buildAuthorizeUrl(config: LineWorksConfig, state: string): strin
     scope: config.scope,
     state,
   });
+  if (options.forcePrompt) {
+    params.set("prompt", "login");
+  }
   return `${AUTHORIZE_URL}?${params.toString()}`;
 }
 
