@@ -217,6 +217,36 @@ button {
   color: var(--on-secondary-container);
 }
 
+.sidebar-nav-count.new {
+  background: var(--error);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sidebar-nav-link.active .sidebar-nav-count.new {
+  background: var(--error);
+  color: #ffffff;
+}
+
+.new-pill {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--error);
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  vertical-align: middle;
+}
+
+.line-works-message-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .sidebar-nav-empty {
   margin: 4px 14px;
   color: var(--on-surface-faint);

@@ -16,6 +16,7 @@ import {
   upsertChannelMeta,
   upsertMessage,
 } from "@libs/line-works-bot-db";
+import { emitFeedUpdate } from "@libs/feed-events";
 import {
   buildAttachmentObjectKey,
   loadS3Config,
@@ -93,6 +94,7 @@ export class LineWorksBotService {
 
     try {
       const stored = await this.persistEvent(botConfig, rawBody, event, channelId);
+      emitFeedUpdate("line-works");
       return { status: 200, body: { ok: true, ...stored } };
     } catch (err) {
       this.logger.error("Failed to persist LINE WORKS event", err as Error);

@@ -24,6 +24,7 @@ import {
   type ChannelLabelMap,
   type StorageItem,
 } from "@/lib/storage";
+import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { StorageTreeView } from "./StorageTreeView";
@@ -129,6 +130,8 @@ export function WorkTrackingDashboard() {
   const [pendingTitleDraft, setPendingTitleDraft] = useState("");
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
+  const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
+  const [lastSeenLineWorks, setLastSeenLineWorks] = useState<number>(0);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
 
   useEffect(() => {
@@ -259,8 +262,20 @@ export function WorkTrackingDashboard() {
       }
     }
 
+    async function loadLineWorks() {
+      try {
+        const archive = await fetchLineWorksArchive(null);
+        if (mounted) {
+          setLineWorksArchive(archive);
+        }
+      } catch (error) {
+        console.error("[dashboard] failed to load line works archive", error);
+      }
+    }
+
     loadNotionUpdates();
     loadGithubUpdates();
+    loadLineWorks();
 
     const eventSource = new EventSource("/api/events");
 
@@ -270,12 +285,14 @@ export function WorkTrackingDashboard() {
       }
       try {
         const payload = JSON.parse((event as MessageEvent).data) as {
-          source?: "notion" | "github";
+          source?: "notion" | "github" | "line-works";
         };
         if (payload.source === "notion") {
           void loadNotionUpdates();
         } else if (payload.source === "github") {
           void loadGithubUpdates();
+        } else if (payload.source === "line-works") {
+          void loadLineWorks();
         }
       } catch (error) {
         console.error("[dashboard] failed to parse feed-update event", error);
@@ -304,6 +321,64 @@ export function WorkTrackingDashboard() {
     };
   }, []);
 
+  // 로그인 직후 서버에서 lastSeen 로드
+  useEffect(() => {
+    if (!currentUser) return;
+    let mounted = true;
+    void fetchLastSeenMap().then((map) => {
+      if (!mounted) return;
+      setLastSeenNotion(parseTimestamp(map.notion));
+      setLastSeenLineWorks(parseTimestamp(map["line-works"]));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser]);
+
+  // 뷰 진입 시 서버에 읽음 기록
+  useEffect(() => {
+    if (!currentUser) return;
+    if (activeView !== "notion" && activeView !== "line-works") return;
+    const source = activeView;
+    void markLastSeen(source).then((at) => {
+      if (!at) return;
+      const ts = parseTimestamp(at);
+      if (source === "notion") {
+        setLastSeenNotion(ts);
+      } else if (source === "line-works") {
+        setLastSeenLineWorks(ts);
+      }
+    });
+  }, [activeView, currentUser]);
+
+  const notionNewCount = useMemo(() => {
+    if (!lastSeenNotion) return 0;
+    return notionFeed.items.reduce<number>((count, item) => {
+      const ts = parseTimestamp(item.editedAt);
+      return ts > lastSeenNotion ? count + 1 : count;
+    }, 0);
+  }, [notionFeed.items, lastSeenNotion]);
+
+  const lineWorksNewCount = useMemo(() => {
+    if (!lastSeenLineWorks) return 0;
+    return lineWorksArchive.items.reduce<number>((count, item) => {
+      const ts = parseTimestamp(item.issuedAt ?? item.receivedAt);
+      return ts > lastSeenLineWorks ? count + 1 : count;
+    }, 0);
+  }, [lineWorksArchive.items, lastSeenLineWorks]);
+
+  function isNotionItemNew(editedAt: string | null | undefined): boolean {
+    if (!lastSeenNotion) return false;
+    const ts = parseTimestamp(editedAt);
+    return ts > 0 && ts > lastSeenNotion;
+  }
+
+  function isLineWorksItemNew(issuedAt: string | null, receivedAt: string): boolean {
+    if (!lastSeenLineWorks) return false;
+    const ts = parseTimestamp(issuedAt ?? receivedAt);
+    return ts > 0 && ts > lastSeenLineWorks;
+  }
+
   useEffect(() => {
     if (selectedRepo === null) {
       return;
@@ -316,7 +391,8 @@ export function WorkTrackingDashboard() {
   }, [githubFeed.repos, selectedRepo]);
 
   useEffect(() => {
-    if (activeView !== "line-works") {
+    // 채널 필터가 변경되면 재조회. 필터 없음(null)일 땐 mount/SSE 경로로 충분.
+    if (activeView !== "line-works" || selectedLineWorksChannel === null) {
       return;
     }
     let mounted = true;
@@ -800,8 +876,8 @@ export function WorkTrackingDashboard() {
             onClick={() => setActiveView("notion")}
           >
             Notion Updates
-            {notionFeed.items.length > 0 ? (
-              <span className="sidebar-nav-count">{notionFeed.items.length}</span>
+            {notionNewCount > 0 ? (
+              <span className="sidebar-nav-count new">{notionNewCount}</span>
             ) : null}
           </button>
           <button
@@ -810,8 +886,8 @@ export function WorkTrackingDashboard() {
             onClick={() => setActiveView("line-works")}
           >
             LINE WORKS
-            {lineWorksArchive.items.length > 0 ? (
-              <span className="sidebar-nav-count">{lineWorksArchive.items.length}</span>
+            {lineWorksNewCount > 0 ? (
+              <span className="sidebar-nav-count new">{lineWorksNewCount}</span>
             ) : null}
           </button>
           <button
@@ -1000,7 +1076,12 @@ export function WorkTrackingDashboard() {
                       className="notion-update-item"
                     >
                       <div>
-                        <h4 className="notion-update-title">{item.title || "제목 없음"}</h4>
+                        <h4 className="notion-update-title">
+                          {isNotionItemNew(item.editedAt) ? (
+                            <span className="new-pill">NEW</span>
+                          ) : null}
+                          {item.title || "제목 없음"}
+                        </h4>
                         <p className="notion-update-subtitle">
                           {[item.section, item.parent].filter(Boolean).join(" / ") || "경로 없음"}
                         </p>
@@ -1107,9 +1188,14 @@ export function WorkTrackingDashboard() {
                             {relativeTime(message.issuedAt ?? message.receivedAt)}
                           </span>
                         </div>
-                        <span className={`line-works-type type-${message.contentType}`}>
-                          {message.contentType}
-                        </span>
+                        <div className="line-works-message-tags">
+                          {isLineWorksItemNew(message.issuedAt, message.receivedAt) ? (
+                            <span className="new-pill">NEW</span>
+                          ) : null}
+                          <span className={`line-works-type type-${message.contentType}`}>
+                            {message.contentType}
+                          </span>
+                        </div>
                       </header>
 
                       {message.text ? (

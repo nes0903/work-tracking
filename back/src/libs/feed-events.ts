@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 
-export type FeedSource = "notion" | "github";
+export type FeedSource = "notion" | "github" | "line-works";
 
 export interface FeedUpdateEvent {
   source: FeedSource;

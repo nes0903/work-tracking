@@ -328,6 +328,13 @@ CREATE TABLE IF NOT EXISTS line_works_channels (
   last_fetched_at  TEXT
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS user_last_seen (
+  user_id       TEXT NOT NULL,
+  source        TEXT NOT NULL,
+  last_seen_at  TEXT NOT NULL,
+  PRIMARY KEY (user_id, source)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS task_references (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id        TEXT NOT NULL,
