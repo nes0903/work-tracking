@@ -28,8 +28,13 @@ import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen"
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
+import { ReferenceCollector } from "./ReferenceCollector";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
+import {
+  pendingKey,
+  type PendingReference,
+} from "@/lib/pending-references";
 import {
   activityColor,
   activityIcon,
@@ -124,11 +129,7 @@ export function WorkTrackingDashboard() {
   const [taskReferences, setTaskReferences] = useState<Record<string, TaskReference[]>>({});
   const [attachCandidate, setAttachCandidate] = useState<AttachCandidate | null>(null);
   const [attachModalOpen, setAttachModalOpen] = useState(false);
-  const [pendingReferences, setPendingReferences] = useState<
-    Array<{ url: string; title: string }>
-  >([]);
-  const [pendingUrlDraft, setPendingUrlDraft] = useState("");
-  const [pendingTitleDraft, setPendingTitleDraft] = useState("");
+  const [pendingReferences, setPendingReferences] = useState<PendingReference[]>([]);
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
   const [previewState, setPreviewState] = useState<
@@ -438,7 +439,7 @@ export function WorkTrackingDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeView !== "storage") {
+    if (activeView !== "storage" && activeView !== "task-create") {
       return;
     }
     void reloadStorage();
@@ -710,36 +711,21 @@ export function WorkTrackingDashboard() {
           for (const ref of pendingReferences) {
             await attachReference({
               taskId: latest.id,
-              source: "url",
-              externalId: ref.url,
-              title: ref.title || ref.url,
-              externalUrl: ref.url,
+              source: ref.source,
+              externalId: ref.externalId,
+              title: ref.title,
+              excerpt: ref.excerpt ?? null,
+              externalUrl: ref.externalUrl ?? null,
+              metadata: ref.metadata ?? null,
             });
           }
           setPendingReferences([]);
-          setPendingUrlDraft("");
-          setPendingTitleDraft("");
           void reloadTaskReferences();
         }
       }
     } catch (error) {
       console.error("[dashboard] failed to create task", error);
     }
-  }
-
-  function addPendingReference() {
-    const url = pendingUrlDraft.trim();
-    if (!url) return;
-    setPendingReferences((prev) => [
-      ...prev,
-      { url, title: pendingTitleDraft.trim() },
-    ]);
-    setPendingUrlDraft("");
-    setPendingTitleDraft("");
-  }
-
-  function removePendingReference(index: number) {
-    setPendingReferences((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateTaskStatus(taskId: string, nextStatus: TaskStatus) {
@@ -1259,60 +1245,15 @@ export function WorkTrackingDashboard() {
                   />
                 </label>
 
-                <div className="pending-references">
-                  <span className="field-label">참조 링크 (선택)</span>
-                  {pendingReferences.length > 0 ? (
-                    <ul className="pending-references-list">
-                      {pendingReferences.map((ref, index) => (
-                        <li key={`${ref.url}-${index}`} className="pending-reference-item">
-                          <span className="pending-reference-title">{ref.title || ref.url}</span>
-                          <span className="pending-reference-url">{ref.url}</span>
-                          <button
-                            type="button"
-                            className="pending-reference-remove"
-                            onClick={() => removePendingReference(index)}
-                            aria-label="링크 제거"
-                          >
-                            ×
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  <div className="pending-reference-input-row">
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={pendingUrlDraft}
-                      onChange={(event) => setPendingUrlDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addPendingReference();
-                        }
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="표시 이름 (선택)"
-                      value={pendingTitleDraft}
-                      onChange={(event) => setPendingTitleDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addPendingReference();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={addPendingReference}
-                    >
-                      + 추가
-                    </button>
-                  </div>
-                </div>
+                <ReferenceCollector
+                  pending={pendingReferences}
+                  onPendingChange={setPendingReferences}
+                  notionItems={notionFeed.items}
+                  lineWorksItems={lineWorksArchive.items}
+                  lineWorksChannels={lineWorksArchive.channels}
+                  storageItems={storageItems}
+                  channelLabels={storageChannelLabels}
+                />
 
                 <button className="primary-button" type="submit">
                   업무 추가
