@@ -391,17 +391,27 @@ function LineWorksTab({
   }, [items, selectedChannel, query]);
 
   if (items.length === 0) {
-    return <p className="empty-note">LINE WORKS 메시지가 아직 없습니다.</p>;
+    return <p className="empty-note">Works 메시지가 아직 없습니다.</p>;
   }
 
-  const channelLabel = (channelId: string) => {
-    const channel = channels.find((c) => c.channelId === channelId);
-    if (channel?.title) {
-      return channel.channelType === "SINGLE_USER"
-        ? `DM · ${channel.title}`
-        : channel.title;
+  const channelLabel = (
+    channelId: string,
+    title: string | null,
+    channelType: string | null,
+  ) => {
+    const t = typeof title === "string" ? title.trim() : "";
+    const isDM = channelType === "SINGLE_USER" || channelId.startsWith("dm:");
+    if (t) return isDM ? `DM · ${t}` : t;
+    return isDM ? "DM" : "채팅방";
+  };
+
+  const authorLabel = (userName: string | null, userId: string | null) => {
+    const n = typeof userName === "string" ? userName.trim() : "";
+    if (n) return n;
+    if (userId && userId.length > 14 && /-/.test(userId)) {
+      return `${userId.slice(0, 4)}…${userId.slice(-4)}`;
     }
-    return channelId.slice(0, 10) + "…";
+    return userId ?? "";
   };
 
   return (
@@ -409,14 +419,12 @@ function LineWorksTab({
       <div className="ref-picker-filters">
         <select
           value={selectedChannel ?? ""}
-          onChange={(event) =>
-            setSelectedChannel(event.target.value || null)
-          }
+          onChange={(event) => setSelectedChannel(event.target.value || null)}
         >
           <option value="">전체 채널</option>
           {channels.map((c) => (
             <option key={c.channelId} value={c.channelId}>
-              {channelLabel(c.channelId)} ({c.count})
+              {channelLabel(c.channelId, c.title, c.channelType)} ({c.count})
             </option>
           ))}
         </select>
@@ -429,41 +437,54 @@ function LineWorksTab({
         />
       </div>
 
-      <ul className="ref-picker-list">
+      <ul className="ref-picker-list works-picker-list">
         {filtered.flatMap((msg) => {
           const rows: React.ReactNode[] = [];
-          const channel = channelLabel(msg.channelId);
+          const channel = channelLabel(msg.channelId, msg.channelTitle, msg.channelType);
+          const author = authorLabel(msg.userName, msg.userId);
           const hasText = Boolean(msg.text && msg.text.trim());
 
           if (hasText) {
+            const preview =
+              msg.text!.length > 140 ? `${msg.text!.slice(0, 140)}…` : msg.text!;
             const msgRef: PendingReference = {
               source: "line_works_message",
               externalId: msg.messageId,
-              title: msg.text!,
-              excerpt: channel,
+              title: preview,
+              excerpt: [channel, author, msg.contentType].filter(Boolean).join(" / "),
               metadata: {
                 channelId: msg.channelId,
                 channelTitle: msg.channelTitle,
                 channelType: msg.channelType,
                 userId: msg.userId,
+                userName: msg.userName,
                 issuedAt: msg.issuedAt,
                 contentType: msg.contentType,
+                text: msg.text,
               },
             };
             const msgSelected = isPendingSelected(pending, {
               source: "line_works_message",
               externalId: msg.messageId,
             });
+            const subtitle = [channel, author, msg.contentType]
+              .filter(Boolean)
+              .join(" / ");
             rows.push(
               <li key={`msg:${msg.messageId}`}>
                 <button
                   type="button"
-                  className={`ref-picker-item multiline ${msgSelected ? "selected" : ""}`.trim()}
+                  className={`ref-picker-item works-row ${msgSelected ? "selected" : ""}`.trim()}
                   onClick={() => onToggle(msgRef)}
                 >
-                  <span className="ref-picker-channel">💬 {channel}</span>
                   <div className="ref-picker-main">
-                    <span className="ref-picker-title multiline">{msg.text}</span>
+                    <span className="ref-picker-title works-row-title">
+                      <span className="works-row-icon">💬</span>
+                      <span className="works-row-title-text">{preview}</span>
+                    </span>
+                    {subtitle ? (
+                      <span className="ref-picker-meta">{subtitle}</span>
+                    ) : null}
                   </div>
                   <span className="ref-picker-indicator">
                     {msgSelected ? "✓" : "+"}
@@ -475,15 +496,21 @@ function LineWorksTab({
 
           for (const att of msg.attachments) {
             const fileName = att.fileName ?? "파일";
+            const subtitleParts = [channel, author, att.mimeType, att.fileSize ? formatFileSize(att.fileSize) : null];
+            const subtitle = subtitleParts.filter(Boolean).join(" / ");
             const attRef: PendingReference = {
               source: "line_works_attachment",
               externalId: String(att.id),
               title: fileName,
-              excerpt: channel,
+              excerpt: subtitle,
               metadata: {
                 attachmentId: att.id,
                 messageId: msg.messageId,
                 channelId: msg.channelId,
+                channelTitle: msg.channelTitle,
+                channelType: msg.channelType,
+                userId: msg.userId,
+                userName: msg.userName,
                 fileName: att.fileName,
                 fileSize: att.fileSize,
                 mimeType: att.mimeType,
@@ -497,12 +524,17 @@ function LineWorksTab({
               <li key={`att:${att.id}`}>
                 <button
                   type="button"
-                  className={`ref-picker-item ${attSelected ? "selected" : ""}`.trim()}
+                  className={`ref-picker-item works-row ${attSelected ? "selected" : ""}`.trim()}
                   onClick={() => onToggle(attRef)}
                 >
-                  <span className="ref-picker-channel">📎 {channel}</span>
                   <div className="ref-picker-main">
-                    <span className="ref-picker-title">{fileName}</span>
+                    <span className="ref-picker-title works-row-title">
+                      <span className="works-row-icon">📎</span>
+                      <span className="works-row-title-text">{fileName}</span>
+                    </span>
+                    {subtitle ? (
+                      <span className="ref-picker-meta">{subtitle}</span>
+                    ) : null}
                   </div>
                   <span className="ref-picker-indicator">
                     {attSelected ? "✓" : "+"}
