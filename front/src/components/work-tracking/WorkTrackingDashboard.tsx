@@ -1129,6 +1129,10 @@ function syncLabel(value: string | null) {
 }
 
 function shortChannelLabel(channelId: string): string {
+  if (channelId.startsWith("dm:")) {
+    const userId = channelId.slice(3);
+    return userId.length <= 10 ? `DM · ${userId}` : `DM · ${userId.slice(0, 4)}…${userId.slice(-4)}`;
+  }
   if (channelId.length <= 14) {
     return channelId;
   }

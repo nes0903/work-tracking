@@ -74,7 +74,7 @@ export class LineWorksBotService {
       return { status: 200, body: { ok: true, ignored: true, reason: "non-message event" } };
     }
 
-    const channelId = event.source?.channelId;
+    const channelId = resolveChannelId(event);
     if (!channelId || !isChannelAllowed(botConfig, channelId)) {
       return {
         status: 200,
@@ -83,7 +83,7 @@ export class LineWorksBotService {
     }
 
     try {
-      const stored = await this.persistEvent(botConfig, rawBody, event);
+      const stored = await this.persistEvent(botConfig, rawBody, event, channelId);
       return { status: 200, body: { ok: true, ...stored } };
     } catch (err) {
       this.logger.error("Failed to persist LINE WORKS event", err as Error);
@@ -95,9 +95,9 @@ export class LineWorksBotService {
     botConfig: BotConfig,
     rawBody: string,
     event: LineWorksCallbackEvent,
+    channelId: string,
   ): Promise<Record<string, unknown>> {
-    const messageId = this.resolveMessageId(event, rawBody);
-    const channelId = event.source?.channelId!;
+    const messageId = this.resolveMessageId(event, rawBody, channelId);
     const contentType = event.content?.type ?? "unknown";
     const text = event.content?.text ?? null;
 
@@ -179,18 +179,35 @@ export class LineWorksBotService {
     return { id: inserted.id };
   }
 
-  private resolveMessageId(event: LineWorksCallbackEvent, rawBody: string): string {
+  private resolveMessageId(
+    event: LineWorksCallbackEvent,
+    rawBody: string,
+    channelId: string,
+  ): string {
     const candidate =
       (event as { messageId?: string }).messageId ??
       (event as { requestId?: string }).requestId;
     if (candidate) {
       return String(candidate);
     }
-    const channelId = event.source?.channelId ?? "unknown";
     const userId = event.source?.userId ?? "unknown";
     const issuedAt = event.issuedTime ?? new Date().toISOString();
     return `${channelId}:${userId}:${issuedAt}:${rawBody.length}`;
   }
+}
+
+function resolveChannelId(event: LineWorksCallbackEvent): string | undefined {
+  const direct = event.source?.channelId;
+  if (direct) {
+    return direct;
+  }
+  // 1:1 direct chats between a user and the bot come without channelId.
+  // Use a synthetic stable ID so we can allowlist and group them in the UI.
+  const userId = event.source?.userId;
+  if (userId) {
+    return `dm:${userId}`;
+  }
+  return undefined;
 }
 
 function safeJsonParse(raw: string): unknown {
