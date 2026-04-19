@@ -2,10 +2,20 @@ export interface SiteLink {
   id: number;
   label: string;
   url: string;
+  category: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
+
+export const SITE_LINK_CATEGORIES = [
+  "보고팡",
+  "푸딩툰",
+  "픽미툰",
+  "덥라이트",
+  "기타",
+] as const;
+export type SiteLinkCategory = (typeof SITE_LINK_CATEGORIES)[number];
 
 export async function fetchSiteLinks(): Promise<SiteLink[]> {
   try {
@@ -22,7 +32,7 @@ export async function fetchSiteLinks(): Promise<SiteLink[]> {
 }
 
 export async function createSiteLink(
-  input: { label: string; url: string },
+  input: { label: string; url: string; category?: string | null },
 ): Promise<SiteLink | null> {
   try {
     const response = await fetch("/api/site-links", {
@@ -43,7 +53,12 @@ export async function createSiteLink(
 
 export async function updateSiteLink(
   id: number,
-  patch: { label?: string; url?: string; sortOrder?: number },
+  patch: {
+    label?: string;
+    url?: string;
+    category?: string | null;
+    sortOrder?: number;
+  },
 ): Promise<SiteLink | null> {
   try {
     const response = await fetch(`/api/site-links/${id}`, {

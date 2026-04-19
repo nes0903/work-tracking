@@ -4,6 +4,7 @@ export interface SiteLink {
   id: number;
   label: string;
   url: string;
+  category: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -13,16 +14,20 @@ interface SiteLinkRow {
   id: number;
   label: string;
   url: string;
+  category: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
 }
+
+const SELECT_COLS = `id, label, url, category, sort_order, created_at, updated_at`;
 
 function hydrate(row: SiteLinkRow): SiteLink {
   return {
     id: row.id,
     label: row.label,
     url: row.url,
+    category: row.category,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -33,7 +38,7 @@ export function listSiteLinks(): SiteLink[] {
   const db = getDatabase();
   const rows = db
     .prepare(
-      `SELECT id, label, url, sort_order, created_at, updated_at
+      `SELECT ${SELECT_COLS}
          FROM site_links
          ORDER BY sort_order ASC, id ASC`,
     )
@@ -41,7 +46,11 @@ export function listSiteLinks(): SiteLink[] {
   return rows.map(hydrate);
 }
 
-export function createSiteLink(input: { label: string; url: string }): SiteLink {
+export function createSiteLink(input: {
+  label: string;
+  url: string;
+  category?: string | null;
+}): SiteLink {
   const db = getDatabase();
   const maxRow = db
     .prepare(`SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_links`)
@@ -50,17 +59,23 @@ export function createSiteLink(input: { label: string; url: string }): SiteLink 
 
   const row = db
     .prepare(
-      `INSERT INTO site_links (label, url, sort_order)
-         VALUES (?, ?, ?)
-         RETURNING id, label, url, sort_order, created_at, updated_at`,
+      `INSERT INTO site_links (label, url, category, sort_order)
+         VALUES (?, ?, ?, ?)
+         RETURNING ${SELECT_COLS}`,
     )
-    .get(input.label, input.url, nextOrder) as unknown as SiteLinkRow;
+    .get(
+      input.label,
+      input.url,
+      input.category ?? null,
+      nextOrder,
+    ) as unknown as SiteLinkRow;
   return hydrate(row);
 }
 
 export interface UpdateSiteLinkInput {
   label?: string;
   url?: string;
+  category?: string | null;
   sortOrder?: number;
 }
 
@@ -71,7 +86,7 @@ export function updateSiteLink(
   const db = getDatabase();
 
   const sets: string[] = [];
-  const args: (string | number)[] = [];
+  const args: (string | number | null)[] = [];
 
   if (patch.label !== undefined) {
     sets.push("label = ?");
@@ -81,6 +96,10 @@ export function updateSiteLink(
     sets.push("url = ?");
     args.push(patch.url);
   }
+  if (patch.category !== undefined) {
+    sets.push("category = ?");
+    args.push(patch.category ?? null);
+  }
   if (patch.sortOrder !== undefined) {
     sets.push("sort_order = ?");
     args.push(patch.sortOrder);
@@ -89,7 +108,7 @@ export function updateSiteLink(
   if (sets.length === 0) {
     const row = db
       .prepare(
-        `SELECT id, label, url, sort_order, created_at, updated_at
+        `SELECT ${SELECT_COLS}
            FROM site_links WHERE id = ?`,
       )
       .get(id) as unknown as SiteLinkRow | undefined;
@@ -101,7 +120,7 @@ export function updateSiteLink(
   const row = db
     .prepare(
       `UPDATE site_links SET ${sets.join(", ")} WHERE id = ?
-         RETURNING id, label, url, sort_order, created_at, updated_at`,
+         RETURNING ${SELECT_COLS}`,
     )
     .get(...args, id) as unknown as SiteLinkRow | undefined;
   return row ? hydrate(row) : null;

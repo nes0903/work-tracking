@@ -372,11 +372,13 @@ CREATE TABLE IF NOT EXISTS site_links (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   label      TEXT NOT NULL,
   url        TEXT NOT NULL,
+  category   TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_site_links_order ON site_links(sort_order);
+CREATE INDEX IF NOT EXISTS idx_site_links_category ON site_links(category);
 
 COMMIT;

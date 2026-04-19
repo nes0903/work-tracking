@@ -20,6 +20,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className="login-shell">
       <section className="login-card">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/dobedub-logo-full.jpg"
+          alt="DOBE DUB"
+          className="login-logo"
+          width={240}
+          height={180}
+        />
         <p className="login-kicker">Work Tracking</p>
         <h1>조직 계정으로 로그인</h1>
         <p className="login-lead">

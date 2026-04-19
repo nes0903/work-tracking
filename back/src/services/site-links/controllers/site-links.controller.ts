@@ -21,11 +21,13 @@ import {
 interface CreatePayload {
   label?: string;
   url?: string;
+  category?: string | null;
 }
 
 interface UpdatePayload {
   label?: string;
   url?: string;
+  category?: string | null;
   sortOrder?: number;
 }
 
@@ -51,7 +53,11 @@ export class SiteLinksController {
   create(@Body() payload: CreatePayload) {
     const label = assertString(payload.label, "label");
     const url = assertString(payload.url, "url");
-    const link = createSiteLink({ label, url });
+    const category =
+      typeof payload.category === "string" && payload.category.trim()
+        ? payload.category.trim()
+        : null;
+    const link = createSiteLink({ label, url, category });
     return { ok: true, item: link };
   }
 
@@ -67,6 +73,7 @@ export class SiteLinksController {
     const patch: {
       label?: string;
       url?: string;
+      category?: string | null;
       sortOrder?: number;
     } = {};
     if (typeof payload.label === "string" && payload.label.trim()) {
@@ -74,6 +81,12 @@ export class SiteLinksController {
     }
     if (typeof payload.url === "string" && payload.url.trim()) {
       patch.url = payload.url.trim();
+    }
+    if (payload.category === null) {
+      patch.category = null;
+    } else if (typeof payload.category === "string") {
+      const trimmed = payload.category.trim();
+      patch.category = trimmed ? trimmed : null;
     }
     if (typeof payload.sortOrder === "number" && Number.isFinite(payload.sortOrder)) {
       patch.sortOrder = Math.floor(payload.sortOrder);
