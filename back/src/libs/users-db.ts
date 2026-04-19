@@ -49,6 +49,24 @@ export function upsertUser(input: {
   ).run(input.userId, input.userName, input.email, input.domainId);
 }
 
+/**
+ * LINE WORKS 봇 등 "로그인 흐름이 아닌" 경로에서 사용자 이름만 캐시한다.
+ * - last_login_at 은 건드리지 않음 (로그인 활동과 혼동 방지)
+ * - 이미 이름이 있는 사용자는 새 값이 있을 때만 덮어씀(COALESCE)
+ */
+export function upsertUserName(userId: string, userName: string | null): void {
+  if (!userId) return;
+  const db = getDatabase();
+  db.prepare(
+    `
+      INSERT INTO users (user_id, user_name)
+      VALUES (?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        user_name = COALESCE(excluded.user_name, users.user_name)
+    `,
+  ).run(userId, userName);
+}
+
 export function listUsers(): UserRow[] {
   const db = getDatabase();
   const rows = db

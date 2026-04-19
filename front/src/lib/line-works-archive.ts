@@ -16,6 +16,7 @@ export interface LineWorksArchiveMessage {
   channelTitle: string | null;
   channelType: string | null;
   userId: string | null;
+  userName: string | null;
   contentType: string;
   text: string | null;
   issuedAt: string | null;

@@ -18,6 +18,7 @@ import {
   upsertChannelMeta,
   upsertMessage,
 } from "@libs/line-works-bot-db";
+import { getUser, upsertUserName } from "@libs/users-db";
 import { emitFeedUpdate } from "@libs/feed-events";
 import {
   buildAttachmentObjectKey,
@@ -95,6 +96,14 @@ export class LineWorksBotService {
       this.logger.warn(`channel meta fetch failed: ${(err as Error).message}`);
     });
 
+    // 발신자 이름 캐시
+    const userId = event.source?.userId;
+    if (userId) {
+      void this.ensureUserName(botConfig, userId).catch((err) => {
+        this.logger.warn(`user name fetch failed: ${(err as Error).message}`);
+      });
+    }
+
     try {
       const stored = await this.persistEvent(botConfig, rawBody, event, channelId);
       emitFeedUpdate("line-works");
@@ -102,6 +111,18 @@ export class LineWorksBotService {
     } catch (err) {
       this.logger.error("Failed to persist LINE WORKS event", err as Error);
       return { status: 500, body: { ok: false, error: "Failed to persist event" } };
+    }
+  }
+
+  private async ensureUserName(
+    botConfig: BotConfig,
+    userId: string,
+  ): Promise<void> {
+    const existing = getUser(userId);
+    if (existing?.userName) return;
+    const name = await fetchBotScopedUserName(botConfig, userId);
+    if (name) {
+      upsertUserName(userId, name);
     }
   }
 

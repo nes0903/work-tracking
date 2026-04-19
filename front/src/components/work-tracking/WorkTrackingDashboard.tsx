@@ -1366,131 +1366,92 @@ export function WorkTrackingDashboard() {
                 {lineWorksArchive.items.length === 0 ? (
                   <p className="empty-note">수신된 메시지가 없습니다.</p>
                 ) : (
-                  lineWorksArchive.items.map((message) => (
-                    <article key={message.messageId} className="line-works-message">
-                      <header className="line-works-message-head">
-                        <div className="line-works-message-meta">
-                          <span className="line-works-channel" title={message.channelId}>
-                            {shortChannelLabel(message.channelId, message.channelTitle)}
-                          </span>
-                          <span className="line-works-user">
-                            {message.userId ?? "unknown"}
-                          </span>
-                          <span className="line-works-time">
+                  lineWorksArchive.items.map((message) => {
+                    const view = buildLineWorksView(message);
+                    return (
+                      <article key={message.messageId} className="line-works-message">
+                        <div className="line-works-message-main">
+                          <h4 className="line-works-message-title">
+                            {isLineWorksItemNew(message.issuedAt, message.receivedAt) ? (
+                              <span className="new-pill">NEW</span>
+                            ) : null}
+                            <span className="line-works-title-text">{view.title}</span>
+                            {view.channelLabel ? (
+                              <span className="line-works-channel-pill">
+                                {view.channelLabel}
+                              </span>
+                            ) : null}
+                          </h4>
+                          {view.subtitle ? (
+                            <p className="line-works-message-subtitle">{view.subtitle}</p>
+                          ) : null}
+                        </div>
+                        <div className="line-works-message-side">
+                          <span className="line-works-message-time">
                             {relativeTime(message.issuedAt ?? message.receivedAt)}
                           </span>
+                          <div className="line-works-message-actions">
+                            {(() => {
+                              const open = view.openAction;
+                              if (!open) return null;
+                              if (open.kind === "file") {
+                                return (
+                                  <button
+                                    type="button"
+                                    className="line-works-link as-button"
+                                    onClick={() =>
+                                      void openAttachment(
+                                        open.attachmentId,
+                                        open.fileName,
+                                        open.mimeType,
+                                      )
+                                    }
+                                  >
+                                    파일 열기
+                                  </button>
+                                );
+                              }
+                              return (
+                                <a
+                                  className="line-works-link"
+                                  href={open.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  링크 열기
+                                </a>
+                              );
+                            })()}
+                            <button
+                              type="button"
+                              className="line-works-link as-button"
+                              onClick={() =>
+                                openAttachCandidate({
+                                  source: "line_works_message",
+                                  externalId: message.messageId,
+                                  title:
+                                    (message.text?.slice(0, 60) ??
+                                      `[${message.contentType}]`) as string,
+                                  excerpt: message.text,
+                                  metadata: {
+                                    channelId: message.channelId,
+                                    channelTitle: message.channelTitle,
+                                    channelType: message.channelType,
+                                    userId: message.userId,
+                                    contentType: message.contentType,
+                                    issuedAt: message.issuedAt,
+                                    text: message.text,
+                                  },
+                                })
+                              }
+                            >
+                              태스크 추가
+                            </button>
+                          </div>
                         </div>
-                        <div className="line-works-message-tags">
-                          {isLineWorksItemNew(message.issuedAt, message.receivedAt) ? (
-                            <span className="new-pill">NEW</span>
-                          ) : null}
-                          <span className={`line-works-type type-${message.contentType}`}>
-                            {message.contentType}
-                          </span>
-                        </div>
-                      </header>
-
-                      {message.text ? (
-                        <p className="line-works-text">{message.text}</p>
-                      ) : null}
-
-                      {message.attachments.length > 0 ? (
-                        <div className="line-works-attachments">
-                          {message.attachments.map((attachment) => (
-                            <div key={attachment.id} className="line-works-attachment-row">
-                              <button
-                                type="button"
-                                className="line-works-attachment"
-                                onClick={() => {
-                                  void openAttachment(
-                                    attachment.id,
-                                    attachment.fileName,
-                                    attachment.mimeType,
-                                  );
-                                }}
-                              >
-                                <span className="line-works-attachment-name">
-                                  📎 {attachment.fileName ?? "파일"}
-                                </span>
-                                {attachment.fileSize ? (
-                                  <span className="line-works-attachment-size">
-                                    {formatFileSize(attachment.fileSize)}
-                                  </span>
-                                ) : null}
-                              </button>
-                              <button
-                                type="button"
-                                className="line-works-attach-tiny"
-                                onClick={() =>
-                                  openAttachCandidate({
-                                    source: "line_works_attachment",
-                                    externalId: String(attachment.id),
-                                    title: attachment.fileName ?? "첨부 파일",
-                                    excerpt: attachment.mimeType,
-                                    metadata: {
-                                      fileSize: attachment.fileSize,
-                                      mimeType: attachment.mimeType,
-                                      messageId: message.messageId,
-                                      channelId: message.channelId,
-                                    },
-                                  })
-                                }
-                                title="이 파일을 태스크에 연결"
-                              >
-                                + 태스크
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {message.links.length > 0 ? (
-                        <ul className="line-works-links">
-                          {message.links.map((link) => (
-                            <li key={link.id}>
-                              <a href={link.url} target="_blank" rel="noreferrer">
-                                {link.url}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-
-                      <div className="line-works-message-actions">
-                        <button
-                          type="button"
-                          className="line-works-action"
-                          onClick={() => {
-                            void handleCopyMessage(message);
-                          }}
-                        >
-                          복사
-                        </button>
-                        <button
-                          type="button"
-                          className="line-works-action"
-                          onClick={() =>
-                            openAttachCandidate({
-                              source: "line_works_message",
-                              externalId: message.messageId,
-                              title:
-                                message.text?.slice(0, 60) ??
-                                `[${message.contentType}] ${shortChannelLabel(message.channelId, message.channelTitle)}`,
-                              excerpt: message.text,
-                              metadata: {
-                                channelId: message.channelId,
-                                userId: message.userId,
-                                contentType: message.contentType,
-                                issuedAt: message.issuedAt,
-                              },
-                            })
-                          }
-                        >
-                          태스크 추가
-                        </button>
-                      </div>
-                    </article>
-                  ))
+                      </article>
+                    );
+                  })
                 )}
               </div>
             </section>
@@ -1674,6 +1635,105 @@ function TaskColumn({
 
 function syncLabel(value: string | null) {
   return value ? formatDateTime(value) : "아직 없음";
+}
+
+function formatUnknownUserId(userId: string): string {
+  if (userId.length > 14 && /-/.test(userId)) {
+    return `${userId.slice(0, 4)}…${userId.slice(-4)}`;
+  }
+  return userId;
+}
+
+interface LineWorksView {
+  title: string;
+  channelLabel: string | null;
+  subtitle: string | null;
+  openAction:
+    | {
+        kind: "file";
+        attachmentId: number;
+        fileName: string | null;
+        mimeType: string | null;
+      }
+    | { kind: "link"; url: string }
+    | null;
+}
+
+function buildLineWorksView(message: LineWorksArchiveMessage): LineWorksView {
+  const text = message.text?.trim() ?? "";
+  const firstAttachment = message.attachments[0];
+  const firstLink = message.links[0];
+  const isDM =
+    message.channelType === "SINGLE_USER" || message.channelId.startsWith("dm:");
+
+  // 1) 제목 우선순위: 텍스트 → 파일명 → 링크 URL → placeholder
+  let title: string;
+  let openAction: LineWorksView["openAction"] = null;
+  if (text) {
+    title = text.length > 140 ? `${text.slice(0, 140)}…` : text;
+    if (firstAttachment) {
+      openAction = {
+        kind: "file",
+        attachmentId: firstAttachment.id,
+        fileName: firstAttachment.fileName,
+        mimeType: firstAttachment.mimeType,
+      };
+    } else if (firstLink) {
+      openAction = { kind: "link", url: firstLink.url };
+    }
+  } else if (firstAttachment) {
+    title = firstAttachment.fileName ?? "파일";
+    openAction = {
+      kind: "file",
+      attachmentId: firstAttachment.id,
+      fileName: firstAttachment.fileName,
+      mimeType: firstAttachment.mimeType,
+    };
+  } else if (firstLink) {
+    title = firstLink.url;
+    openAction = { kind: "link", url: firstLink.url };
+  } else {
+    title = `[${message.contentType}]`;
+  }
+
+  // 2) 채널 라벨: title 이 있으면 그대로, 없으면 DM/채팅방 fallback.
+  //    ID 는 노출하지 않음.
+  const rawTitle =
+    typeof message.channelTitle === "string" ? message.channelTitle.trim() : "";
+  const channelLabel = rawTitle
+    ? isDM
+      ? `DM · ${rawTitle}`
+      : rawTitle
+    : isDM
+      ? "DM"
+      : null; // 그룹채팅인데 title 없으면 label 생략 (subtitle 에 작성자 표시로 대체)
+
+  // 3) 서브타이틀: 그룹채팅이면 작성자 이름, 첨부·링크 추가 개수
+  const subtitleParts: string[] = [];
+  if (!isDM) {
+    const author =
+      (message.userName && message.userName.trim()) ||
+      (message.userId && formatUnknownUserId(message.userId)) ||
+      null;
+    if (author) subtitleParts.push(`👤 ${author}`);
+  }
+  const extraAttachments = message.attachments.length - (title === firstAttachment?.fileName ? 1 : 0);
+  if (extraAttachments > 0 && text) {
+    subtitleParts.push(`📎 첨부 ${message.attachments.length}개`);
+  } else if (extraAttachments > 0 && !text) {
+    subtitleParts.push(`📎 외 ${extraAttachments}개`);
+  }
+  const extraLinks = message.links.length - (openAction?.kind === "link" ? 1 : 0);
+  if (extraLinks > 0) {
+    subtitleParts.push(`🔗 링크 ${message.links.length}개`);
+  }
+
+  return {
+    title,
+    channelLabel,
+    subtitle: subtitleParts.length > 0 ? subtitleParts.join(" · ") : null,
+    openAction,
+  };
 }
 
 function shortChannelLabel(channelId: string, title?: string | null): string {

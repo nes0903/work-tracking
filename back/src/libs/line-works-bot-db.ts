@@ -315,6 +315,7 @@ export interface ArchiveMessage {
   channelTitle: string | null;
   channelType: string | null;
   userId: string | null;
+  userName: string | null;
   contentType: string;
   text: string | null;
   issuedAt: string | null;
@@ -386,14 +387,19 @@ export function listArchive(options?: {
   const messages = db
     .prepare(
       `
-        SELECT message_id, channel_id, user_id, content_type, text, issued_at, received_at
-        FROM line_works_messages
-        ${useChannelFilter ? "WHERE channel_id = ?" : ""}
-        ORDER BY COALESCE(issued_at, received_at) DESC
+        SELECT m.message_id, m.channel_id, m.user_id, m.content_type,
+               m.text, m.issued_at, m.received_at,
+               u.user_name AS user_name
+        FROM line_works_messages m
+        LEFT JOIN users u ON u.user_id = m.user_id
+        ${useChannelFilter ? "WHERE m.channel_id = ?" : ""}
+        ORDER BY COALESCE(m.issued_at, m.received_at) DESC
         LIMIT ?
       `,
     )
-    .all(...channelParams, limit) as unknown as MessageDbRow[];
+    .all(...channelParams, limit) as unknown as (MessageDbRow & {
+      user_name: string | null;
+    })[];
 
   const messageIds = messages.map((row) => row.message_id);
 
@@ -461,6 +467,7 @@ export function listArchive(options?: {
       channelTitle: meta?.title ?? null,
       channelType: meta?.channelType ?? null,
       userId: row.user_id,
+      userName: row.user_name ?? null,
       contentType: row.content_type,
       text: row.text,
       issuedAt: row.issued_at,
