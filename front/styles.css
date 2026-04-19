@@ -980,6 +980,17 @@ button {
   line-height: 1.4;
 }
 
+.ref-picker-channel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+  max-width: 40%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ref-picker-item.multiline {
   align-items: flex-start;
 }

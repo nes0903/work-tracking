@@ -40,6 +40,7 @@ import {
 } from "./TaskCreateModal";
 import { TaskDetailDrawer } from "./TaskDetailDrawer";
 import { TaskList } from "./TaskList";
+import { TaskReferenceAddModal } from "./TaskReferenceAddModal";
 import {
   fetchTasks,
   PER_PAGE_OPTIONS,
@@ -108,6 +109,7 @@ export function WorkTrackingDashboard() {
   >("dashboard");
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
   const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(null);
+  const [refAddTaskId, setRefAddTaskId] = useState<string | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
@@ -513,10 +515,15 @@ export function WorkTrackingDashboard() {
         }
         break;
       case "line_works_attachment": {
-        const metadata = ref.metadata as { attachmentId?: number; fileName?: string; mimeType?: string } | null;
-        const id = metadata?.attachmentId ?? Number(ref.externalId);
-        if (Number.isFinite(id)) {
+        const metadata = ref.metadata as
+          | { attachmentId?: number | string; fileName?: string; mimeType?: string }
+          | null;
+        const raw = metadata?.attachmentId ?? ref.externalId;
+        const id = Number(raw);
+        if (Number.isFinite(id) && id > 0) {
           void openAttachment(id, metadata?.fileName ?? null, metadata?.mimeType ?? null);
+        } else {
+          console.warn("[reference] invalid attachment id", ref);
         }
         break;
       }
@@ -581,14 +588,26 @@ export function WorkTrackingDashboard() {
     hintedFileName?: string | null,
     hintedMimeType?: string | null,
   ) {
+    // Office 파일이 아닐 가능성을 대비해 클릭 시점에 빈 탭을 먼저 열어둠(팝업 차단 회피)
+    const officeHint = isOfficeFile(hintedFileName ?? null, hintedMimeType ?? null);
+    const pendingTab = officeHint ? null : window.open("about:blank", "_blank", "noopener");
+
     const resolved = await resolveAttachmentUrl(id);
-    if (!resolved) return;
+    if (!resolved) {
+      pendingTab?.close();
+      return;
+    }
     const fileName = resolved.fileName ?? hintedFileName ?? null;
     const mimeType = resolved.mimeType ?? hintedMimeType ?? null;
     if (isOfficeFile(fileName, mimeType)) {
+      pendingTab?.close();
       setPreviewState({ fileName, url: resolved.url });
     } else {
-      window.open(resolved.url, "_blank", "noopener");
+      if (pendingTab) {
+        pendingTab.location.href = resolved.url;
+      } else {
+        window.open(resolved.url, "_blank", "noopener");
+      }
     }
   }
 
@@ -1018,7 +1037,7 @@ export function WorkTrackingDashboard() {
             className={`sidebar-nav-link ${activeView === "line-works" ? "active" : ""}`.trim()}
             onClick={() => setActiveView("line-works")}
           >
-            LINE WORKS
+            Works
             {lineWorksNewCount > 0 ? (
               <span className="sidebar-nav-count new">{lineWorksNewCount}</span>
             ) : null}
@@ -1099,7 +1118,7 @@ export function WorkTrackingDashboard() {
               </>
             ) : activeView === "line-works" ? (
               <>
-                <h2>LINE WORKS</h2>
+                <h2>Works</h2>
                 <p>
                   {selectedLineWorksChannel === null
                     ? "수집된 채팅 메시지와 첨부를 전체 조회합니다."
@@ -1518,10 +1537,8 @@ export function WorkTrackingDashboard() {
           onChangeStatus={handleDrawerStatusChange}
           onDelete={handleDrawerDelete}
           onOpenReference={handleOpenReference}
-          onAddReference={() => {
-            setSelectedTask(null);
-            setAttachCandidate(null);
-            setAttachModalOpen(true);
+          onAddReference={(task) => {
+            setRefAddTaskId(task.id);
           }}
           onEdit={(task) => {
             setSelectedTask(null);
@@ -1550,6 +1567,20 @@ export function WorkTrackingDashboard() {
           setTaskEditTarget(null);
         }}
         onSubmit={handleTaskCreateSubmit}
+        notionItems={notionFeed.items}
+        lineWorksItems={lineWorksArchive.items}
+        lineWorksChannels={lineWorksArchive.channels}
+        storageItems={storageItems}
+        channelLabels={storageChannelLabels}
+      />
+      <TaskReferenceAddModal
+        open={refAddTaskId !== null}
+        taskId={refAddTaskId}
+        onClose={() => setRefAddTaskId(null)}
+        onAttached={() => {
+          // drawer 내부 참조 목록 재조회 트리거
+          setSelectedTask((prev) => (prev ? { ...prev } : prev));
+        }}
         notionItems={notionFeed.items}
         lineWorksItems={lineWorksArchive.items}
         lineWorksChannels={lineWorksArchive.channels}

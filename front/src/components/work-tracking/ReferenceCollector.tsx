@@ -430,101 +430,89 @@ function LineWorksTab({
       </div>
 
       <ul className="ref-picker-list">
-        {filtered.map((msg) => {
+        {filtered.flatMap((msg) => {
+          const rows: React.ReactNode[] = [];
+          const channel = channelLabel(msg.channelId);
           const hasText = Boolean(msg.text && msg.text.trim());
-          const msgTitle = hasText ? msg.text! : `[${msg.contentType}]`;
 
-          const msgRef: PendingReference = {
-            source: "line_works_message",
-            externalId: msg.messageId,
-            title: hasText
-              ? msgTitle.length > 120
-                ? `${msgTitle.slice(0, 120)}…`
-                : msgTitle
-              : msgTitle,
-            excerpt: `${channelLabel(msg.channelId)} · ${msg.userId ?? "unknown"}`,
-            metadata: {
-              channelId: msg.channelId,
-              channelTitle: msg.channelTitle,
-              channelType: msg.channelType,
-              userId: msg.userId,
-              issuedAt: msg.issuedAt,
-              contentType: msg.contentType,
-            },
-          };
-          const msgSelected = isPendingSelected(pending, {
-            source: "line_works_message",
-            externalId: msg.messageId,
-          });
+          if (hasText) {
+            const msgRef: PendingReference = {
+              source: "line_works_message",
+              externalId: msg.messageId,
+              title: msg.text!,
+              excerpt: channel,
+              metadata: {
+                channelId: msg.channelId,
+                channelTitle: msg.channelTitle,
+                channelType: msg.channelType,
+                userId: msg.userId,
+                issuedAt: msg.issuedAt,
+                contentType: msg.contentType,
+              },
+            };
+            const msgSelected = isPendingSelected(pending, {
+              source: "line_works_message",
+              externalId: msg.messageId,
+            });
+            rows.push(
+              <li key={`msg:${msg.messageId}`}>
+                <button
+                  type="button"
+                  className={`ref-picker-item multiline ${msgSelected ? "selected" : ""}`.trim()}
+                  onClick={() => onToggle(msgRef)}
+                >
+                  <span className="ref-picker-channel">💬 {channel}</span>
+                  <div className="ref-picker-main">
+                    <span className="ref-picker-title multiline">{msg.text}</span>
+                  </div>
+                  <span className="ref-picker-indicator">
+                    {msgSelected ? "✓" : "+"}
+                  </span>
+                </button>
+              </li>,
+            );
+          }
 
-          return (
-            <li key={msg.messageId}>
-              <button
-                type="button"
-                className={`ref-picker-item multiline ${msgSelected ? "selected" : ""}`.trim()}
-                onClick={() => onToggle(msgRef)}
-              >
-                <div className="ref-picker-main">
-                  <span className="ref-picker-title multiline">{msgTitle}</span>
-                  <span className="ref-picker-meta">{msgRef.excerpt}</span>
-                </div>
-                <span className="ref-picker-indicator">
-                  {msgSelected ? "✓" : "+"}
-                </span>
-              </button>
+          for (const att of msg.attachments) {
+            const fileName = att.fileName ?? "파일";
+            const attRef: PendingReference = {
+              source: "line_works_attachment",
+              externalId: String(att.id),
+              title: fileName,
+              excerpt: channel,
+              metadata: {
+                attachmentId: att.id,
+                messageId: msg.messageId,
+                channelId: msg.channelId,
+                fileName: att.fileName,
+                fileSize: att.fileSize,
+                mimeType: att.mimeType,
+              },
+            };
+            const attSelected = isPendingSelected(pending, {
+              source: "line_works_attachment",
+              externalId: String(att.id),
+            });
+            rows.push(
+              <li key={`att:${att.id}`}>
+                <button
+                  type="button"
+                  className={`ref-picker-item ${attSelected ? "selected" : ""}`.trim()}
+                  onClick={() => onToggle(attRef)}
+                >
+                  <span className="ref-picker-channel">📎 {channel}</span>
+                  <div className="ref-picker-main">
+                    <span className="ref-picker-title">{fileName}</span>
+                  </div>
+                  <span className="ref-picker-indicator">
+                    {attSelected ? "✓" : "+"}
+                  </span>
+                </button>
+              </li>,
+            );
+          }
 
-              {msg.attachments.length > 0 ? (
-                <ul className="ref-picker-attachment-list">
-                  {msg.attachments.map((att) => {
-                    const fileName = att.fileName ?? "파일";
-                    const attRef: PendingReference = {
-                      source: "line_works_attachment",
-                      externalId: String(att.id),
-                      title: fileName,
-                      excerpt: [
-                        att.mimeType,
-                        formatFileSize(att.fileSize),
-                      ]
-                        .filter(Boolean)
-                        .join(" · "),
-                      metadata: {
-                        attachmentId: att.id,
-                        messageId: msg.messageId,
-                        channelId: msg.channelId,
-                        fileName: att.fileName,
-                        fileSize: att.fileSize,
-                        mimeType: att.mimeType,
-                      },
-                    };
-                    const attSelected = isPendingSelected(pending, {
-                      source: "line_works_attachment",
-                      externalId: String(att.id),
-                    });
-                    return (
-                      <li key={att.id}>
-                        <button
-                          type="button"
-                          className={`ref-picker-item attachment ${attSelected ? "selected" : ""}`.trim()}
-                          onClick={() => onToggle(attRef)}
-                        >
-                          <span className="ref-picker-attachment-icon">📎</span>
-                          <div className="ref-picker-main">
-                            <span className="ref-picker-title">{fileName}</span>
-                            {attRef.excerpt ? (
-                              <span className="ref-picker-meta">{attRef.excerpt}</span>
-                            ) : null}
-                          </div>
-                          <span className="ref-picker-indicator">
-                            {attSelected ? "✓" : "+"}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-            </li>
-          );
+          return rows;
         })}
       </ul>
     </div>

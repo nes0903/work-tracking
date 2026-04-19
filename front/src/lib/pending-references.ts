@@ -73,9 +73,9 @@ export function sourceLabel(source: PendingReferenceSource): string {
     case "notion_page":
       return "Notion";
     case "line_works_message":
-      return "LINE WORKS";
+      return "Works 메시지";
     case "line_works_attachment":
-      return "LW 파일";
+      return "Works 파일";
     case "figma_node":
       return "Figma";
     default:

@@ -98,9 +98,9 @@ export async function fetchReferencesForTasks(
 export function sourceLabel(source: ReferenceSource): string {
   switch (source) {
     case "line_works_message":
-      return "LW 메시지";
+      return "Works 메시지";
     case "line_works_attachment":
-      return "LW 파일";
+      return "Works 파일";
     case "notion_page":
       return "Notion";
     case "figma_node":
