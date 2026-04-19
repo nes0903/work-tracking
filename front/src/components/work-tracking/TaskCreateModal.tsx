@@ -11,6 +11,7 @@ import type { NotionUpdateItem, TaskPriority } from "@/lib/work-tracking";
 import { ReferenceCollector } from "./ReferenceCollector";
 
 export interface TaskCreateSubmit {
+  taskId?: string;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -20,9 +21,22 @@ export interface TaskCreateSubmit {
   pendingReferences: PendingReference[];
 }
 
+export interface TaskEditInitial {
+  id: string;
+  title: string;
+  category: string;
+  priority: TaskPriority;
+  dueDate: string;
+  dueTime: string | null;
+  note: string;
+  workDate: string;
+}
+
 interface Props {
   open: boolean;
   defaultDueDate: string;
+  mode?: "create" | "edit";
+  initialTask?: TaskEditInitial | null;
   onClose: () => void;
   onSubmit: (payload: TaskCreateSubmit) => Promise<void>;
   notionItems: NotionUpdateItem[];
@@ -52,9 +66,22 @@ function initialForm(dueDate: string): FormState {
   };
 }
 
+function formFromTask(task: TaskEditInitial): FormState {
+  return {
+    title: task.title,
+    category: task.category,
+    priority: task.priority,
+    dueDate: task.dueDate || task.workDate,
+    dueTime: task.dueTime ?? "",
+    note: task.note,
+  };
+}
+
 export function TaskCreateModal({
   open,
   defaultDueDate,
+  mode = "create",
+  initialTask = null,
   onClose,
   onSubmit,
   notionItems,
@@ -63,17 +90,24 @@ export function TaskCreateModal({
   storageItems,
   channelLabels,
 }: Props) {
-  const [form, setForm] = useState<FormState>(() => initialForm(defaultDueDate));
+  const isEdit = mode === "edit" && !!initialTask;
+  const [form, setForm] = useState<FormState>(() =>
+    isEdit && initialTask ? formFromTask(initialTask) : initialForm(defaultDueDate),
+  );
   const [pendingReferences, setPendingReferences] = useState<PendingReference[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setForm(initialForm(defaultDueDate));
+      if (mode === "edit" && initialTask) {
+        setForm(formFromTask(initialTask));
+      } else {
+        setForm(initialForm(defaultDueDate));
+      }
       setPendingReferences([]);
       setSubmitting(false);
     }
-  }, [open, defaultDueDate]);
+  }, [open, defaultDueDate, mode, initialTask]);
 
   if (!open) return null;
 
@@ -86,6 +120,7 @@ export function TaskCreateModal({
     setSubmitting(true);
     try {
       await onSubmit({
+        taskId: isEdit && initialTask ? initialTask.id : undefined,
         title: form.title,
         category: form.category,
         priority: form.priority,
@@ -112,7 +147,7 @@ export function TaskCreateModal({
     >
       <div className="task-create-modal">
         <header className="task-create-modal-head">
-          <h3>태스크 생성</h3>
+          <h3>{isEdit ? "태스크 편집" : "태스크 생성"}</h3>
           <button
             type="button"
             className="modal-close"
@@ -208,15 +243,17 @@ export function TaskCreateModal({
             />
           </label>
 
-          <ReferenceCollector
-            pending={pendingReferences}
-            onPendingChange={setPendingReferences}
-            notionItems={notionItems}
-            lineWorksItems={lineWorksItems}
-            lineWorksChannels={lineWorksChannels}
-            storageItems={storageItems}
-            channelLabels={channelLabels}
-          />
+          {isEdit ? null : (
+            <ReferenceCollector
+              pending={pendingReferences}
+              onPendingChange={setPendingReferences}
+              notionItems={notionItems}
+              lineWorksItems={lineWorksItems}
+              lineWorksChannels={lineWorksChannels}
+              storageItems={storageItems}
+              channelLabels={channelLabels}
+            />
+          )}
 
           <div className="task-create-modal-actions">
             <button
@@ -228,7 +265,7 @@ export function TaskCreateModal({
               취소
             </button>
             <button type="submit" className="primary-button" disabled={submitting}>
-              {submitting ? "저장 중..." : "업무 추가"}
+              {submitting ? "저장 중..." : isEdit ? "저장" : "업무 추가"}
             </button>
           </div>
         </form>

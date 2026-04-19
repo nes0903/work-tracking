@@ -48,6 +48,34 @@ export class DashboardService {
           String(payload?.taskId ?? ""),
           payload?.status as TaskStatus,
         );
+      case "updateTask": {
+        const patch = (payload?.patch ?? {}) as Record<string, unknown>;
+        const cleaned: Parameters<
+          typeof this.dashboardRepository.updateTask
+        >[2] = {};
+        if (typeof patch.title === "string") cleaned.title = patch.title;
+        if (typeof patch.category === "string") cleaned.category = patch.category;
+        if (
+          patch.priority === "high" ||
+          patch.priority === "medium" ||
+          patch.priority === "low"
+        ) {
+          cleaned.priority = patch.priority;
+        }
+        if (typeof patch.dueDate === "string") cleaned.dueDate = patch.dueDate;
+        if (patch.dueTime === null) cleaned.dueTime = null;
+        else if (typeof patch.dueTime === "string") cleaned.dueTime = patch.dueTime;
+        if (typeof patch.note === "string") cleaned.note = patch.note;
+        if (patch.assigneeUserId === null) cleaned.assigneeUserId = null;
+        else if (typeof patch.assigneeUserId === "string") {
+          cleaned.assigneeUserId = patch.assigneeUserId;
+        }
+        return this.dashboardRepository.updateTask(
+          date,
+          String(payload?.taskId ?? ""),
+          cleaned,
+        );
+      }
       case "deleteTask":
         return this.dashboardRepository.deleteTask(
           date,

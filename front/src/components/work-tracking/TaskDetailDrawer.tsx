@@ -23,6 +23,7 @@ interface Props {
   onDelete: (task: TaskListItem) => Promise<void> | void;
   onOpenReference: (ref: TaskReference) => void;
   onAddReference: (task: TaskListItem) => void;
+  onEdit: (task: TaskListItem) => void;
 }
 
 export function TaskDetailDrawer({
@@ -32,6 +33,7 @@ export function TaskDetailDrawer({
   onDelete,
   onOpenReference,
   onAddReference,
+  onEdit,
 }: Props) {
   const [references, setReferences] = useState<TaskReference[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,6 +88,13 @@ export function TaskDetailDrawer({
             <span className={`task-drawer-status status-${task.status}`}>
               {statusLabel(task.status)}
             </span>
+            <button
+              type="button"
+              className="text-button task-drawer-edit"
+              onClick={() => onEdit(task)}
+            >
+              편집
+            </button>
             <button
               type="button"
               className="modal-close"

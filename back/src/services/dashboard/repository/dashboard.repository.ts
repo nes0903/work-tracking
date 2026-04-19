@@ -7,10 +7,12 @@ import {
   importLegacyDays,
   recordFocusSessionForDate,
   updateNotesForDate,
+  updateTaskForDate,
   updateTaskStatusForDate,
   updateTimerDurationForDate,
   type CreateTaskInput,
   type DashboardState,
+  type UpdateTaskInput,
 } from "@libs/dashboard-db";
 import { type TaskStatus, type WorkDayMap } from "@libs/work-tracking";
 
@@ -34,6 +36,14 @@ export class DashboardRepository {
     status: TaskStatus,
   ): DashboardState {
     return updateTaskStatusForDate(date, taskId, status);
+  }
+
+  updateTask(
+    date: string,
+    taskId: string,
+    patch: UpdateTaskInput,
+  ): DashboardState {
+    return updateTaskForDate(date, taskId, patch);
   }
 
   deleteTask(date: string, taskId: string): DashboardState {

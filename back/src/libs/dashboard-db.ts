@@ -272,6 +272,73 @@ export function createTaskForDate(
   });
 }
 
+export interface UpdateTaskInput {
+  title?: string;
+  category?: string;
+  priority?: TaskPriority;
+  dueDate?: string;
+  dueTime?: string | null;
+  note?: string;
+  assigneeUserId?: string | null;
+}
+
+export function updateTaskForDate(
+  dateKey: string,
+  taskId: string,
+  patch: UpdateTaskInput,
+): DashboardState {
+  return withTransaction((db) => {
+    prepareWorkDay(db, dateKey);
+
+    const sets: string[] = [];
+    const args: (string | number | null)[] = [];
+
+    if (patch.title !== undefined) {
+      sets.push("title = ?");
+      args.push(String(patch.title).trim());
+    }
+    if (patch.category !== undefined) {
+      sets.push("category = ?");
+      args.push(String(patch.category).trim());
+    }
+    if (patch.priority !== undefined) {
+      sets.push("priority = ?");
+      args.push(patch.priority);
+    }
+    if (patch.dueDate !== undefined) {
+      sets.push("due_date = ?");
+      args.push(patch.dueDate || dateKey);
+    }
+    if (patch.dueTime !== undefined) {
+      sets.push("due_time = ?");
+      args.push(normalizeDueTime(patch.dueTime));
+    }
+    if (patch.note !== undefined) {
+      sets.push("note = ?");
+      args.push(String(patch.note));
+    }
+    if (patch.assigneeUserId !== undefined) {
+      sets.push("assignee_user_id = ?");
+      args.push(patch.assigneeUserId ?? null);
+    }
+
+    if (sets.length > 0) {
+      sets.push("updated_at = ?");
+      args.push(new Date().toISOString());
+
+      db.prepare(
+        `UPDATE tasks SET ${sets.join(", ")} WHERE id = ? AND work_date = ?`,
+      ).run(...args, taskId, dateKey);
+
+      touchWorkDay(db, dateKey);
+    }
+
+    return {
+      days: selectDays(db),
+    };
+  });
+}
+
 export function updateTaskStatusForDate(
   dateKey: string,
   taskId: string,

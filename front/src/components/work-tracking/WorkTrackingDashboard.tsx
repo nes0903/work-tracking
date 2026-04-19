@@ -33,7 +33,11 @@ import { GithubRepoCard } from "./GithubRepoCard";
 import { Pagination } from "./Pagination";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
-import { TaskCreateModal, type TaskCreateSubmit } from "./TaskCreateModal";
+import {
+  TaskCreateModal,
+  type TaskCreateSubmit,
+  type TaskEditInitial,
+} from "./TaskCreateModal";
 import { TaskDetailDrawer } from "./TaskDetailDrawer";
 import { TaskList } from "./TaskList";
 import {
@@ -103,6 +107,7 @@ export function WorkTrackingDashboard() {
     "dashboard" | "calendar" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
+  const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
@@ -746,6 +751,40 @@ export function WorkTrackingDashboard() {
   }
 
   async function handleTaskCreateSubmit(payload: TaskCreateSubmit) {
+    if (payload.taskId && taskEditTarget) {
+      await postDashboardAction({
+        action: "updateTask",
+        date: taskEditTarget.workDate,
+        taskId: payload.taskId,
+        patch: {
+          title: payload.title,
+          category: payload.category,
+          priority: payload.priority,
+          dueDate: payload.dueDate || taskEditTarget.workDate,
+          dueTime: payload.dueTime,
+          note: payload.note,
+        },
+      });
+      setTaskEditTarget(null);
+      setSelectedTask((prev) =>
+        prev && prev.id === payload.taskId
+          ? {
+              ...prev,
+              title: payload.title,
+              category: payload.category,
+              priority: payload.priority,
+              dueDate: payload.dueDate || taskEditTarget.workDate,
+              dueTime: payload.dueTime,
+              note: payload.note,
+            }
+          : prev,
+      );
+      if (activeView === "dashboard") {
+        await reloadDashboardTasks();
+      }
+      return;
+    }
+
     const result = await postDashboardAction({
       action: "createTask",
       date: activeDate,
@@ -1471,12 +1510,31 @@ export function WorkTrackingDashboard() {
             });
             setAttachModalOpen(true);
           }}
+          onEdit={(task) => {
+            setSelectedTask(null);
+            setTaskEditTarget({
+              id: task.id,
+              title: task.title,
+              category: task.category,
+              priority: task.priority,
+              dueDate: task.dueDate,
+              dueTime: task.dueTime,
+              note: task.note,
+              workDate: task.workDate,
+            });
+            setTaskCreateOpen(true);
+          }}
         />
       ) : null}
       <TaskCreateModal
         open={taskCreateOpen}
         defaultDueDate={activeDate}
-        onClose={() => setTaskCreateOpen(false)}
+        mode={taskEditTarget ? "edit" : "create"}
+        initialTask={taskEditTarget}
+        onClose={() => {
+          setTaskCreateOpen(false);
+          setTaskEditTarget(null);
+        }}
         onSubmit={handleTaskCreateSubmit}
         notionItems={notionFeed.items}
         lineWorksItems={lineWorksArchive.items}
