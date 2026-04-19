@@ -25,6 +25,7 @@ const ALLOWED_SOURCES: ReferenceSource[] = [
   "line_works_message",
   "line_works_attachment",
   "notion_page",
+  "figma_node",
   "url",
 ];
 

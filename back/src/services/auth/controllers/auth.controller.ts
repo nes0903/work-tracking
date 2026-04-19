@@ -18,6 +18,7 @@ import {
   deleteSession,
   SESSION_TTL_SECONDS,
 } from "@libs/auth-db";
+import { upsertUser } from "@libs/users-db";
 import {
   buildAuthorizeUrl,
   exchangeCodeForToken,
@@ -123,10 +124,22 @@ export class AuthController {
         return res.redirect(loginErrorRedirect("invalid_user"));
       }
 
+      const resolvedUserId = String(user.userId);
+      const resolvedUserName = formatUserName(user);
+      const resolvedEmail = user.email ?? null;
+
+      // users 테이블에도 upsert (태스크 할당자/담당자 드롭다운용 마스터)
+      upsertUser({
+        userId: resolvedUserId,
+        userName: resolvedUserName,
+        email: resolvedEmail,
+        domainId: userDomainId,
+      });
+
       const session = createSession({
-        userId: String(user.userId),
-        userName: formatUserName(user),
-        email: user.email ?? null,
+        userId: resolvedUserId,
+        userName: resolvedUserName,
+        email: resolvedEmail,
         domainId: userDomainId,
       });
 

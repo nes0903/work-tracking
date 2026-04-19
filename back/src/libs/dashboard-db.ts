@@ -176,6 +176,8 @@ export interface CreateTaskInput {
   dueDate: string;
   estimate: number;
   note: string;
+  createdByUserId?: string | null;
+  assigneeUserId?: string | null;
 }
 
 export function getDashboardState(dateKey: string): DashboardState {
@@ -231,14 +233,18 @@ export function createTaskForDate(
     const timestamp = new Date().toISOString();
     const lineageId = createId();
 
+    const createdBy = input.createdByUserId ?? null;
+    const assignee = input.assigneeUserId ?? createdBy;
+
     db.prepare(
       `
         INSERT INTO tasks (
           id, lineage_id, work_date, title, category, priority, due_date,
           estimate_minutes, note, status, sort_order, carryover_count,
-          carried_from_date, created_at, updated_at, completed_at
+          carried_from_date, created_at, updated_at, completed_at,
+          created_by_user_id, assignee_user_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, 0, NULL, ?, ?, NULL)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, 0, NULL, ?, ?, NULL, ?, ?)
       `,
     ).run(
       lineageId,
@@ -252,6 +258,8 @@ export function createTaskForDate(
       input.note.trim(),
       timestamp,
       timestamp,
+      createdBy,
+      assignee,
     );
 
     touchWorkDay(db, dateKey);
@@ -488,22 +496,27 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
         SELECT
           id, lineage_id, work_date, title, category, priority, due_date,
           estimate_minutes, note, status, created_at, updated_at,
-          carryover_count, carried_from_date, completed_at
+          carryover_count, carried_from_date, completed_at,
+          created_by_user_id, assignee_user_id
         FROM tasks
         WHERE work_date < ? AND status <> 'done'
         ORDER BY work_date DESC, datetime(created_at) ASC, id ASC
       `,
     )
-    .all(targetDateKey) as unknown as TaskRow[];
+    .all(targetDateKey) as unknown as (TaskRow & {
+      created_by_user_id: string | null;
+      assignee_user_id: string | null;
+    })[];
 
   const insertStatement = db.prepare(
     `
       INSERT INTO tasks (
         id, lineage_id, work_date, title, category, priority, due_date,
         estimate_minutes, note, status, sort_order, carryover_count,
-        carried_from_date, created_at, updated_at, completed_at
+        carried_from_date, created_at, updated_at, completed_at,
+        created_by_user_id, assignee_user_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, NULL)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, NULL, ?, ?)
     `,
   );
   const deleteStatement = db.prepare("DELETE FROM tasks WHERE id = ?");
@@ -529,6 +542,8 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
       row.work_date,
       row.created_at,
       new Date().toISOString(),
+      row.created_by_user_id,
+      row.assignee_user_id,
     );
     deleteStatement.run(row.id);
     existingLineages.add(row.lineage_id);

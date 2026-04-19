@@ -34,34 +34,40 @@
 ### 레이아웃
 
 ```
-┌─ 태스크 생성 ─────────────────────────────────┐
-│ 업무명 / 카테고리 / 우선순위 / 마감 / 예상 / 메모  │
-│                                                │
-│ ─ 참조 링크 (선택) ─                          │
-│ ┌─────────────────────────────────────────┐  │
-│ │ [ URL ] [ Notion ] [ LINE WORKS ] [ 파일 ] │ ← 탭
-│ │                                          │  │
-│ │  (선택한 탭에 따른 picker UI)              │  │
-│ └─────────────────────────────────────────┘  │
-│                                                │
-│ ─ 추가된 참조 (3) ─                           │
-│  · [Notion] 플랫폼 본부 / 기획 / 랜딩페이지 v2  │
-│  · [LW]    @홍길동: "이 부분 UI 수정 요청"     │
-│  · [파일]   spec.pdf (2.4MB)                   │
-│                                                │
-│ [ 업무 추가 ]                                  │
-└────────────────────────────────────────────────┘
+┌─ 태스크 생성 ─────────────────────────────────────────────┐
+│ 업무명 / 카테고리 / 우선순위 / 마감 / 예상 / 메모 / 담당자    │
+│                                                            │
+│ ─ 참조 (선택) ─                                           │
+│ ┌────────────────────────────────────────────────────┐   │
+│ │ [ Notion ] [ LINE WORKS ] [ Figma ] [ 파일 ] [ 기타 URL ] │  ← 5탭
+│ │                                                    │   │
+│ │  (선택한 탭에 따른 picker UI)                         │   │
+│ └────────────────────────────────────────────────────┘   │
+│                                                            │
+│ ─ 추가된 참조 (4) ─                                       │
+│  📄 Notion   플랫폼 본부 / 기획 / 랜딩페이지 v2             │
+│  💬 LW       @홍길동: "이 부분 UI 수정 요청..."             │
+│  🎨 Figma    Hero Section v3 (fileKey:abc / node:1:234)    │
+│  🔗 기타     https://notion.so/... (외부 문서)              │
+│                                                            │
+│ [ 업무 추가 ]                                              │
+└────────────────────────────────────────────────────────────┘
 ```
 
-### 탭별 동작
+### 탭별 동작 (2026-04-20 업데이트)
 
 | 탭 | 리스트 소스 | 선택 시 | 생성될 reference |
 |---|---|---|---|
-| **URL** | (입력창) | URL + 표시이름 입력 → `+추가` | source=`url` |
 | **Notion** | `notionFeed.items` (최근 20건) + 검색 | 항목 클릭 | source=`notion_page`, externalId=`page_url`, metadata에 section/parent |
-| **LINE WORKS** | `lineWorksArchive.items` (최근 50건) + 채널 필터 | 메시지 클릭 → 본문 참조 | source=`line_works_message`, externalId=`messageId` |
-| **LINE WORKS 첨부** | 메시지 중 첨부 있는 것 필터 | 첨부 클릭 | source=`line_works_attachment`, externalId=`attachment.id` |
-| **파일 저장소** | `storageItems` 트리 뷰 (채널→날짜→파일) | 파일 클릭 | source=`line_works_attachment`, externalId=`attachment.id` |
+| **LINE WORKS** | `lineWorksArchive.items` (최근 50건) + 채널 필터 | 메시지 / 첨부 클릭 | 메시지 → source=`line_works_message` / 첨부 → source=`line_works_attachment` |
+| **Figma** ✨신규 | Figma URL 입력창 | Figma URL 붙여넣기 → 자동 파싱 (`fileKey`, `nodeId`) → `+추가` | source=`figma_node`, externalId=URL, metadata=`{fileKey, nodeId}` |
+| **파일 저장소** | `storageItems` 플랫 리스트 | 파일 클릭 | source=`line_works_attachment`, externalId=`attachment.id` |
+| **기타 URL** (리네임) | 범용 URL 입력창 | URL + 표시이름 입력 → `+추가` | source=`url` |
+
+> **변경점**:
+> - 기존 단일 "URL" 탭을 **"기타 URL"** 로 명칭 변경 (외부 리소스 범용)
+> - **Figma 탭** 신규 추가 — URL 파싱으로 fileKey/nodeId 자동 추출
+> - 탭 순서 재정렬: **Notion → LINE WORKS → Figma → 파일 → 기타 URL** (자주 쓰는 순)
 
 ### 공통 상호작용
 - 선택하면 **하단 "추가된 참조" 리스트에 즉시 반영** (pending)
@@ -85,8 +91,57 @@ type PendingReference =
   | { source: "url"; externalId: string; title: string; externalUrl: string }
   | { source: "notion_page"; externalId: string; title: string; excerpt: string; externalUrl: string; metadata: { section?: string; parent?: string; editor?: string; editedAt?: string } }
   | { source: "line_works_message"; externalId: string; title: string; excerpt: string; metadata: { channelId: string; channelTitle?: string; userId?: string; issuedAt?: string; contentType: string } }
-  | { source: "line_works_attachment"; externalId: string; title: string; excerpt: string; metadata: { attachmentId: number; messageId: string; fileName: string; fileSize: number; mimeType: string } };
+  | { source: "line_works_attachment"; externalId: string; title: string; excerpt: string; metadata: { attachmentId: number; messageId: string; fileName: string; fileSize: number; mimeType: string } }
+  | { source: "figma_node"; externalId: string; title: string; externalUrl: string; metadata: { fileKey: string; nodeId: string | null } };   // ✨ 신규
 ```
+
+### Figma 탭 세부 스펙
+
+**입력 UX**:
+- URL 입력창 (플레이스홀더 `https://www.figma.com/file/... 또는 .../design/...?node-id=...`)
+- 표시 이름 입력창 (선택, 비어있으면 URL 사용)
+- `+추가` 버튼
+
+**URL 파싱 규칙**:
+```ts
+function parseFigmaUrl(raw: string): { fileKey: string; nodeId: string | null } | null {
+  // https://www.figma.com/file/<fileKey>/<slug>?node-id=<nodeId>
+  // https://www.figma.com/design/<fileKey>/... (새 형식)
+  const match = raw.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)\//);
+  if (!match) return null;
+  const fileKey = match[1];
+  const nodeMatch = raw.match(/[?&]node-id=([^&]+)/);
+  const nodeId = nodeMatch ? decodeURIComponent(nodeMatch[1]) : null;
+  return { fileKey, nodeId };
+}
+```
+
+**유효성 검증**:
+- `figma.com` 도메인 아닐 때 → 에러 메시지 "Figma URL이 아닙니다. 기타 URL 탭을 사용하세요"
+- `fileKey` 추출 실패 시 → 에러 "fileKey를 찾을 수 없습니다"
+- `nodeId` 는 선택 (없으면 파일 전체로 간주)
+
+**생성되는 reference 예시**:
+```json
+{
+  "source": "figma_node",
+  "externalId": "https://www.figma.com/file/abc123/Design?node-id=1%3A234",
+  "title": "Hero Section v3",
+  "externalUrl": "https://www.figma.com/file/abc123/Design?node-id=1%3A234",
+  "metadata": { "fileKey": "abc123", "nodeId": "1:234" }
+}
+```
+
+**외부 정보 보강 (Phase 5+)**:
+- Figma Personal Access Token 이 있으면 `/v1/files/:fileKey?ids=<nodeId>&depth=1` 호출로 **노드 이름·파일명 자동 채움**
+- 초기에는 사용자가 수동 입력 or URL 그대로 제목 사용
+
+### 기타 URL 탭 (리네임)
+
+- 기존 "URL" → **"기타 URL"**
+- 동작 동일: 외부 리소스 (Slack, 외부 문서, 임의 웹페이지 등) 범용 참조
+- `source=url`
+- **힌트**: 입력창에 figma.com URL 을 붙여넣으면 "Figma URL 은 Figma 탭을 사용하세요" 안내 메시지 표시 (선택, UX 개선용)
 
 이 타입 그대로 `POST /api/task-references` 에 매핑.
 
@@ -97,17 +152,23 @@ type PendingReference =
 ```
 WorkTrackingDashboard
   └─ (activeView === "task-create")
-       └─ TaskCreateView                          ← 신규 분리 컴포넌트
-            ├─ TaskFormFields                     ← 기본 필드
-            ├─ ReferenceCollector                 ← 참조 섹션 (탭 + 선택 리스트)
-            │    ├─ UrlReferenceTab
-            │    ├─ NotionReferenceTab            ← notionFeed 주입
-            │    ├─ LineWorksReferenceTab         ← lineWorksArchive 주입
-            │    └─ StorageReferenceTab           ← storageItems + channelLabels 주입
-            └─ PendingReferenceList               ← 선택된 참조 목록 + 제거
+       └─ ReferenceCollector                      ← 5탭 컨테이너 (이미 구현)
+            ├─ NotionTab                          ← notionFeed 주입
+            ├─ LineWorksTab                       ← lineWorksArchive 주입
+            ├─ FigmaTab   ✨신규                   ← URL 파싱 + metadata 추출
+            ├─ StorageTab                         ← storageItems + channelLabels 주입
+            └─ OtherUrlTab (=기존 UrlTab 리네임)   ← 범용 URL 입력
+       └─ PendingReferenceList                    ← 선택된 참조 목록 + 제거
 ```
 
 **Dashboard 가 이미 모든 데이터 상태 (notionFeed, lineWorksArchive, storageItems) 를 가지고 있으므로**, props 로 내려주기만 하면 별도 fetch 없이 재활용.
+
+**파일 추가/수정**:
+- [신규] `ReferenceCollector.tsx` 내부에 `FigmaTab` 함수형 컴포넌트 추가
+- [수정] 기존 `UrlTab` → `OtherUrlTab` 으로 리네임 + 버튼 라벨 "기타 URL"
+- [수정] 탭 순서: `Notion → LINE WORKS → Figma → 파일 저장소 → 기타 URL`
+- [수정] `lib/pending-references.ts` 의 `PendingReferenceSource` 에 `"figma_node"` 추가
+- [수정] `sourceIcon` / `sourceLabel` 에 `figma_node` 매핑 추가 (🎨 / `Figma`)
 
 ---
 
@@ -131,34 +192,31 @@ Phase 별 개선 추가 검토 (필수 아님):
 
 ## 6. 구현 Phase
 
-### Phase 1 — 탭 레이아웃 + 기존 URL picker 분리 (하루)
-- `TaskCreateView` 컴포넌트 분리
-- `ReferenceCollector` + 탭 헤더 UI
-- 현재 URL 입력을 `UrlReferenceTab` 로 이사
-- "추가된 참조" 리스트 공통화
+### ✅ Phase 1~4 완료 (2026-04-19)
+- `ReferenceCollector` + 4 탭 (URL / Notion / LINE WORKS / 파일 저장소) 구현됨
+- `PendingReference` 타입 + 중복 방지 + submit 시 배치 attach 동작 중
 
-### Phase 2 — Notion picker (반나절)
-- `NotionReferenceTab` : `notionFeed.items` 렌더 + 제목 검색
-- 항목 클릭 → pending 에 `source=notion_page` 로 추가
-- 중복 방지 (같은 externalId 이미 있으면 제거 토글)
+### Phase 5 — Figma 탭 + URL 리네임 (2026-04-20 추가) (반나절)
+- `ReferenceCollector` 에 `FigmaTab` 추가
+  - URL 입력창 + 표시이름 입력창
+  - `parseFigmaUrl` 로 fileKey/nodeId 파싱 및 유효성 검증
+  - 에러 케이스 UI (도메인 틀림, fileKey 추출 실패)
+- 기존 `UrlTab` → `OtherUrlTab` 리네임, 버튼 라벨 "기타 URL"
+- `PendingReferenceSource` 에 `"figma_node"` 추가
+- `sourceIcon` / `sourceLabel` 매핑 추가 (🎨 / "Figma")
+- 탭 순서 재정렬: Notion → LINE WORKS → Figma → 파일 저장소 → 기타 URL
 
-### Phase 3 — LINE WORKS 메시지/첨부 picker (하루)
-- `LineWorksReferenceTab` : `lineWorksArchive.items` 리스트
-- 채널 드롭다운 필터 (`channels` 사용)
-- 각 행에 본문 미리보기 + 첨부 목록
-- 클릭 지점에 따라 `line_works_message` 또는 `line_works_attachment` 로 추가
+### Phase 6 — 태스크 담당자 입력 연결 (대시보드 계획과 교차)
+- 태스크 생성 폼에 **담당자 드롭다운** 추가 (디폴트: 세션 유저)
+- `users` 테이블에서 선택지 가져오기 (별도 API `/api/users`)
+- `POST /api/dashboard action=createTask` body 에 `assigneeUserId` 추가
 
-### Phase 4 — 파일 저장소 picker (반나절)
-- `StorageReferenceTab` : 기존 `StorageTreeView` 재사용 (onSelect prop 추가)
-- 트리에서 파일 클릭 → `line_works_attachment` 로 추가
-- 폴더 구조는 그대로 (채널 이름 치환된 상태)
-
-### Phase 5 — 품질 개선 (추후)
+### Phase 7 — 품질 개선 (추후)
 - 검색창 debounce
-- "더보기" 버튼 / 무한 스크롤 (현재 limit=20~50 으로 끊어두고 필요 시 확장)
+- "더보기" 버튼 / 무한 스크롤 (**페이지네이션은 대시보드 계획과 통합**)
 - 태스크 생성 성공 toast + 참조 연결 진행 표시
-- 이미 태스크에 붙어있는 참조는 **"이미 연결됨"** 배지 표시 (방지용)
-- 제목 자동 추출 개선: Notion 페이지 title, LW 메시지 앞부분, 파일명
+- 이미 태스크에 붙어있는 참조는 "이미 연결됨" 배지 표시
+- 제목 자동 추출: Notion 페이지 title, LW 메시지 앞부분, 파일명, Figma 노드 이름(API 호출)
 
 ---
 
@@ -196,12 +254,22 @@ front/src/components/work-tracking/
 
 ## 9. 다음 액션
 
-- [ ] Phase 1: `TaskCreateView` + `ReferenceCollector` 골격 + URL 탭 이동
-- [ ] Phase 2: Notion picker
-- [ ] Phase 3: LINE WORKS picker
-- [ ] Phase 4: 파일 저장소 picker
-- [ ] 기존 "태스크 추가 기능은 추후 구현 예정" 알림(alert) 도 같이 정리 — 태스크 컨텍스트 뷰에서 역방향 attach 는 이미 모달로 되어있으니 문구만 제거
+### 완료 (2026-04-19)
+- [x] Phase 1: `ReferenceCollector` 골격 + URL 탭
+- [x] Phase 2: Notion picker
+- [x] Phase 3: LINE WORKS picker (메시지/첨부 분리)
+- [x] Phase 4: 파일 저장소 picker (플랫 리스트)
+
+### 이번 라운드 (2026-04-20)
+- [ ] Phase 5-1: `PendingReferenceSource` 에 `"figma_node"` 추가 + 아이콘/라벨 매핑
+- [ ] Phase 5-2: `ReferenceCollector` 에 `FigmaTab` 신규 + `parseFigmaUrl` 유틸
+- [ ] Phase 5-3: 기존 `UrlTab` → `OtherUrlTab` 리네임, 라벨 "기타 URL"
+- [ ] Phase 5-4: 탭 순서 재정렬 (Notion → LINE WORKS → Figma → 파일 저장소 → 기타 URL)
+
+### 대시보드 계획과 연계
+- [ ] Phase 6: 태스크 폼에 **담당자 드롭다운** 추가 (별도 계획: [TASK_DASHBOARD_PLAN.md](TASK_DASHBOARD_PLAN.md))
+- [ ] Phase 7: 페이지네이션 컴포넌트 공용화 — 대시보드 계획의 페이지네이션 정책 따름
 
 ---
 
-*작성일: 2026-04-19. Phase 진행 시 이 문서를 그대로 갱신.*
+*작성일: 2026-04-19. Figma 탭 + URL 리네임 추가: 2026-04-20.*

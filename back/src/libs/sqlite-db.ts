@@ -25,10 +25,26 @@ export function getDatabase() {
 
   if (!globalThis.__workTrackingDbInitialized__) {
     globalThis.__workTrackingDb__.exec(readFileSync(SCHEMA_PATH, "utf8"));
+    runColumnMigrations(globalThis.__workTrackingDb__);
     globalThis.__workTrackingDbInitialized__ = true;
   }
 
   return globalThis.__workTrackingDb__;
+}
+
+function tableHasColumn(db: DatabaseSync, table: string, column: string): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  return rows.some((row) => row.name === column);
+}
+
+function runColumnMigrations(db: DatabaseSync): void {
+  // tasks: created_by_user_id, assignee_user_id (태스크 할당자/담당자)
+  if (!tableHasColumn(db, "tasks", "created_by_user_id")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN created_by_user_id TEXT`);
+  }
+  if (!tableHasColumn(db, "tasks", "assignee_user_id")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN assignee_user_id TEXT`);
+  }
 }
 
 export function withTransaction<T>(callback: (db: DatabaseSync) => T): T {

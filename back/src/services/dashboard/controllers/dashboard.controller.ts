@@ -6,8 +6,10 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
   UseGuards,
 } from "@nestjs/common";
+import type { Request } from "express";
 import { AuthGuard } from "@common/auth.guard";
 import { DashboardService } from "../applications/dashboard.service";
 
@@ -32,11 +34,11 @@ export class DashboardController {
   }
 
   @Post()
-  handleDashboardAction(@Body() payload: any) {
+  handleDashboardAction(@Body() payload: any, @Req() req: Request) {
     try {
       return {
         ok: true,
-        ...this.dashboardService.handleAction(payload),
+        ...this.dashboardService.handleAction(payload, req.auth?.userId ?? null),
       };
     } catch (error) {
       const message =

@@ -335,6 +335,15 @@ CREATE TABLE IF NOT EXISTS user_last_seen (
   PRIMARY KEY (user_id, source)
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS users (
+  user_id        TEXT PRIMARY KEY,
+  user_name      TEXT,
+  email          TEXT,
+  domain_id      TEXT,
+  last_login_at  TEXT,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS task_references (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id        TEXT NOT NULL,

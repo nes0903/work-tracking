@@ -10,7 +10,7 @@ export class DashboardService {
     return this.dashboardRepository.getDashboardState(date);
   }
 
-  handleAction(payload: any) {
+  handleAction(payload: any, sessionUserId?: string | null) {
     const action = payload?.action as string | undefined;
     const date = payload?.date as string | undefined;
 
@@ -24,7 +24,8 @@ export class DashboardService {
           normalizeState(payload?.days ?? {}),
           date,
         );
-      case "createTask":
+      case "createTask": {
+        const assigneeFromPayload = payload?.task?.assigneeUserId;
         return this.dashboardRepository.createTask(date, {
           title: String(payload?.task?.title ?? ""),
           category: String(payload?.task?.category ?? ""),
@@ -32,7 +33,13 @@ export class DashboardService {
           dueDate: String(payload?.task?.dueDate ?? date),
           estimate: Number(payload?.task?.estimate ?? 0),
           note: String(payload?.task?.note ?? ""),
+          createdByUserId: sessionUserId ?? null,
+          assigneeUserId:
+            typeof assigneeFromPayload === "string" && assigneeFromPayload
+              ? assigneeFromPayload
+              : sessionUserId ?? null,
         });
+      }
       case "updateTaskStatus":
         return this.dashboardRepository.updateTaskStatus(
           date,

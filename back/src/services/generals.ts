@@ -1,3 +1,4 @@
+import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { FeedsModule } from "./feeds/feeds.module";
@@ -7,6 +8,8 @@ import { LineWorksBotModule } from "./line-works-bot/line-works-bot.module";
 import { NotionModule } from "./notion/notion.module";
 import { StorageModule } from "./storage/storage.module";
 import { TaskReferencesModule } from "./task-references/task-references.module";
+import { TasksModule } from "./tasks/tasks.module";
+import { UsersModule } from "./users/users.module";
 
 export default [
   AuthModule,
@@ -18,4 +21,7 @@ export default [
   TaskReferencesModule,
   StorageModule,
   LastSeenModule,
+  UsersModule,
+  AdminModule,
+  TasksModule,
 ];

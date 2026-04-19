@@ -26,31 +26,39 @@ import {
 } from "@/lib/storage";
 import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
+import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
+import { Pagination } from "./Pagination";
 import { ReferenceCollector } from "./ReferenceCollector";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
+import { TaskDetailDrawer } from "./TaskDetailDrawer";
+import { TaskList } from "./TaskList";
+import {
+  fetchTasks,
+  PER_PAGE_OPTIONS,
+  thisWeekRange,
+  type PerPageOption,
+  type TaskListItem,
+  type TaskQueryResponse,
+  type TaskStatus as DashboardTaskStatus,
+} from "@/lib/tasks-api";
 import {
   pendingKey,
   type PendingReference,
 } from "@/lib/pending-references";
 import {
-  activityColor,
-  activityIcon,
-  buildActivitySubtitle,
   emptyGithubFeed,
   emptyNotionFeed,
   formatDateCaption,
   formatDateKey,
   formatDateTime,
   getDay,
-  getEffectivePriority,
   loadDaysFromStorage,
   parseDateKey,
   relativeTime,
   sortTasksForDisplay,
-  statusLabel,
   todayKey,
   type GithubFeed,
   type NotionFeed,
@@ -120,8 +128,29 @@ export function WorkTrackingDashboard() {
   >("dashboard");
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
-  const [notesDraft, setNotesDraft] = useState("");
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+
+  // 새 대시보드 리스트 상태
+  const initialWeek = thisWeekRange();
+  const [taskQuery, setTaskQuery] = useState<TaskQueryResponse | null>(null);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [dashFilters, setDashFilters] = useState<FiltersValue>({
+    q: "",
+    assignee: "all",
+    priorities: [],
+    statuses: [],
+    sort: "priority",
+    order: "desc",
+  });
+  const [dashRange] = useState<{ from: string; to: string }>(initialWeek);
+  const [dashPage, setDashPage] = useState(1);
+  const [dashPerPage, setDashPerPage] = useState<PerPageOption>(() => {
+    if (typeof window === "undefined") return 20;
+    const raw = window.localStorage.getItem("wt:perPage:tasks");
+    const n = raw ? Number(raw) : 20;
+    return (PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20) as PerPageOption;
+  });
+  const [selectedTask, setSelectedTask] = useState<TaskListItem | null>(null);
   const [lineWorksArchive, setLineWorksArchive] = useState<LineWorksArchive>(() =>
     emptyLineWorksArchive(),
   );
@@ -181,33 +210,6 @@ export function WorkTrackingDashboard() {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!hasHydrated || notesDraft === activeDay.notes) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const result = await postDashboardAction({
-            action: "updateNotes",
-            date: activeDate,
-            notes: notesDraft,
-          });
-          applyDashboardState(activeDate, result.days, {
-            syncNotes: false,
-          });
-        } catch (error) {
-          console.error("[dashboard] failed to save notes", error);
-        }
-      })();
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [activeDate, activeDay.notes, hasHydrated, notesDraft]);
 
   useEffect(() => {
     let mounted = true;
@@ -445,6 +447,113 @@ export function WorkTrackingDashboard() {
     void reloadStorage();
   }, [activeView, reloadStorage]);
 
+  // 대시보드 태스크 리스트 fetch
+  const reloadDashboardTasks = useCallback(async () => {
+    setTaskLoading(true);
+    try {
+      const result = await fetchTasks({
+        from: dashRange.from,
+        to: dashRange.to,
+        assignee: dashFilters.assignee,
+        statuses: dashFilters.statuses,
+        priorities: dashFilters.priorities,
+        q: dashFilters.q || undefined,
+        sort: dashFilters.sort,
+        order: dashFilters.order,
+        page: dashPage,
+        perPage: dashPerPage,
+      });
+      setTaskQuery(result);
+    } catch (error) {
+      console.error("[dashboard] failed to fetch tasks", error);
+    } finally {
+      setTaskLoading(false);
+    }
+  }, [dashRange, dashFilters, dashPage, dashPerPage]);
+
+  useEffect(() => {
+    if (activeView !== "dashboard") return;
+    void reloadDashboardTasks();
+  }, [activeView, reloadDashboardTasks]);
+
+  // 필터 변경 시 페이지 1 로 리셋
+  useEffect(() => {
+    setDashPage(1);
+  }, [dashFilters, dashRange]);
+
+  function handleDashPerPageChange(next: PerPageOption) {
+    setDashPerPage(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("wt:perPage:tasks", String(next));
+    }
+    setDashPage(1);
+  }
+
+  async function handleDrawerStatusChange(task: TaskListItem, status: DashboardTaskStatus) {
+    try {
+      await postDashboardAction({
+        action: "updateTaskStatus",
+        date: task.workDate,
+        taskId: task.id,
+        status,
+      });
+      await reloadDashboardTasks();
+      setSelectedTask((prev) => (prev && prev.id === task.id ? { ...prev, status } : prev));
+    } catch (error) {
+      console.error("[dashboard] status change failed", error);
+    }
+  }
+
+  async function handleDrawerDelete(task: TaskListItem) {
+    const ok = window.confirm("이 태스크를 삭제합니다. 연결된 참조도 함께 제거됩니다.");
+    if (!ok) return;
+    try {
+      await postDashboardAction({
+        action: "deleteTask",
+        date: task.workDate,
+        taskId: task.id,
+      });
+      setSelectedTask(null);
+      await reloadDashboardTasks();
+    } catch (error) {
+      console.error("[dashboard] delete failed", error);
+    }
+  }
+
+  function handleOpenReference(ref: TaskReference) {
+    switch (ref.source) {
+      case "url":
+      case "figma_node":
+      case "notion_page":
+        if (ref.externalUrl) {
+          window.open(ref.externalUrl, "_blank", "noopener");
+        }
+        break;
+      case "line_works_attachment": {
+        const metadata = ref.metadata as { attachmentId?: number; fileName?: string; mimeType?: string } | null;
+        const id = metadata?.attachmentId ?? Number(ref.externalId);
+        if (Number.isFinite(id)) {
+          void openAttachment(id, metadata?.fileName ?? null, metadata?.mimeType ?? null);
+        }
+        break;
+      }
+      case "line_works_message": {
+        const metadata = ref.metadata as { channelId?: string } | null;
+        window.alert(
+          [
+            `채팅방: ${metadata?.channelId ?? "?"}`,
+            ``,
+            ref.title ?? "",
+            ref.excerpt ? `\n${ref.excerpt}` : "",
+          ].join("\n"),
+        );
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
   async function handleStorageDelete(id: number) {
     const confirmed = window.confirm("이 파일을 S3와 DB에서 영구 삭제합니다. 진행할까요?");
     if (!confirmed) return;
@@ -532,17 +641,6 @@ export function WorkTrackingDashboard() {
     () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "done")),
     [activeDay.tasks],
   );
-  const activityTasks = useMemo(
-    () =>
-      [...activeDay.tasks]
-        .sort(
-          (left, right) =>
-            new Date(right.updatedAt || right.createdAt).getTime() -
-            new Date(left.updatedAt || left.createdAt).getTime(),
-        )
-        .slice(0, 5),
-    [activeDay.tasks],
-  );
   const repoList = useMemo(
     () =>
       githubFeed.repos
@@ -570,10 +668,6 @@ export function WorkTrackingDashboard() {
 
     if (options?.resetTaskForm) {
       setTaskForm(createTaskFormState(dateKey));
-    }
-
-    if (options?.syncNotes) {
-      setNotesDraft(getDay(nextDays, dateKey).notes);
     }
   }
 
@@ -811,23 +905,6 @@ export function WorkTrackingDashboard() {
       console.error("[dashboard] quick task creation failed", error);
       return null;
     }
-  }
-
-  function clearNotes() {
-    setNotesDraft("");
-    void mutateDashboard(
-      {
-        action: "updateNotes",
-        date: activeDate,
-        notes: "",
-      },
-      {
-        date: activeDate,
-        syncNotes: true,
-      },
-    ).catch((error) => {
-      console.error("[dashboard] failed to clear notes", error);
-    });
   }
 
   function buildActions(task: Task): TaskAction[] {
@@ -1428,121 +1505,36 @@ export function WorkTrackingDashboard() {
             </section>
           ) : (
             <>
-          <section className="lower-grid">
-            <section className="panel board-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Task Board</h3>
-                  <p>오늘 업무를 상태별로 관리합니다.</p>
-                </div>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={openUrlAttachModal}
-                >
-                  + 링크 참조 추가
-                </button>
-              </div>
+              <DashboardFilters
+                value={dashFilters}
+                onChange={setDashFilters}
+                users={taskQuery?.users ?? []}
+                counts={taskQuery?.counts ?? { todo: 0, doing: 0, done: 0, total: 0 }}
+              />
 
-              <div className="board-grid">
-                <TaskColumn
-                  title="할 일"
-                  count={todoTasks.length}
-                  tasks={todoTasks}
-                  activeDate={activeDate}
-                  buildActions={buildActions}
-                  taskReferences={taskReferences}
-                  onRemoveReference={handleRemoveReference}
-                />
-                <TaskColumn
-                  title="진행 중"
-                  count={doingTasks.length}
-                  tasks={doingTasks}
-                  activeDate={activeDate}
-                  buildActions={buildActions}
-                  taskReferences={taskReferences}
-                  onRemoveReference={handleRemoveReference}
-                />
-                <TaskColumn
-                  title="완료"
-                  count={doneTasks.length}
-                  tasks={doneTasks}
-                  activeDate={activeDate}
-                  buildActions={buildActions}
-                  taskReferences={taskReferences}
-                  onRemoveReference={handleRemoveReference}
-                />
-              </div>
-            </section>
-
-            <section className="panel utility-stack">
-              <section className="utility-panel">
-                <div className="panel-heading compact">
-                  <div>
-                    <h3>Daily Notes</h3>
-                    <p>회고, 막힌 점, 다음 액션을 짧게 정리합니다.</p>
-                  </div>
-                </div>
-                <textarea
-                  id="daily-notes"
-                  rows={9}
-                  placeholder="오늘 있었던 일, 막힌 점, 내일 이어갈 일을 적으세요."
-                  value={notesDraft}
-                  onChange={(event) => setNotesDraft(event.target.value)}
-                />
-                <div className="notes-footer">
-                  <span>자동 저장</span>
-                  <button className="text-button" type="button" onClick={clearNotes}>
-                    메모 비우기
-                  </button>
-                </div>
+              <section className="panel dashboard-tasks-panel">
+                {taskLoading && !taskQuery ? (
+                  <p className="empty-note">불러오는 중...</p>
+                ) : (
+                  <TaskList
+                    items={taskQuery?.items ?? []}
+                    onSelect={setSelectedTask}
+                    currentUserId={currentUser?.userId ?? null}
+                  />
+                )}
               </section>
-            </section>
-          </section>
 
-          <section className="panel activity-panel">
-            <div className="panel-heading">
-              <div>
-                <h3>Recent Activity</h3>
-                <p>오늘 생성 및 변경된 업무를 시간순으로 봅니다.</p>
-              </div>
-            </div>
-            <div className="activity-list">
-              {activityTasks.length === 0 ? (
-                <p className="empty-note">아직 활동 기록이 없습니다.</p>
-              ) : (
-                activityTasks.map((task) => {
-                  const effectivePriority = getEffectivePriority(task);
-
-                  return (
-                    <article key={`activity-${task.id}`} className="activity-item">
-                      <div
-                        className="activity-icon"
-                        style={{
-                          display: "grid",
-                          placeItems: "center",
-                          fontWeight: 800,
-                          color: activityColor(effectivePriority),
-                        }}
-                      >
-                        {activityIcon(effectivePriority)}
-                      </div>
-                      <div className="activity-main">
-                        <h4 className="activity-title">{task.title}</h4>
-                        <p className="activity-subtitle">{task.note || buildActivitySubtitle(task)}</p>
-                      </div>
-                      <div className="activity-side">
-                        <span className="activity-time">
-                          {relativeTime(task.updatedAt || task.createdAt)}
-                        </span>
-                        <span className="activity-badge">{statusLabel(task.status)}</span>
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </section>
+              {taskQuery ? (
+                <Pagination
+                  page={taskQuery.pagination.page}
+                  perPage={taskQuery.pagination.perPage}
+                  total={taskQuery.pagination.total}
+                  totalPages={taskQuery.pagination.totalPages}
+                  onPageChange={setDashPage}
+                  onPerPageChange={handleDashPerPageChange}
+                  disabled={taskLoading}
+                />
+              ) : null}
             </>
           )}
         </main>
@@ -1565,6 +1557,24 @@ export function WorkTrackingDashboard() {
           fileName={previewState.fileName}
           sourceUrl={previewState.url}
           onClose={() => setPreviewState(null)}
+        />
+      ) : null}
+      {selectedTask ? (
+        <TaskDetailDrawer
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onChangeStatus={handleDrawerStatusChange}
+          onDelete={handleDrawerDelete}
+          onOpenReference={handleOpenReference}
+          onAddReference={(task) => {
+            setSelectedTask(null);
+            setAttachCandidate({
+              source: "url",
+              externalId: "",
+              title: task.title,
+            });
+            setAttachModalOpen(true);
+          }}
         />
       ) : null}
     </>

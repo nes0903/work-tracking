@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { isFigmaUrl, parseFigmaUrl } from "@/lib/figma-url";
 import { formatFileSize } from "@/lib/line-works-archive";
 import type {
   LineWorksArchiveChannelSummary,
@@ -18,7 +19,7 @@ import {
 import type { ChannelLabelMap, StorageItem } from "@/lib/storage";
 import type { NotionUpdateItem } from "@/lib/work-tracking";
 
-type TabId = "url" | "notion" | "line-works" | "storage";
+type TabId = "notion" | "line-works" | "figma" | "storage" | "other-url";
 
 interface Props {
   pending: PendingReference[];
@@ -39,7 +40,7 @@ export function ReferenceCollector({
   storageItems,
   channelLabels,
 }: Props) {
-  const [tab, setTab] = useState<TabId>("url");
+  const [tab, setTab] = useState<TabId>("notion");
 
   const toggle = (ref: PendingReference) =>
     onPendingChange(togglePending(pending, ref));
@@ -58,13 +59,6 @@ export function ReferenceCollector({
       <div className="ref-tabs">
         <button
           type="button"
-          className={`ref-tab ${tab === "url" ? "active" : ""}`.trim()}
-          onClick={() => setTab("url")}
-        >
-          URL
-        </button>
-        <button
-          type="button"
           className={`ref-tab ${tab === "notion" ? "active" : ""}`.trim()}
           onClick={() => setTab("notion")}
         >
@@ -79,15 +73,28 @@ export function ReferenceCollector({
         </button>
         <button
           type="button"
+          className={`ref-tab ${tab === "figma" ? "active" : ""}`.trim()}
+          onClick={() => setTab("figma")}
+        >
+          Figma
+        </button>
+        <button
+          type="button"
           className={`ref-tab ${tab === "storage" ? "active" : ""}`.trim()}
           onClick={() => setTab("storage")}
         >
           파일 저장소{storageItems.length > 0 ? ` (${storageItems.length})` : ""}
         </button>
+        <button
+          type="button"
+          className={`ref-tab ${tab === "other-url" ? "active" : ""}`.trim()}
+          onClick={() => setTab("other-url")}
+        >
+          기타 URL
+        </button>
       </div>
 
       <div className="ref-tab-content">
-        {tab === "url" ? <UrlTab onAdd={addFresh} /> : null}
         {tab === "notion" ? (
           <NotionTab items={notionItems} pending={pending} onToggle={toggle} />
         ) : null}
@@ -99,6 +106,7 @@ export function ReferenceCollector({
             onToggle={toggle}
           />
         ) : null}
+        {tab === "figma" ? <FigmaTab onAdd={addFresh} /> : null}
         {tab === "storage" ? (
           <StorageTab
             items={storageItems}
@@ -107,6 +115,7 @@ export function ReferenceCollector({
             onToggle={toggle}
           />
         ) : null}
+        {tab === "other-url" ? <OtherUrlTab onAdd={addFresh} /> : null}
       </div>
 
       <PendingList items={pending} onRemove={handleRemove} />
@@ -115,15 +124,21 @@ export function ReferenceCollector({
 }
 
 /* ============================================================
-   URL 탭
+   기타 URL 탭 (범용 외부 링크)
    ============================================================ */
-function UrlTab({ onAdd }: { onAdd: (ref: PendingReference) => void }) {
+function OtherUrlTab({ onAdd }: { onAdd: (ref: PendingReference) => void }) {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
+  const [hint, setHint] = useState<string | null>(null);
 
   function handleAdd() {
     const trimmedUrl = url.trim();
     if (!trimmedUrl) return;
+    // Figma URL 이면 안내
+    if (isFigmaUrl(trimmedUrl)) {
+      setHint("Figma URL 입니다. 더 정확한 연결을 위해 Figma 탭을 사용하세요.");
+      return;
+    }
     onAdd({
       source: "url",
       externalId: trimmedUrl,
@@ -132,37 +147,124 @@ function UrlTab({ onAdd }: { onAdd: (ref: PendingReference) => void }) {
     });
     setUrl("");
     setTitle("");
+    setHint(null);
   }
 
   return (
-    <div className="ref-url-tab">
-      <input
-        type="url"
-        placeholder="https://..."
-        value={url}
-        onChange={(event) => setUrl(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleAdd();
-          }
-        }}
-      />
-      <input
-        type="text"
-        placeholder="표시 이름 (선택)"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleAdd();
-          }
-        }}
-      />
-      <button type="button" className="secondary-button" onClick={handleAdd}>
-        + 추가
-      </button>
+    <div className="ref-url-tab-wrap">
+      <div className="ref-url-tab">
+        <input
+          type="url"
+          placeholder="https://..."
+          value={url}
+          onChange={(event) => {
+            setUrl(event.target.value);
+            if (hint) setHint(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleAdd();
+            }
+          }}
+        />
+        <input
+          type="text"
+          placeholder="표시 이름 (선택)"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleAdd();
+            }
+          }}
+        />
+        <button type="button" className="secondary-button" onClick={handleAdd}>
+          + 추가
+        </button>
+      </div>
+      {hint ? <p className="ref-url-hint">{hint}</p> : null}
+    </div>
+  );
+}
+
+/* ============================================================
+   Figma 탭
+   ============================================================ */
+function FigmaTab({ onAdd }: { onAdd: (ref: PendingReference) => void }) {
+  const [url, setUrl] = useState("");
+  const [title, setTitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleAdd() {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      setError("Figma URL을 입력하세요.");
+      return;
+    }
+    const parsed = parseFigmaUrl(trimmedUrl);
+    if (!parsed) {
+      setError("Figma URL이 아닙니다. 예) https://www.figma.com/file/<key>/?node-id=1:2");
+      return;
+    }
+    const cleanedTitle =
+      title.trim() ||
+      (parsed.nodeId ? `Figma 노드 ${parsed.nodeId}` : `Figma 파일 ${parsed.fileKey.slice(0, 6)}`);
+    onAdd({
+      source: "figma_node",
+      externalId: trimmedUrl,
+      title: cleanedTitle,
+      externalUrl: trimmedUrl,
+      metadata: {
+        fileKey: parsed.fileKey,
+        nodeId: parsed.nodeId,
+        urlType: parsed.urlType,
+      },
+    });
+    setUrl("");
+    setTitle("");
+    setError(null);
+  }
+
+  return (
+    <div className="ref-url-tab-wrap">
+      <div className="ref-url-tab">
+        <input
+          type="url"
+          placeholder="https://www.figma.com/file/... 또는 .../design/...?node-id=..."
+          value={url}
+          onChange={(event) => {
+            setUrl(event.target.value);
+            if (error) setError(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleAdd();
+            }
+          }}
+        />
+        <input
+          type="text"
+          placeholder="표시 이름 (선택)"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleAdd();
+            }
+          }}
+        />
+        <button type="button" className="secondary-button" onClick={handleAdd}>
+          + 추가
+        </button>
+      </div>
+      {error ? <p className="ref-url-error">{error}</p> : null}
+      <p className="ref-url-tip">
+        Figma 파일 URL 을 붙여넣으면 <code>fileKey</code>·<code>nodeId</code> 가 자동으로 추출됩니다.
+      </p>
     </div>
   );
 }

@@ -2,7 +2,8 @@ export type PendingReferenceSource =
   | "url"
   | "notion_page"
   | "line_works_message"
-  | "line_works_attachment";
+  | "line_works_attachment"
+  | "figma_node";
 
 export interface PendingReference {
   source: PendingReferenceSource;
@@ -58,6 +59,8 @@ export function sourceIcon(source: PendingReferenceSource): string {
       return "💬";
     case "line_works_attachment":
       return "📎";
+    case "figma_node":
+      return "🎨";
     default:
       return "•";
   }
@@ -66,13 +69,15 @@ export function sourceIcon(source: PendingReferenceSource): string {
 export function sourceLabel(source: PendingReferenceSource): string {
   switch (source) {
     case "url":
-      return "URL";
+      return "기타 URL";
     case "notion_page":
       return "Notion";
     case "line_works_message":
       return "LINE WORKS";
     case "line_works_attachment":
       return "LW 파일";
+    case "figma_node":
+      return "Figma";
     default:
       return source;
   }
