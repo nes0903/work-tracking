@@ -275,4 +275,49 @@ CREATE TABLE IF NOT EXISTS auth_oauth_states (
 
 CREATE INDEX IF NOT EXISTS idx_auth_oauth_states_expires_at ON auth_oauth_states(expires_at);
 
+CREATE TABLE IF NOT EXISTS line_works_messages (
+  message_id   TEXT PRIMARY KEY,
+  channel_id   TEXT NOT NULL,
+  user_id      TEXT,
+  domain_id    TEXT,
+  content_type TEXT NOT NULL,
+  text         TEXT,
+  issued_at    TEXT,
+  raw_json     TEXT NOT NULL,
+  received_at  TEXT NOT NULL DEFAULT (datetime('now'))
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_line_works_messages_channel_issued
+  ON line_works_messages(channel_id, issued_at DESC);
+
+CREATE TABLE IF NOT EXISTS line_works_attachments (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id  TEXT NOT NULL,
+  file_id     TEXT NOT NULL,
+  file_name   TEXT,
+  file_size   INTEGER,
+  mime_type   TEXT,
+  s3_bucket   TEXT NOT NULL,
+  s3_key      TEXT NOT NULL,
+  uploaded_at TEXT,
+  FOREIGN KEY (message_id) REFERENCES line_works_messages(message_id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_line_works_attachments_message
+  ON line_works_attachments(message_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_line_works_attachments_s3_key
+  ON line_works_attachments(s3_bucket, s3_key);
+
+CREATE TABLE IF NOT EXISTS line_works_links (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id TEXT NOT NULL,
+  url        TEXT NOT NULL,
+  found_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (message_id) REFERENCES line_works_messages(message_id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_line_works_links_message
+  ON line_works_links(message_id);
+
 COMMIT;
