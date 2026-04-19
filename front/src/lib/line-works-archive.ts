@@ -83,13 +83,6 @@ export function formatFileSize(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-export function buildLineWorksDeepLink(channelId: string): string {
-  if (channelId.startsWith("dm:")) {
-    return `https://talk.worksmobile.com/#/direct/${encodeURIComponent(channelId.slice(3))}`;
-  }
-  return `https://talk.worksmobile.com/#/chat/${encodeURIComponent(channelId)}`;
-}
-
 export function buildMessageClipboardText(message: LineWorksArchiveMessage): string {
   const lines: string[] = [];
   if (message.text) {

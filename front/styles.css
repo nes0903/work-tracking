@@ -1400,14 +1400,6 @@ button {
   color: var(--on-surface);
 }
 
-.line-works-action:first-of-type {
-  color: var(--primary);
-}
-
-.line-works-action:first-of-type:hover {
-  color: var(--on-surface);
-}
-
 /* ============================================================
    Activity panel — alternating subtle shift
    ============================================================ */

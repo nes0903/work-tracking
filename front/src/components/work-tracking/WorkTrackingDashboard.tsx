@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  buildLineWorksDeepLink,
   buildMessageClipboardText,
   copyToClipboard,
   emptyLineWorksArchive,
@@ -923,14 +922,6 @@ export function WorkTrackingDashboard() {
                       ) : null}
 
                       <div className="line-works-message-actions">
-                        <a
-                          className="line-works-action"
-                          href={buildLineWorksDeepLink(message.channelId)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          💬 채팅방 열기
-                        </a>
                         <button
                           type="button"
                           className="line-works-action"
