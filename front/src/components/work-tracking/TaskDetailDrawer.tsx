@@ -141,37 +141,38 @@ export function TaskDetailDrawer({
             <p className="empty-note">연결된 참조가 없습니다.</p>
           ) : (
             <ul className="task-drawer-refs">
-              {references.map((ref) => (
-                <li key={ref.id}>
-                  <button
-                    type="button"
-                    className="task-drawer-ref-item"
-                    onClick={() => onOpenReference(ref)}
-                  >
-                    <span className="task-drawer-ref-source">
-                      {sourceIcon(ref.source)} {sourceLabel(ref.source)}
-                    </span>
-                    <div className="task-drawer-ref-main">
-                      <span className="task-drawer-ref-title">
-                        {ref.title ?? "제목 없음"}
+              {references.map((ref) => {
+                const { title, excerpt } = buildRefDisplay(ref);
+                return (
+                  <li key={ref.id}>
+                    <button
+                      type="button"
+                      className="task-drawer-ref-item"
+                      onClick={() => onOpenReference(ref)}
+                    >
+                      <span className="task-drawer-ref-source">
+                        {sourceIcon(ref.source)} {sourceLabel(ref.source)}
                       </span>
-                      {ref.excerpt ? (
-                        <span className="task-drawer-ref-excerpt">{ref.excerpt}</span>
-                      ) : null}
-                    </div>
-                    <span className="task-drawer-ref-arrow">↗</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="task-drawer-ref-remove"
-                    onClick={() => void handleRemoveRef(ref)}
-                    aria-label="참조 제거"
-                    title="참조 제거"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
+                      <div className="task-drawer-ref-main">
+                        <span className="task-drawer-ref-title">{title}</span>
+                        {excerpt ? (
+                          <span className="task-drawer-ref-excerpt">{excerpt}</span>
+                        ) : null}
+                      </div>
+                      <span className="task-drawer-ref-arrow">↗</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="task-drawer-ref-remove"
+                      onClick={() => void handleRemoveRef(ref)}
+                      aria-label="참조 제거"
+                      title="참조 제거"
+                    >
+                      ×
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -206,4 +207,48 @@ export function TaskDetailDrawer({
       </aside>
     </div>
   );
+}
+
+function buildRefDisplay(ref: TaskReference): { title: string; excerpt: string | null } {
+  const metadata = (ref.metadata ?? {}) as Record<string, unknown>;
+  const channelTitle =
+    typeof metadata.channelTitle === "string" && metadata.channelTitle
+      ? metadata.channelTitle
+      : null;
+
+  if (ref.source === "line_works_message") {
+    const body =
+      (typeof metadata.text === "string" && metadata.text) ||
+      ref.excerpt ||
+      ref.title ||
+      "";
+    const displayBody = body.replace(/\s+/g, " ").trim();
+    const truncated =
+      displayBody.length > 100 ? `${displayBody.slice(0, 100)}…` : displayBody;
+    return {
+      title: truncated || "(본문 없음)",
+      excerpt: channelTitle ? `채팅방: ${channelTitle}` : null,
+    };
+  }
+
+  if (ref.source === "line_works_attachment") {
+    const fileName =
+      (typeof metadata.fileName === "string" && metadata.fileName) ||
+      ref.title ||
+      "파일";
+    const parts: string[] = [];
+    if (channelTitle) parts.push(`채팅방: ${channelTitle}`);
+    if (typeof metadata.mimeType === "string" && metadata.mimeType) {
+      parts.push(metadata.mimeType);
+    }
+    return {
+      title: fileName,
+      excerpt: parts.length > 0 ? parts.join(" · ") : null,
+    };
+  }
+
+  return {
+    title: ref.title ?? "제목 없음",
+    excerpt: ref.excerpt ?? null,
+  };
 }

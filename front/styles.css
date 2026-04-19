@@ -3226,6 +3226,86 @@ button {
 }
 
 /* ============================================================
+   Message preview modal (Works 메시지 본문 미리보기)
+   ============================================================ */
+.message-preview-backdrop {
+  align-items: flex-start;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+
+.message-preview-modal {
+  width: 100%;
+  max-width: 640px;
+  border-radius: var(--radius-xl);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-ambient);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.message-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.message-preview-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.message-preview-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+}
+
+.message-preview-head-main h3 {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.message-preview-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.76rem;
+  color: var(--on-surface-muted);
+  flex-wrap: wrap;
+}
+
+.message-preview-body {
+  padding: 18px 22px 22px;
+  overflow-y: auto;
+}
+
+.message-preview-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--on-surface);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.message-preview-text a {
+  color: var(--primary);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+/* ============================================================
    Site links modal
    ============================================================ */
 .sidebar-site-links-trigger {

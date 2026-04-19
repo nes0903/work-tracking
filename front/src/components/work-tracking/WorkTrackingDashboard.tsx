@@ -30,6 +30,10 @@ import { CalendarView } from "./CalendarView";
 import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
+import {
+  MessagePreviewModal,
+  type MessagePreview,
+} from "./MessagePreviewModal";
 import { Pagination } from "./Pagination";
 import { SiteLinksModal } from "./SiteLinksModal";
 import { StorageTreeView } from "./StorageTreeView";
@@ -122,6 +126,7 @@ export function WorkTrackingDashboard() {
   const [previewState, setPreviewState] = useState<
     { fileName: string | null; url: string } | null
   >(null);
+  const [messagePreview, setMessagePreview] = useState<MessagePreview | null>(null);
   const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
   const [lastSeenLineWorks, setLastSeenLineWorks] = useState<number>(0);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
@@ -503,15 +508,38 @@ export function WorkTrackingDashboard() {
         break;
       }
       case "line_works_message": {
-        const metadata = ref.metadata as { channelId?: string } | null;
-        window.alert(
-          [
-            `채팅방: ${metadata?.channelId ?? "?"}`,
-            ``,
-            ref.title ?? "",
-            ref.excerpt ? `\n${ref.excerpt}` : "",
-          ].join("\n"),
-        );
+        const metadata = ref.metadata as
+          | {
+              channelId?: string;
+              channelTitle?: string;
+              userId?: string;
+              userName?: string;
+              issuedAt?: string;
+              contentType?: string;
+              text?: string;
+            }
+          | null;
+        const body =
+          (typeof metadata?.text === "string" && metadata.text) ||
+          ref.excerpt ||
+          ref.title ||
+          "";
+
+        // 본문이 URL 하나로만 이루어진 경우(앞뒤 공백 허용) → 바로 새 탭으로 열기
+        const trimmed = body.trim();
+        const urlOnlyMatch = trimmed.match(/^(https?:\/\/\S+)$/);
+        if (urlOnlyMatch) {
+          window.open(urlOnlyMatch[1], "_blank", "noopener");
+          break;
+        }
+
+        setMessagePreview({
+          channelTitle: metadata?.channelTitle ?? null,
+          channelId: metadata?.channelId ?? null,
+          userName: metadata?.userName ?? metadata?.userId ?? null,
+          issuedAt: metadata?.issuedAt ?? null,
+          text: body,
+        });
         break;
       }
       default:
@@ -1506,6 +1534,10 @@ export function WorkTrackingDashboard() {
           onClose={() => setPreviewState(null)}
         />
       ) : null}
+      <MessagePreviewModal
+        preview={messagePreview}
+        onClose={() => setMessagePreview(null)}
+      />
       {selectedTask ? (
         <TaskDetailDrawer
           task={selectedTask}

@@ -63,6 +63,148 @@ function hydrate(row: TaskReferenceDbRow): TaskReferenceRow {
   };
 }
 
+/**
+ * line_works 관련 참조의 metadata 를 서버 기준으로 최신화한다.
+ * - channelTitle/channelType: line_works_channels 테이블에서 최신값
+ * - line_works_message: text 전문(metadata.text), 없으면 line_works_messages 에서 보강
+ * - line_works_attachment: fileName/fileSize/mimeType 최신값
+ */
+function enrichLineWorksRefs(rows: TaskReferenceRow[]): TaskReferenceRow[] {
+  const db = getDatabase();
+
+  const channelCache = new Map<string, { title: string | null; type: string | null }>();
+  const messageCache = new Map<
+    string,
+    { text: string | null; contentType: string; channelId: string | null; issuedAt: string | null; receivedAt: string }
+  >();
+  const attachmentCache = new Map<
+    number,
+    {
+      fileName: string | null;
+      fileSize: number | null;
+      mimeType: string | null;
+      messageId: string;
+      channelId: string | null;
+    }
+  >();
+
+  const resolveChannel = (channelId: string | null | undefined) => {
+    if (!channelId) return null;
+    if (channelCache.has(channelId)) return channelCache.get(channelId)!;
+    const row = db
+      .prepare(
+        `SELECT title, channel_type FROM line_works_channels WHERE channel_id = ?`,
+      )
+      .get(channelId) as { title: string | null; channel_type: string | null } | undefined;
+    const result = {
+      title: row?.title ?? null,
+      type: row?.channel_type ?? null,
+    };
+    channelCache.set(channelId, result);
+    return result;
+  };
+
+  const resolveMessage = (messageId: string) => {
+    if (messageCache.has(messageId)) return messageCache.get(messageId)!;
+    const row = db
+      .prepare(
+        `SELECT text, content_type, channel_id, issued_at, received_at
+           FROM line_works_messages WHERE message_id = ?`,
+      )
+      .get(messageId) as
+      | { text: string | null; content_type: string; channel_id: string; issued_at: string | null; received_at: string }
+      | undefined;
+    const result = row
+      ? {
+          text: row.text,
+          contentType: row.content_type,
+          channelId: row.channel_id,
+          issuedAt: row.issued_at,
+          receivedAt: row.received_at,
+        }
+      : { text: null, contentType: "unknown", channelId: null, issuedAt: null, receivedAt: "" };
+    messageCache.set(messageId, result);
+    return result;
+  };
+
+  const resolveAttachment = (id: number) => {
+    if (attachmentCache.has(id)) return attachmentCache.get(id)!;
+    const row = db
+      .prepare(
+        `SELECT a.file_name, a.file_size, a.mime_type, a.message_id, m.channel_id
+           FROM line_works_attachments a
+      LEFT JOIN line_works_messages m ON m.message_id = a.message_id
+          WHERE a.id = ?`,
+      )
+      .get(id) as
+      | {
+          file_name: string | null;
+          file_size: number | null;
+          mime_type: string | null;
+          message_id: string;
+          channel_id: string | null;
+        }
+      | undefined;
+    const result = row
+      ? {
+          fileName: row.file_name,
+          fileSize: row.file_size,
+          mimeType: row.mime_type,
+          messageId: row.message_id,
+          channelId: row.channel_id,
+        }
+      : {
+          fileName: null,
+          fileSize: null,
+          mimeType: null,
+          messageId: "",
+          channelId: null,
+        };
+    attachmentCache.set(id, result);
+    return result;
+  };
+
+  return rows.map((ref) => {
+    if (ref.source === "line_works_message") {
+      const meta = { ...(ref.metadata ?? {}) } as Record<string, unknown>;
+      const msg = resolveMessage(ref.externalId);
+      const channelId =
+        (typeof meta.channelId === "string" && meta.channelId) || msg.channelId || null;
+      const channel = resolveChannel(channelId);
+      if (channelId && !meta.channelId) meta.channelId = channelId;
+      if (channel) {
+        if (channel.title) meta.channelTitle = channel.title;
+        if (channel.type) meta.channelType = channel.type;
+      }
+      if (msg.text && !meta.text) meta.text = msg.text;
+      if (msg.contentType && !meta.contentType) meta.contentType = msg.contentType;
+      if (msg.issuedAt && !meta.issuedAt) meta.issuedAt = msg.issuedAt;
+      return { ...ref, metadata: meta };
+    }
+    if (ref.source === "line_works_attachment") {
+      const meta = { ...(ref.metadata ?? {}) } as Record<string, unknown>;
+      const idNum = Number(meta.attachmentId ?? ref.externalId);
+      if (Number.isFinite(idNum) && idNum > 0) {
+        const att = resolveAttachment(idNum);
+        if (att.fileName && !meta.fileName) meta.fileName = att.fileName;
+        if (att.fileSize && !meta.fileSize) meta.fileSize = att.fileSize;
+        if (att.mimeType && !meta.mimeType) meta.mimeType = att.mimeType;
+        if (att.channelId && !meta.channelId) meta.channelId = att.channelId;
+        if (att.messageId && !meta.messageId) meta.messageId = att.messageId;
+        const channel = resolveChannel(
+          (typeof meta.channelId === "string" && meta.channelId) || att.channelId,
+        );
+        if (channel) {
+          if (channel.title) meta.channelTitle = channel.title;
+          if (channel.type) meta.channelType = channel.type;
+        }
+      }
+      return { ...ref, metadata: meta };
+    }
+    return ref;
+  });
+}
+
 function truncate(value: string | null | undefined, max = 200): string | null {
   if (!value) return null;
   const trimmed = value.trim();
@@ -287,11 +429,11 @@ export function listReferencesByTaskIds(taskIds: string[]): Map<string, TaskRefe
       `,
     )
     .all(...taskIds) as unknown as TaskReferenceDbRow[];
-  for (const row of rows) {
-    const hydrated = hydrate(row);
-    const list = result.get(hydrated.taskId) ?? [];
-    list.push(hydrated);
-    result.set(hydrated.taskId, list);
+  const enriched = enrichLineWorksRefs(rows.map(hydrate));
+  for (const ref of enriched) {
+    const list = result.get(ref.taskId) ?? [];
+    list.push(ref);
+    result.set(ref.taskId, list);
   }
   return result;
 }
@@ -307,5 +449,5 @@ export function listReferencesForTask(taskId: string): TaskReferenceRow[] {
         ORDER BY created_at DESC`,
     )
     .all(taskId) as unknown as TaskReferenceDbRow[];
-  return rows.map(hydrate);
+  return enrichLineWorksRefs(rows.map(hydrate));
 }
