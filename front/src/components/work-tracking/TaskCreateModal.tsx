@@ -7,7 +7,11 @@ import type {
 } from "@/lib/line-works-archive";
 import type { PendingReference } from "@/lib/pending-references";
 import type { ChannelLabelMap, StorageItem } from "@/lib/storage";
-import type { NotionUpdateItem, TaskPriority } from "@/lib/work-tracking";
+import type {
+  NotionUpdateItem,
+  TaskPriority,
+  TaskStatus,
+} from "@/lib/work-tracking";
 import { ReferenceCollector } from "./ReferenceCollector";
 
 export interface TaskCreateSubmit {
@@ -15,6 +19,7 @@ export interface TaskCreateSubmit {
   title: string;
   category: string;
   priority: TaskPriority;
+  status?: TaskStatus;
   dueDate: string;
   dueTime: string | null;
   note: string;
@@ -26,6 +31,7 @@ export interface TaskEditInitial {
   title: string;
   category: string;
   priority: TaskPriority;
+  status: TaskStatus;
   dueDate: string;
   dueTime: string | null;
   note: string;
@@ -50,6 +56,7 @@ interface FormState {
   title: string;
   category: string;
   priority: TaskPriority;
+  status: TaskStatus;
   dueDate: string;
   dueTime: string;
   note: string;
@@ -60,6 +67,7 @@ function initialForm(dueDate: string): FormState {
     title: "",
     category: "",
     priority: "medium",
+    status: "todo",
     dueDate,
     dueTime: "",
     note: "",
@@ -71,6 +79,7 @@ function formFromTask(task: TaskEditInitial): FormState {
     title: task.title,
     category: task.category,
     priority: task.priority,
+    status: task.status,
     dueDate: task.dueDate || task.workDate,
     dueTime: task.dueTime ?? "",
     note: task.note,
@@ -124,6 +133,7 @@ export function TaskCreateModal({
         title: form.title,
         category: form.category,
         priority: form.priority,
+        status: isEdit ? form.status : undefined,
         dueDate: form.dueDate || defaultDueDate,
         dueTime,
         note: form.note,
@@ -206,6 +216,25 @@ export function TaskCreateModal({
                 <option value="low">낮음</option>
               </select>
             </label>
+            {isEdit ? (
+              <label>
+                <span className="field-label">상태</span>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      status: event.target.value as TaskStatus,
+                    }))
+                  }
+                >
+                  <option value="todo">할 일</option>
+                  <option value="doing">진행 중</option>
+                  <option value="done">완료</option>
+                </select>
+              </label>
+            ) : null}
             <label>
               <span className="field-label">마감일</span>
               <input

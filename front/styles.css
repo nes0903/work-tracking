@@ -726,13 +726,15 @@ button {
 
 .task-drawer-foot {
   margin-top: auto;
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding-top: 16px;
   border-top: 1px solid var(--outline-variant);
 }
 
-.task-drawer-status-actions {
+.task-drawer-foot-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -740,7 +742,6 @@ button {
 
 .task-drawer-delete {
   color: var(--error);
-  text-align: right;
 }
 
 /* ============================================================
@@ -967,6 +968,55 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  word-break: break-word;
+}
+
+.ref-picker-title.multiline {
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: unset;
+  line-height: 1.4;
+}
+
+.ref-picker-item.multiline {
+  align-items: flex-start;
+}
+
+.ref-picker-item.attachment {
+  background: var(--surface-container);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+
+.ref-picker-item.attachment:hover {
+  background: var(--surface-container-high);
+}
+
+.ref-picker-item.attachment.selected {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.ref-picker-attachment-icon {
+  font-size: 1rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.ref-picker-attachment-list {
+  list-style: none;
+  padding: 0 14px 10px 40px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.ref-picker-list li:last-child .ref-picker-attachment-list {
+  border-bottom: none;
 }
 
 .ref-picker-meta {
@@ -1378,8 +1428,20 @@ button {
 .date-caption {
   margin: 0;
   color: var(--on-surface-muted);
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 500;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-caption-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
 }
 
 /* ============================================================

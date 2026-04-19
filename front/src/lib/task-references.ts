@@ -31,6 +31,10 @@ export interface CreateReferenceInput {
 export async function attachReference(
   input: CreateReferenceInput,
 ): Promise<TaskReference | null> {
+  if (!input.taskId || !input.externalId.trim()) {
+    console.warn("[task-references] skipping attach: missing taskId or externalId", input);
+    return null;
+  }
   try {
     const response = await fetch("/api/task-references", {
       method: "POST",

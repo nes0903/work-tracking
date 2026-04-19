@@ -19,8 +19,8 @@ import {
 interface Props {
   task: TaskListItem | null;
   onClose: () => void;
-  onChangeStatus: (task: TaskListItem, status: TaskStatus) => Promise<void> | void;
   onDelete: (task: TaskListItem) => Promise<void> | void;
+  onChangeStatus: (task: TaskListItem, status: TaskStatus) => Promise<void> | void;
   onOpenReference: (ref: TaskReference) => void;
   onAddReference: (task: TaskListItem) => void;
   onEdit: (task: TaskListItem) => void;
@@ -29,8 +29,8 @@ interface Props {
 export function TaskDetailDrawer({
   task,
   onClose,
-  onChangeStatus,
   onDelete,
+  onChangeStatus,
   onOpenReference,
   onAddReference,
   onEdit,
@@ -88,13 +88,6 @@ export function TaskDetailDrawer({
             <span className={`task-drawer-status status-${task.status}`}>
               {statusLabel(task.status)}
             </span>
-            <button
-              type="button"
-              className="text-button task-drawer-edit"
-              onClick={() => onEdit(task)}
-            >
-              편집
-            </button>
             <button
               type="button"
               className="modal-close"
@@ -184,25 +177,7 @@ export function TaskDetailDrawer({
         </section>
 
         <footer className="task-drawer-foot">
-          <div className="task-drawer-status-actions">
-            {task.status !== "todo" ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => void onChangeStatus(task, "todo")}
-              >
-                할 일로
-              </button>
-            ) : null}
-            {task.status !== "doing" ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => void onChangeStatus(task, "doing")}
-              >
-                진행 중으로
-              </button>
-            ) : null}
+          <div className="task-drawer-foot-actions">
             {task.status !== "done" ? (
               <button
                 type="button"
@@ -212,6 +187,13 @@ export function TaskDetailDrawer({
                 완료
               </button>
             ) : null}
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onEdit(task)}
+            >
+              수정
+            </button>
           </div>
           <button
             type="button"

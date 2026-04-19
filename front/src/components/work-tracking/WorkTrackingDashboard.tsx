@@ -478,8 +478,10 @@ export function WorkTrackingDashboard() {
         taskId: task.id,
         status,
       });
-      await reloadDashboardTasks();
       setSelectedTask((prev) => (prev && prev.id === task.id ? { ...prev, status } : prev));
+      if (activeView === "dashboard") {
+        await reloadDashboardTasks();
+      }
     } catch (error) {
       console.error("[dashboard] status change failed", error);
     }
@@ -765,6 +767,17 @@ export function WorkTrackingDashboard() {
           note: payload.note,
         },
       });
+
+      if (payload.status && payload.status !== taskEditTarget.status) {
+        await postDashboardAction({
+          action: "updateTaskStatus",
+          date: taskEditTarget.workDate,
+          taskId: payload.taskId,
+          status: payload.status,
+        });
+      }
+
+      const nextStatus = payload.status ?? taskEditTarget.status;
       setTaskEditTarget(null);
       setSelectedTask((prev) =>
         prev && prev.id === payload.taskId
@@ -773,6 +786,7 @@ export function WorkTrackingDashboard() {
               title: payload.title,
               category: payload.category,
               priority: payload.priority,
+              status: nextStatus,
               dueDate: payload.dueDate || taskEditTarget.workDate,
               dueTime: payload.dueTime,
               note: payload.note,
@@ -1145,8 +1159,11 @@ export function WorkTrackingDashboard() {
                 >
                   ▶
                 </button>
+                <p className="date-caption">
+                  <span className="date-caption-label">Today:</span>{" "}
+                  {formatDateCaption(todayKey())}
+                </p>
               </div>
-              <p className="date-caption">{formatDateCaption(activeDate)}</p>
             </div>
           </div>
         </header>
@@ -1501,13 +1518,9 @@ export function WorkTrackingDashboard() {
           onChangeStatus={handleDrawerStatusChange}
           onDelete={handleDrawerDelete}
           onOpenReference={handleOpenReference}
-          onAddReference={(task) => {
+          onAddReference={() => {
             setSelectedTask(null);
-            setAttachCandidate({
-              source: "url",
-              externalId: "",
-              title: task.title,
-            });
+            setAttachCandidate(null);
             setAttachModalOpen(true);
           }}
           onEdit={(task) => {
@@ -1517,6 +1530,7 @@ export function WorkTrackingDashboard() {
               title: task.title,
               category: task.category,
               priority: task.priority,
+              status: task.status,
               dueDate: task.dueDate,
               dueTime: task.dueTime,
               note: task.note,

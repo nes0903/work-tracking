@@ -431,16 +431,17 @@ function LineWorksTab({
 
       <ul className="ref-picker-list">
         {filtered.map((msg) => {
-          const msgTitle = msg.text
-            ? msg.text.length > 60
-              ? `${msg.text.slice(0, 60)}…`
-              : msg.text
-            : `[${msg.contentType}]`;
+          const hasText = Boolean(msg.text && msg.text.trim());
+          const msgTitle = hasText ? msg.text! : `[${msg.contentType}]`;
 
           const msgRef: PendingReference = {
             source: "line_works_message",
             externalId: msg.messageId,
-            title: msgTitle,
+            title: hasText
+              ? msgTitle.length > 120
+                ? `${msgTitle.slice(0, 120)}…`
+                : msgTitle
+              : msgTitle,
             excerpt: `${channelLabel(msg.channelId)} · ${msg.userId ?? "unknown"}`,
             metadata: {
               channelId: msg.channelId,
@@ -460,11 +461,11 @@ function LineWorksTab({
             <li key={msg.messageId}>
               <button
                 type="button"
-                className={`ref-picker-item ${msgSelected ? "selected" : ""}`.trim()}
+                className={`ref-picker-item multiline ${msgSelected ? "selected" : ""}`.trim()}
                 onClick={() => onToggle(msgRef)}
               >
                 <div className="ref-picker-main">
-                  <span className="ref-picker-title">{msgRef.title}</span>
+                  <span className="ref-picker-title multiline">{msgTitle}</span>
                   <span className="ref-picker-meta">{msgRef.excerpt}</span>
                 </div>
                 <span className="ref-picker-indicator">
@@ -473,12 +474,13 @@ function LineWorksTab({
               </button>
 
               {msg.attachments.length > 0 ? (
-                <div className="ref-picker-sublist">
+                <ul className="ref-picker-attachment-list">
                   {msg.attachments.map((att) => {
+                    const fileName = att.fileName ?? "파일";
                     const attRef: PendingReference = {
                       source: "line_works_attachment",
                       externalId: String(att.id),
-                      title: att.fileName ?? "파일",
+                      title: fileName,
                       excerpt: [
                         att.mimeType,
                         formatFileSize(att.fileSize),
@@ -499,26 +501,27 @@ function LineWorksTab({
                       externalId: String(att.id),
                     });
                     return (
-                      <button
-                        key={att.id}
-                        type="button"
-                        className={`ref-picker-attachment ${attSelected ? "selected" : ""}`.trim()}
-                        onClick={() => onToggle(attRef)}
-                      >
-                        📎 {attRef.title}
-                        {attRef.excerpt ? (
-                          <span className="ref-picker-attachment-meta">
-                            {" "}
-                            · {attRef.excerpt}
+                      <li key={att.id}>
+                        <button
+                          type="button"
+                          className={`ref-picker-item attachment ${attSelected ? "selected" : ""}`.trim()}
+                          onClick={() => onToggle(attRef)}
+                        >
+                          <span className="ref-picker-attachment-icon">📎</span>
+                          <div className="ref-picker-main">
+                            <span className="ref-picker-title">{fileName}</span>
+                            {attRef.excerpt ? (
+                              <span className="ref-picker-meta">{attRef.excerpt}</span>
+                            ) : null}
+                          </div>
+                          <span className="ref-picker-indicator">
+                            {attSelected ? "✓" : "+"}
                           </span>
-                        ) : null}
-                        <span className="ref-picker-indicator">
-                          {attSelected ? "✓" : "+"}
-                        </span>
-                      </button>
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               ) : null}
             </li>
           );
