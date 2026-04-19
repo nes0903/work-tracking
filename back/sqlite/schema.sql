@@ -379,6 +379,8 @@ CREATE TABLE IF NOT EXISTS site_links (
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_site_links_order ON site_links(sort_order);
-CREATE INDEX IF NOT EXISTS idx_site_links_category ON site_links(category);
+-- NOTE: idx_site_links_category 는 sqlite-db.ts runColumnMigrations 에서 category 컬럼
+-- ALTER TABLE ADD 이후에 만든다. (구버전 DB에는 category 컬럼이 아직 없을 수 있어 여기서 만들면
+-- "no such column: category" 로 부팅이 실패함)
 
 COMMIT;

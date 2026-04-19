@@ -55,6 +55,10 @@ function runColumnMigrations(db: DatabaseSync): void {
   if (!siteLinksHadCategory) {
     db.exec(`ALTER TABLE site_links ADD COLUMN category TEXT`);
   }
+  // 인덱스는 반드시 ALTER TABLE ADD COLUMN 이후에 생성해야 함
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_site_links_category ON site_links(category)`,
+  );
 
   seedSiteLinksIfEmpty(db);
   backfillSiteLinkCategories(db);
