@@ -76,18 +76,40 @@ function toDateFolder(value: string | null | undefined): string {
 export function buildAttachmentObjectKey(params: {
   prefix: string;
   channelId: string;
+  /** 있으면 채널 폴더에 이름을 사용. 없으면/빈값이면 channelId 로 fallback. */
+  channelName?: string | null;
   issuedAt?: string | null;
   fileName?: string;
   /** 사용되지 않지만 과거 호출부 호환을 위해 남겨둠. */
   fileId?: string;
 }): string {
-  const { prefix, channelId, issuedAt, fileName } = params;
+  const { prefix, channelId, channelName, issuedAt, fileName } = params;
   const dateFolder = toDateFolder(issuedAt);
-  const channelFolder = sanitizeChannelSegment(channelId);
+  const channelFolder = resolveChannelFolder(channelId, channelName);
   const safeFileName = sanitizeFileName(fileName);
-  // 신규 규칙: <prefix>line-works/<channelId>/<YYYY-MM-DD>/<fileName>
+  // 신규 규칙: <prefix>line-works/<channelName|channelId>/<YYYY-MM-DD>/<fileName>
   // 충돌 방지는 호출부(uploadAttachment)에서 resolveUniqueAttachmentKey 로 처리.
   return `${prefix}${channelFolder}/${dateFolder}/${safeFileName}`;
+}
+
+/**
+ * channelName 이 유효하면 sanitize 해서 사용, 아니면 channelId 를 sanitize.
+ * DM 채널(channelId 가 "dm:..." 형태이고 channelName 이 없으면) 은 "DM-<userId>" 로 대체.
+ */
+function resolveChannelFolder(
+  channelId: string,
+  channelName: string | null | undefined,
+): string {
+  const trimmedName = typeof channelName === "string" ? channelName.trim() : "";
+  if (trimmedName) {
+    const sanitized = sanitizeChannelSegment(trimmedName);
+    if (sanitized) return sanitized;
+  }
+  if (channelId.startsWith("dm:")) {
+    const userId = channelId.slice(3);
+    return sanitizeChannelSegment(`DM-${userId || "unknown"}`);
+  }
+  return sanitizeChannelSegment(channelId);
 }
 
 /**

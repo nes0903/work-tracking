@@ -212,9 +212,11 @@ export class LineWorksBotService {
 
     const stream = await fetchAttachmentStream(botConfig, fileId);
     const fileName = event.content?.fileName ?? stream.fileName ?? `${fileId}.bin`;
+    const channelMeta = getChannelMeta(channelId);
     const baseKey = buildAttachmentObjectKey({
       prefix: s3Config.prefix,
       channelId,
+      channelName: channelMeta?.title ?? null,
       issuedAt: event.issuedTime,
       fileName,
     });

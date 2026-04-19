@@ -9,7 +9,9 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,test}/**/*.ts\"",
-    "test": "jest"
+    "test": "jest",
+    "migrate:s3-keys": "ts-node --transpile-only -r tsconfig-paths/register scripts/migrate-s3-keys.ts",
+    "migrate:s3-keys:dry": "ts-node --transpile-only -r tsconfig-paths/register scripts/migrate-s3-keys.ts --dry-run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",
