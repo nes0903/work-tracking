@@ -218,6 +218,37 @@ Phase 별 개선 추가 검토 (필수 아님):
 - 이미 태스크에 붙어있는 참조는 "이미 연결됨" 배지 표시
 - 제목 자동 추출: Notion 페이지 title, LW 메시지 앞부분, 파일명, Figma 노드 이름(API 호출)
 
+### Phase 8 — 모달화 + 예상시간 UX 개선 (2026-04-20 추가)
+**배경**: 태스크 생성을 "뷰 전환"이 아닌 "팝업"으로 제공하는 것이 흐름에 자연스럽다.
+또한 기존 `예상(분)` 한 칸 입력은 직관성이 낮음 (예: 90분 vs 1시간 30분).
+
+**변경 내용**:
+- 사이드바 네비게이션에서 **"태스크 생성" 항목 제거**
+- 대시보드 우측 상단(`topbar-right` 내부 또는 필터 바 오른쪽)에 **`+ 태스크 생성` 버튼** 추가
+- 버튼 클릭 → **`TaskCreateModal` 띄움**
+  - 기존 `task-create` 뷰의 폼 JSX 를 그대로 모달 안으로 이동
+  - `ReferenceCollector` 그대로 포함 (props 는 대시보드에서 주입)
+- `activeView` 타입에서 `"task-create"` 제거
+- 모달 저장 성공 시 **대시보드 태스크 리스트 자동 reload**
+
+**예상 시간 필드 리뉴얼**:
+- 기존 단일 `예상(분)` 입력 → **`시간` + `분` 두 개의 number 입력**
+- `TaskFormState`: `estimate: string` → `estimateHours: string, estimateMinutes: string`
+- 제출 시 `Number(hours) * 60 + Number(minutes)` 로 계산해서 기존 API `estimate` 필드에 전달
+- 기본값: `hours=0, minutes=30` (기존 30분 유지)
+- UI: 두 input 을 나란히, 각각 라벨 "시간 / 분" 표기
+
+**파일 변경**:
+- [신규] `TaskCreateModal.tsx` — 백드롭 + 카드 + 폼
+- [수정] `WorkTrackingDashboard.tsx`:
+  - `activeView` 유니온에서 `"task-create"` 제거
+  - 사이드바 `"태스크 생성"` 버튼 삭제
+  - topbar/대시보드 상단에 모달 오픈 버튼 추가
+  - `task-create` 조건부 렌더 블록 제거
+  - 모달 상태 `taskCreateOpen` 관리
+  - `TaskFormState` 에 hours/minutes 분리 필드
+- [수정] `styles.css` — 모달 전용 스타일 + `.time-split` (시간/분 2열)
+
 ---
 
 ## 7. 경계 사례 / 고려
@@ -270,6 +301,13 @@ front/src/components/work-tracking/
 - [ ] Phase 6: 태스크 폼에 **담당자 드롭다운** 추가 (별도 계획: [TASK_DASHBOARD_PLAN.md](TASK_DASHBOARD_PLAN.md))
 - [ ] Phase 7: 페이지네이션 컴포넌트 공용화 — 대시보드 계획의 페이지네이션 정책 따름
 
+### 이번 라운드 Phase 8 (2026-04-20)
+- [ ] Phase 8-1: `TaskCreateModal` 신규 작성 (폼 + ReferenceCollector)
+- [ ] Phase 8-2: 사이드바 "태스크 생성" 제거 + `activeView` 유니온 축소
+- [ ] Phase 8-3: 대시보드 상단 `+ 태스크 생성` 버튼 추가 + 모달 연결
+- [ ] Phase 8-4: `estimate` 단일 필드 → `estimateHours / estimateMinutes` 분리
+- [ ] Phase 8-5: styles.css 모달·시간·분 split 스타일 추가
+
 ---
 
-*작성일: 2026-04-19. Figma 탭 + URL 리네임 추가: 2026-04-20.*
+*작성일: 2026-04-19. Figma 탭 + URL 리네임 추가: 2026-04-20. 모달화 Phase 8 추가: 2026-04-20.*

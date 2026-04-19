@@ -30,9 +30,9 @@ import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
 import { FilePreviewModal } from "./FilePreviewModal";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { Pagination } from "./Pagination";
-import { ReferenceCollector } from "./ReferenceCollector";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
+import { TaskCreateModal, type TaskCreateSubmit } from "./TaskCreateModal";
 import { TaskDetailDrawer } from "./TaskDetailDrawer";
 import { TaskList } from "./TaskList";
 import {
@@ -44,10 +44,6 @@ import {
   type TaskQueryResponse,
   type TaskStatus as DashboardTaskStatus,
 } from "@/lib/tasks-api";
-import {
-  pendingKey,
-  type PendingReference,
-} from "@/lib/pending-references";
 import {
   emptyGithubFeed,
   emptyNotionFeed,
@@ -67,15 +63,6 @@ import {
   type TaskStatus,
   type WorkDayMap,
 } from "@/lib/work-tracking";
-
-interface TaskFormState {
-  title: string;
-  category: string;
-  priority: TaskPriority;
-  dueDate: string;
-  estimate: string;
-  note: string;
-}
 
 const QUICK_LINKS = [
   {
@@ -104,28 +91,17 @@ const QUICK_LINKS = [
   },
 ] as const;
 
-function createTaskFormState(dateKey: string): TaskFormState {
-  return {
-    title: "",
-    category: "",
-    priority: "medium",
-    dueDate: dateKey,
-    estimate: "30",
-    note: "",
-  };
-}
-
 export function WorkTrackingDashboard() {
   const initialDate = todayKey();
   const [days, setDays] = useState<WorkDayMap>({});
   const [activeDate, setActiveDate] = useState(initialDate);
-  const [taskForm, setTaskForm] = useState<TaskFormState>(() => createTaskFormState(initialDate));
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
   const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [activeView, setActiveView] = useState<
-    "dashboard" | "task-create" | "github" | "notion" | "line-works" | "storage"
+    "dashboard" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
+  const [taskCreateOpen, setTaskCreateOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
@@ -158,7 +134,6 @@ export function WorkTrackingDashboard() {
   const [taskReferences, setTaskReferences] = useState<Record<string, TaskReference[]>>({});
   const [attachCandidate, setAttachCandidate] = useState<AttachCandidate | null>(null);
   const [attachModalOpen, setAttachModalOpen] = useState(false);
-  const [pendingReferences, setPendingReferences] = useState<PendingReference[]>([]);
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
   const [previewState, setPreviewState] = useState<
@@ -441,7 +416,7 @@ export function WorkTrackingDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeView !== "storage" && activeView !== "task-create") {
+    if (activeView !== "storage") {
       return;
     }
     void reloadStorage();
@@ -658,17 +633,13 @@ export function WorkTrackingDashboard() {
   function applyDashboardState(
     dateKey: string,
     nextDays: WorkDayMap,
-    options?: {
+    _options?: {
       resetTaskForm?: boolean;
       syncNotes?: boolean;
     },
   ) {
     setDays(nextDays);
     setActiveDate(dateKey);
-
-    if (options?.resetTaskForm) {
-      setTaskForm(createTaskFormState(dateKey));
-    }
   }
 
   async function fetchDashboardState(dateKey: string) {
@@ -773,53 +744,53 @@ export function WorkTrackingDashboard() {
     }
   }
 
-  async function handleCreateTask(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      const result = await postDashboardAction({
-        action: "createTask",
-        date: activeDate,
-        task: {
-          title: taskForm.title,
-          category: taskForm.category,
-          priority: taskForm.priority,
-          dueDate: taskForm.dueDate || activeDate,
-          estimate: Number(taskForm.estimate || 0),
-          note: taskForm.note,
-        },
-      });
-      applyDashboardState(activeDate, result.days, {
-        resetTaskForm: true,
-        syncNotes: false,
-      });
+  async function handleTaskCreateSubmit(payload: TaskCreateSubmit) {
+    const result = await postDashboardAction({
+      action: "createTask",
+      date: activeDate,
+      task: {
+        title: payload.title,
+        category: payload.category,
+        priority: payload.priority,
+        dueDate: payload.dueDate || activeDate,
+        estimate: payload.estimate,
+        note: payload.note,
+      },
+    });
+    applyDashboardState(activeDate, result.days, { syncNotes: false });
 
-      if (pendingReferences.length > 0) {
-        const tasksForDate = getDay(result.days, activeDate).tasks;
-        const latest = tasksForDate.reduce<Task | null>((acc, task) => {
-          if (!acc) return task;
-          return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
-            ? task
-            : acc;
-        }, null);
-        if (latest) {
-          for (const ref of pendingReferences) {
-            await attachReference({
-              taskId: latest.id,
-              source: ref.source,
-              externalId: ref.externalId,
-              title: ref.title,
-              excerpt: ref.excerpt ?? null,
-              externalUrl: ref.externalUrl ?? null,
-              metadata: ref.metadata ?? null,
-            });
-          }
-          setPendingReferences([]);
-          void reloadTaskReferences();
+    if (payload.pendingReferences.length > 0) {
+      const tasksForDate = getDay(result.days, activeDate).tasks;
+      const latest = tasksForDate.reduce<Task | null>((acc, task) => {
+        if (!acc) return task;
+        return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
+          ? task
+          : acc;
+      }, null);
+      if (latest) {
+        for (const ref of payload.pendingReferences) {
+          await attachReference({
+            taskId: latest.id,
+            source: ref.source,
+            externalId: ref.externalId,
+            title: ref.title,
+            excerpt: ref.excerpt ?? null,
+            externalUrl: ref.externalUrl ?? null,
+            metadata: ref.metadata ?? null,
+          });
         }
+        void reloadTaskReferences();
       }
-    } catch (error) {
-      console.error("[dashboard] failed to create task", error);
     }
+
+    if (activeView === "dashboard") {
+      await reloadDashboardTasks();
+    }
+  }
+
+  function openTaskCreateModal() {
+    void reloadStorage();
+    setTaskCreateOpen(true);
   }
 
   function updateTaskStatus(taskId: string, nextStatus: TaskStatus) {
@@ -962,13 +933,6 @@ export function WorkTrackingDashboard() {
           </button>
           <button
             type="button"
-            className={`sidebar-nav-link ${activeView === "task-create" ? "active" : ""}`.trim()}
-            onClick={() => setActiveView("task-create")}
-          >
-            태스크 생성
-          </button>
-          <button
-            type="button"
             className={`sidebar-nav-link ${activeView === "github" ? "active" : ""}`.trim()}
             onClick={() => setActiveView("github")}
           >
@@ -1052,11 +1016,6 @@ export function WorkTrackingDashboard() {
                 <h2>Work Tracking Dashboard</h2>
                 <p>오늘 해야 할 일과 집중 시간을 한 화면에서 관리합니다.</p>
               </>
-            ) : activeView === "task-create" ? (
-              <>
-                <h2>태스크 생성</h2>
-                <p>새 업무를 등록하고 참조 링크까지 한 번에 추가합니다.</p>
-              </>
             ) : activeView === "github" ? (
               <>
                 <h2>GitHub Watch</h2>
@@ -1107,6 +1066,13 @@ export function WorkTrackingDashboard() {
                 </strong>
               </div>
             )}
+            <button
+              type="button"
+              className="primary-button task-create-trigger"
+              onClick={openTaskCreateModal}
+            >
+              + 태스크 생성
+            </button>
             <div className="date-panel">
               <div className="date-row">
                 <button
@@ -1247,95 +1213,6 @@ export function WorkTrackingDashboard() {
                   </button>
                 ) : null}
               </div>
-            </section>
-          ) : activeView === "task-create" ? (
-            <section className="panel task-create-panel">
-              <form className="task-form" onSubmit={handleCreateTask}>
-                <label>
-                  <span className="field-label">업무명</span>
-                  <input
-                    type="text"
-                    name="title"
-                    placeholder="예: 통계 API 검증"
-                    value={taskForm.title}
-                    onChange={(event) => setTaskForm((current) => ({ ...current, title: event.target.value }))}
-                    required
-                  />
-                </label>
-                <label>
-                  <span className="field-label">카테고리</span>
-                  <input
-                    type="text"
-                    name="category"
-                    placeholder="예: 백엔드, 회의, 문서"
-                    value={taskForm.category}
-                    onChange={(event) => setTaskForm((current) => ({ ...current, category: event.target.value }))}
-                  />
-                </label>
-                <div className="split-fields">
-                  <label>
-                    <span className="field-label">우선순위</span>
-                    <select
-                      name="priority"
-                      value={taskForm.priority}
-                      onChange={(event) =>
-                        setTaskForm((current) => ({
-                          ...current,
-                          priority: event.target.value as TaskPriority,
-                        }))
-                      }
-                    >
-                      <option value="high">높음</option>
-                      <option value="medium">중간</option>
-                      <option value="low">낮음</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span className="field-label">마감일</span>
-                    <input
-                      type="date"
-                      name="dueDate"
-                      value={taskForm.dueDate}
-                      onChange={(event) => setTaskForm((current) => ({ ...current, dueDate: event.target.value }))}
-                    />
-                  </label>
-                  <label>
-                    <span className="field-label">예상(분)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="5"
-                      name="estimate"
-                      value={taskForm.estimate}
-                      onChange={(event) => setTaskForm((current) => ({ ...current, estimate: event.target.value }))}
-                    />
-                  </label>
-                </div>
-                <label>
-                  <span className="field-label">메모</span>
-                  <textarea
-                    name="note"
-                    rows={4}
-                    placeholder="이 업무에서 꼭 확인할 점을 적으세요."
-                    value={taskForm.note}
-                    onChange={(event) => setTaskForm((current) => ({ ...current, note: event.target.value }))}
-                  />
-                </label>
-
-                <ReferenceCollector
-                  pending={pendingReferences}
-                  onPendingChange={setPendingReferences}
-                  notionItems={notionFeed.items}
-                  lineWorksItems={lineWorksArchive.items}
-                  lineWorksChannels={lineWorksArchive.channels}
-                  storageItems={storageItems}
-                  channelLabels={storageChannelLabels}
-                />
-
-                <button className="primary-button" type="submit">
-                  업무 추가
-                </button>
-              </form>
             </section>
           ) : activeView === "storage" ? (
             <section className="panel storage-panel">
@@ -1577,6 +1454,17 @@ export function WorkTrackingDashboard() {
           }}
         />
       ) : null}
+      <TaskCreateModal
+        open={taskCreateOpen}
+        defaultDueDate={activeDate}
+        onClose={() => setTaskCreateOpen(false)}
+        onSubmit={handleTaskCreateSubmit}
+        notionItems={notionFeed.items}
+        lineWorksItems={lineWorksArchive.items}
+        lineWorksChannels={lineWorksArchive.channels}
+        storageItems={storageItems}
+        channelLabels={storageChannelLabels}
+      />
     </>
   );
 }
