@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_request: "로그인 요청이 올바르지 않습니다.",
   invalid_state: "인증 세션이 만료됐습니다. 다시 시도해주세요.",
@@ -32,9 +30,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
 
-        <Link className="login-button" href={href} prefetch={false}>
+        {/* 순수 <a> 태그 사용: Next <Link>는 prefetch={false}라도 RSC prefetch(_rsc 쿼리)가
+            붙는 경우가 있어 302 체인을 자동 추적 → 자동 로그인되는 문제가 있음 */}
+        <a className="login-button" href={href} rel="nofollow noreferrer">
           네이버웍스로 로그인
-        </Link>
+        </a>
       </section>
     </main>
   );

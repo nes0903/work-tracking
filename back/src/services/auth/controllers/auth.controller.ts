@@ -50,8 +50,25 @@ export class AuthController {
   login(
     @Query("redirect") redirect: string | undefined,
     @Query("prompt") prompt: string | undefined,
+    @Query("_rsc") rsc: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    // Next.js RSC prefetch(_rsc=...), HEAD, 혹은 명시적 "no-prefetch" 헤더를 가진 요청은
+    // 실제 사용자 클릭이 아니라 사이드이펙트(302 체인 자동 추적 → 자동 로그인)가 발생하므로 차단.
+    const isPrefetch =
+      rsc !== undefined ||
+      req.method === "HEAD" ||
+      req.headers["purpose"] === "prefetch" ||
+      req.headers["sec-purpose"]?.includes("prefetch") ||
+      req.headers["next-router-prefetch"] === "1";
+    if (isPrefetch) {
+      throw new HttpException(
+        { ok: false, error: "Prefetch blocked" },
+        HttpStatus.METHOD_NOT_ALLOWED,
+      );
+    }
+
     const config = loadLineWorksConfig();
     if (!config) {
       throw new HttpException(
