@@ -1024,7 +1024,7 @@ export function WorkTrackingDashboard() {
     <>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h1>Executive</h1>
+          <h1>Work Manage</h1>
           <p>WORK TRACKING SUITE</p>
         </div>
 
