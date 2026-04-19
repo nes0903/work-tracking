@@ -563,9 +563,11 @@ export function WorkTrackingDashboard() {
     hintedFileName?: string | null,
     hintedMimeType?: string | null,
   ) {
-    // Office 파일이 아닐 가능성을 대비해 클릭 시점에 빈 탭을 먼저 열어둠(팝업 차단 회피)
+    // Office 파일이 아닐 가능성을 대비해 클릭 시점에 빈 탭을 먼저 열어둠(팝업 차단 회피).
+    // 주의: `noopener` 를 주면 window.open 반환값이 null 이 되어 이후 location.href 주입이
+    // 불가능하므로, 여기서는 `noopener` 를 빼고 직접 opener 를 끊는다.
     const officeHint = isOfficeFile(hintedFileName ?? null, hintedMimeType ?? null);
-    const pendingTab = officeHint ? null : window.open("about:blank", "_blank", "noopener");
+    const pendingTab = officeHint ? null : window.open("about:blank", "_blank");
 
     const resolved = await resolveAttachmentUrl(id);
     if (!resolved) {
@@ -577,12 +579,15 @@ export function WorkTrackingDashboard() {
     if (isOfficeFile(fileName, mimeType)) {
       pendingTab?.close();
       setPreviewState({ fileName, url: resolved.url });
-    } else {
-      if (pendingTab) {
-        pendingTab.location.href = resolved.url;
-      } else {
-        window.open(resolved.url, "_blank", "noopener");
+    } else if (pendingTab) {
+      try {
+        pendingTab.opener = null;
+      } catch {
+        // cross-origin 등으로 opener 를 set 할 수 없는 경우 무시
       }
+      pendingTab.location.href = resolved.url;
+    } else {
+      window.open(resolved.url, "_blank", "noopener");
     }
   }
 
