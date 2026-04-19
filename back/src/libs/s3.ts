@@ -199,13 +199,39 @@ export async function putAttachmentObject(params: {
 export async function presignGetUrl(
   bucket: string,
   key: string,
-  expiresSeconds?: number,
+  options?: {
+    expiresSeconds?: number;
+    /**
+     * `attachment` 이면 브라우저가 바로 다운로드하도록 Content-Disposition 을
+     * 응답에 붙여서 presign. 파일명을 함께 지정하면 다운로드 시 해당 이름으로 저장.
+     * `inline` 이면 기본(브라우저 내 표시).
+     */
+    disposition?: "inline" | "attachment";
+    fileName?: string | null;
+  },
 ): Promise<string> {
   const config = loadS3Config();
-  const ttl = expiresSeconds ?? config?.presignTtlSeconds ?? 600;
+  const ttl = options?.expiresSeconds ?? config?.presignTtlSeconds ?? 600;
+
+  let responseContentDisposition: string | undefined;
+  if (options?.disposition === "attachment" || options?.fileName) {
+    const kind = options?.disposition ?? "attachment";
+    const safeName = options?.fileName
+      ? options.fileName.normalize("NFC").replace(/"/g, "")
+      : null;
+    // RFC 5987 encoded filename 으로 유니코드 파일명(한글 등) 전달
+    responseContentDisposition = safeName
+      ? `${kind}; filename*=UTF-8''${encodeURIComponent(safeName)}`
+      : kind;
+  }
+
   return getSignedUrl(
     getS3Client(),
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ResponseContentDisposition: responseContentDisposition,
+    }),
     { expiresIn: ttl },
   );
 }
