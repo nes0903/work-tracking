@@ -152,21 +152,6 @@ export async function handleNotionWebhook(
     };
   }
 
-  if (payload.type === "database.content_updated") {
-    const items = await buildDatabaseUpdateItems(payload);
-    for (const it of items) {
-      upsertUpdateFeed(it);
-    }
-    return {
-      status: 200,
-      body: {
-        ok: true,
-        accepted: true,
-        item: items[0],
-      },
-    };
-  }
-
   if (!payload.type.startsWith("page.")) {
     return {
       status: 200,
@@ -181,95 +166,6 @@ export async function handleNotionWebhook(
     status: 200,
     body: { ok: true, accepted: true, item },
   };
-}
-
-/**
- * database.content_updated 이벤트 처리:
- * 해당 데이터베이스의 "최근 수정된 페이지 N개" 를 조회해
- * page.* 이벤트와 동일한 포맷으로 변환.
- * event_id 는 <webhook id>:<page id> 형태로 부여해 중복 저장을 방지.
- */
-async function buildDatabaseUpdateItems(
-  event: NotionWebhookEvent,
-): Promise<UpdateFeedItem[]> {
-  const databaseId = event.entity?.id ?? "";
-  if (!databaseId) return [];
-
-  const pages = await queryDatabaseRecentPages(databaseId, 5);
-  if (pages.length === 0) {
-    return [];
-  }
-
-  const databaseInfo = await fetchDatabaseSafely(databaseId);
-  const databaseTitle =
-    extractRichTitle(databaseInfo?.title) || "데이터베이스";
-
-  const items: UpdateFeedItem[] = [];
-  for (const page of pages) {
-    const pageId = page.id ?? "";
-    if (!pageId) continue;
-
-    const title = extractPageTitle(page) || "(제목 없음)";
-    const url = page.url || notionPageUrl(pageId);
-    const breadcrumb = await buildBreadcrumb(page.parent);
-    const section = breadcrumb[0] ?? databaseTitle;
-    const parent =
-      breadcrumb.length > 1 ? breadcrumb.slice(1).join(" / ") : databaseTitle;
-
-    const editorId = page.last_edited_by?.id;
-    const editor = editorId ? await fetchUserName(editorId) : null;
-
-    const eventId =
-      (event.id || cryptoSafeId(databaseId, event.timestamp)) + ":" + pageId;
-
-    items.push({
-      eventId,
-      type: "page.derived_from_database",
-      title,
-      url,
-      link: url,
-      editedAt: page.last_edited_time ?? event.timestamp ?? null,
-      section,
-      parent,
-      editor,
-      summary: "데이터베이스 내 페이지 변경",
-    });
-  }
-
-  return items;
-}
-
-async function queryDatabaseRecentPages(
-  databaseId: string,
-  limit: number,
-): Promise<NotionPageResponse[]> {
-  if (!databaseId || !NOTION_API_TOKEN) return [];
-  try {
-    const response = await fetch(
-      `https://api.notion.com/v1/databases/${databaseId}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${NOTION_API_TOKEN}`,
-          "Notion-Version": NOTION_API_VERSION,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          page_size: Math.max(1, Math.min(limit, 20)),
-          sorts: [
-            { timestamp: "last_edited_time", direction: "descending" },
-          ],
-        }),
-      },
-    );
-    if (!response.ok) return [];
-    const payload = (await response.json()) as {
-      results?: NotionPageResponse[];
-    };
-    return Array.isArray(payload.results) ? payload.results : [];
-  } catch {
-    return [];
-  }
 }
 
 function safeJsonParse(raw: string) {
