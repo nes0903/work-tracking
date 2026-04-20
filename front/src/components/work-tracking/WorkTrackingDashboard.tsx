@@ -1078,7 +1078,7 @@ export function WorkTrackingDashboard() {
             className={`sidebar-nav-link ${activeView === "storage" ? "active" : ""}`.trim()}
             onClick={() => setActiveView("storage")}
           >
-            파일 저장소
+            File Storage
             {storageItems.length > 0 ? (
               <span className="sidebar-nav-count">{storageItems.length}</span>
             ) : null}
@@ -1159,7 +1159,7 @@ export function WorkTrackingDashboard() {
               </>
             ) : (
               <>
-                <h2>파일 저장소</h2>
+                <h2>File Storage</h2>
                 <p>S3 에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이 발급됩니다.</p>
               </>
             )}
