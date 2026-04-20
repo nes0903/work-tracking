@@ -70,7 +70,7 @@ export function DayDetailPanel({
         ))}
       </Section>
 
-      <Section title="File Storage" count={bucket.storage.length}>
+      <Section title="파일 저장소" count={bucket.storage.length}>
         {bucket.storage.map((item) => (
           <StorageItem
             key={item.id}
