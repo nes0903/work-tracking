@@ -249,58 +249,7 @@ export function prepareDays(days: WorkDayMap, dateKey: string): WorkDayMap {
     next[dateKey] = createEmptyDay();
   }
 
-  rolloverPendingTasks(next, dateKey);
   return next;
-}
-
-function rolloverPendingTasks(days: WorkDayMap, targetDateKey: string) {
-  const targetDay = days[targetDateKey];
-  const knownLineages = new Set(targetDay.tasks.map((task) => task.lineageId || task.id));
-  const carriedTasks: Task[] = [];
-
-  const sourceDates = Object.keys(days)
-    .filter((dateKey) => dateKey < targetDateKey)
-    .sort((left, right) => right.localeCompare(left));
-
-  for (const sourceDateKey of sourceDates) {
-    const sourceDay = days[sourceDateKey];
-    const remainingTasks: Task[] = [];
-
-    for (const task of sourceDay.tasks) {
-      if (task.status === "done") {
-        remainingTasks.push(task);
-        continue;
-      }
-
-      const lineageId = task.lineageId || task.id;
-      if (knownLineages.has(lineageId)) {
-        continue;
-      }
-
-      carriedTasks.push(createCarryoverTask(task, sourceDateKey));
-      knownLineages.add(lineageId);
-    }
-
-    sourceDay.tasks = remainingTasks;
-  }
-
-  if (carriedTasks.length > 0) {
-    targetDay.tasks = [...sortTasksForDisplay(carriedTasks), ...targetDay.tasks];
-  }
-}
-
-function createCarryoverTask(task: Task, sourceDateKey: string): Task {
-  const timestamp = new Date().toISOString();
-
-  return {
-    ...task,
-    id: createId(),
-    priority: "high",
-    updatedAt: timestamp,
-    carryoverCount: task.carryoverCount + 1,
-    carriedFromDate: sourceDateKey,
-    completedAt: null,
-  };
 }
 
 export function sortTasksForDisplay(tasks: Task[]) {
@@ -323,10 +272,7 @@ export function compareTasksForDisplay(left: Task, right: Task) {
 }
 
 export function getEffectivePriority(task: Task): TaskPriority {
-  if (
-    task.status !== "done" &&
-    (task.priority === "high" || task.carryoverCount > 0 || isTaskOverdue(task))
-  ) {
+  if (task.status !== "done" && (task.priority === "high" || isTaskOverdue(task))) {
     return "high";
   }
 
@@ -342,13 +288,6 @@ export function getTaskFlag(task: Task, referenceDateKey = todayKey()) {
     return {
       label: `${daysPastDue(task.dueDate, referenceDateKey)}일 지연`,
       kind: "overdue" as const,
-    };
-  }
-
-  if (task.carryoverCount > 0) {
-    return {
-      label: "전일 승계",
-      kind: "carryover" as const,
     };
   }
 
@@ -372,10 +311,6 @@ export function formatDeadlineLabel(task: Task, referenceDateKey = todayKey()) {
 }
 
 export function buildActivitySubtitle(task: Task) {
-  if (task.carryoverCount > 0) {
-    return `${task.category || "분류 없음"} · ${formatShortDate(task.carriedFromDate)}에서 승계`;
-  }
-
   return `${task.category || "분류 없음"} 카테고리로 저장됨`;
 }
 

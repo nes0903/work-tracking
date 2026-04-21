@@ -2,7 +2,6 @@
 
 import {
   formatDeadlineLabel,
-  formatShortDate,
   formatTime,
   getEffectivePriority,
   getTaskFlag,
@@ -101,11 +100,7 @@ export function TaskCard({
         <span className={`task-deadline ${isTaskOverdue(task, activeDate) ? "is-overdue" : ""}`.trim()}>
           {formatDeadlineLabel(task, activeDate)}
         </span>
-        <span className="task-origin">
-          {task.carryoverCount > 0
-            ? `${formatShortDate(task.carriedFromDate)}에서 승계`
-            : `등록 ${formatTime(task.createdAt)}`}
-        </span>
+        <span className="task-origin">{`등록 ${formatTime(task.createdAt)}`}</span>
       </div>
 
       <div className="task-actions">

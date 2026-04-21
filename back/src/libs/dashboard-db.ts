@@ -119,7 +119,6 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
   };
 }
 
-
 interface TaskRow {
   id: string;
   lineage_id: string;
@@ -541,8 +540,9 @@ function selectDays(db: DatabaseSync): WorkDayMap {
 }
 
 function prepareWorkDay(db: DatabaseSync, dateKey: string) {
+  // 조회/수정 요청이 task row 자체를 이동시키면 참조와 이력이 깨진다.
+  // work_day row 만 보장하고 task 는 그대로 둔다.
   ensureWorkDay(db, dateKey);
-  rolloverPendingTasks(db, dateKey);
 }
 
 function ensureWorkDay(db: DatabaseSync, dateKey: string) {
@@ -553,86 +553,6 @@ function ensureWorkDay(db: DatabaseSync, dateKey: string) {
       ON CONFLICT(work_date) DO NOTHING
     `,
   ).run(dateKey);
-}
-
-function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
-  const existingLineages = new Set(
-    (
-      db
-        .prepare("SELECT lineage_id FROM tasks WHERE work_date = ?")
-        .all(targetDateKey) as Array<{ lineage_id: string }>
-    ).map((row) => row.lineage_id),
-  );
-
-  const sourceTasks = db
-    .prepare(
-      `
-        SELECT
-          id, lineage_id, work_date, title, category, priority, due_date, due_time,
-          estimate_minutes, note, status, created_at, updated_at,
-          carryover_count, carried_from_date, completed_at,
-          created_by_user_id, assignee_user_id
-        FROM tasks
-        WHERE work_date < ? AND status <> 'done'
-        ORDER BY work_date DESC, datetime(created_at) ASC, id ASC
-      `,
-    )
-    .all(targetDateKey) as unknown as (TaskRow & {
-      created_by_user_id: string | null;
-      assignee_user_id: string | null;
-    })[];
-
-  const insertStatement = db.prepare(
-    `
-      INSERT INTO tasks (
-        id, lineage_id, work_date, title, category, priority, due_date, due_time,
-        estimate_minutes, note, status, sort_order, carryover_count,
-        carried_from_date, created_at, updated_at, completed_at,
-        created_by_user_id, assignee_user_id
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, NULL, ?, ?)
-    `,
-  );
-  const deleteStatement = db.prepare("DELETE FROM tasks WHERE id = ?");
-
-  for (const row of sourceTasks) {
-    if (existingLineages.has(row.lineage_id)) {
-      deleteStatement.run(row.id);
-      continue;
-    }
-
-    const newId = createId();
-    insertStatement.run(
-      newId,
-      row.lineage_id,
-      targetDateKey,
-      row.title,
-      row.category,
-      "high",
-      row.due_date,
-      row.due_time,
-      row.estimate_minutes,
-      row.note,
-      row.status,
-      row.carryover_count + 1,
-      row.work_date,
-      row.created_at,
-      new Date().toISOString(),
-      row.created_by_user_id,
-      row.assignee_user_id,
-    );
-    // 이전 task 의 담당자 행들을 신규 id 로 복사
-    db.prepare(
-      `INSERT INTO task_assignees (task_id, user_id, sort_order)
-       SELECT ?, user_id, sort_order FROM task_assignees WHERE task_id = ?`,
-    ).run(newId, row.id);
-    deleteStatement.run(row.id);
-    existingLineages.add(row.lineage_id);
-  }
-
-  if (sourceTasks.length > 0) {
-    touchWorkDay(db, targetDateKey);
-  }
 }
 
 function touchWorkDay(db: DatabaseSync, dateKey: string) {
@@ -793,7 +713,10 @@ function listAssigneesForTasks(
   db: DatabaseSync,
   taskIds: string[],
 ): Map<string, { userId: string; userName: string | null }[]> {
-  const result = new Map<string, { userId: string; userName: string | null }[]>();
+  const result = new Map<
+    string,
+    { userId: string; userName: string | null }[]
+  >();
   if (taskIds.length === 0) return result;
   const placeholders = taskIds.map(() => "?").join(",");
   const rows = db
@@ -810,11 +733,11 @@ function listAssigneesForTasks(
       `,
     )
     .all(...taskIds) as Array<{
-      task_id: string;
-      user_id: string;
-      user_name: string | null;
-      sort_order: number;
-    }>;
+    task_id: string;
+    user_id: string;
+    user_name: string | null;
+    sort_order: number;
+  }>;
   for (const row of rows) {
     const list = result.get(row.task_id) ?? [];
     list.push({ userId: row.user_id, userName: row.user_name });
