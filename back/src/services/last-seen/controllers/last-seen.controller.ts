@@ -10,7 +10,11 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthGuard } from "@common/auth.guard";
-import { getLastSeenMap, setLastSeen } from "@libs/last-seen-db";
+import {
+  getLastSeenMap,
+  markNotionRead,
+  setLastSeen,
+} from "@libs/last-seen-db";
 
 const ALLOWED_SOURCES = new Set(["notion", "line-works", "github"]);
 
@@ -47,5 +51,28 @@ export class LastSeenController {
     const at = body.at ?? new Date().toISOString();
     setLastSeen(req.auth.userId, source, at);
     return { ok: true, source, at };
+  }
+
+  /** Notion 이벤트 1건 이상을 읽음 처리 */
+  @Post("notion/read")
+  markRead(@Req() req: Request, @Body() body: { eventIds?: unknown }) {
+    if (!req.auth) {
+      throw new HttpException(
+        { ok: false, error: "Unauthorized" },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const raw = body.eventIds;
+    const ids = Array.isArray(raw)
+      ? raw.filter((v): v is string => typeof v === "string")
+      : [];
+    if (ids.length === 0) {
+      throw new HttpException(
+        { ok: false, error: "eventIds is required" },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const inserted = markNotionRead(req.auth.userId, ids);
+    return { ok: true, inserted, count: ids.length };
   }
 }

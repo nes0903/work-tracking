@@ -24,7 +24,12 @@ import {
   type ChannelLabelMap,
   type StorageItem,
 } from "@/lib/storage";
-import { fetchLastSeenMap, markLastSeen, parseTimestamp } from "@/lib/last-seen";
+import {
+  fetchLastSeenMap,
+  markLastSeen,
+  markNotionRead,
+  parseTimestamp,
+} from "@/lib/last-seen";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
 import { CalendarView } from "./CalendarView";
 import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
@@ -80,7 +85,14 @@ export function WorkTrackingDashboard() {
   const [days, setDays] = useState<WorkDayMap>({});
   const [activeDate, setActiveDate] = useState(initialDate);
   const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
-  const [isLoadingMoreNotion, setIsLoadingMoreNotion] = useState(false);
+  const [notionPage, setNotionPage] = useState(1);
+  const [notionPerPage, setNotionPerPage] = useState<PerPageOption>(() => {
+    if (typeof window === "undefined") return 20;
+    const raw = window.localStorage.getItem("wt:perPage:notion");
+    const n = raw ? Number(raw) : 20;
+    return (PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20) as PerPageOption;
+  });
+  const [notionReadSet, setNotionReadSet] = useState<Set<string>>(new Set());
   const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
   const [activeView, setActiveView] = useState<
     "dashboard" | "calendar" | "github" | "notion" | "line-works" | "storage"
@@ -174,37 +186,40 @@ export function WorkTrackingDashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadNotionUpdates() {
+  const loadNotionUpdates = useCallback(
+    async (page: number, perPage: PerPageOption) => {
       try {
         const response = await fetch(
-          `/api/notion-updates?limit=10&t=${Date.now()}`,
-          {
-            cache: "no-store",
-          },
+          `/api/notion-updates?page=${page}&perPage=${perPage}&t=${Date.now()}`,
+          { cache: "no-store" },
         );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = (await response.json()) as NotionFeed;
-        if (!mounted) {
-          return;
-        }
-
         setNotionFeed({
           lastSyncedAt: payload.lastSyncedAt ?? null,
           items: Array.isArray(payload.items) ? payload.items : [],
-          nextCursor: payload.nextCursor ?? null,
+          pagination:
+            payload.pagination ?? emptyNotionFeed().pagination,
+          readEventIds: Array.isArray(payload.readEventIds)
+            ? payload.readEventIds
+            : [],
         });
+        setNotionReadSet(new Set(payload.readEventIds ?? []));
       } catch {
-        if (mounted) {
-          setNotionFeed(emptyNotionFeed());
-        }
+        setNotionFeed(emptyNotionFeed());
+        setNotionReadSet(new Set());
       }
-    }
+    },
+    [],
+  );
+
+  // 페이지/사이즈 변경 시 재조회
+  useEffect(() => {
+    void loadNotionUpdates(notionPage, notionPerPage);
+  }, [notionPage, notionPerPage, loadNotionUpdates]);
+
+  useEffect(() => {
+    let mounted = true;
 
     async function loadGithubUpdates() {
       try {
@@ -243,7 +258,6 @@ export function WorkTrackingDashboard() {
       }
     }
 
-    loadNotionUpdates();
     loadGithubUpdates();
     loadLineWorks();
 
@@ -258,7 +272,7 @@ export function WorkTrackingDashboard() {
           source?: "notion" | "github" | "line-works";
         };
         if (payload.source === "notion") {
-          void loadNotionUpdates();
+          void loadNotionUpdates(notionPage, notionPerPage);
         } else if (payload.source === "github") {
           void loadGithubUpdates();
         } else if (payload.source === "line-works") {
@@ -305,29 +319,29 @@ export function WorkTrackingDashboard() {
     };
   }, [currentUser]);
 
-  // 뷰 진입 시 서버에 읽음 기록
+  // Works 뷰만 자동 "모두 읽음" (Notion 은 명시적 버튼으로 전환)
   useEffect(() => {
     if (!currentUser) return;
-    if (activeView !== "notion" && activeView !== "line-works") return;
-    const source = activeView;
-    void markLastSeen(source).then((at) => {
+    if (activeView !== "line-works") return;
+    void markLastSeen("line-works").then((at) => {
       if (!at) return;
-      const ts = parseTimestamp(at);
-      if (source === "notion") {
-        setLastSeenNotion(ts);
-      } else if (source === "line-works") {
-        setLastSeenLineWorks(ts);
-      }
+      setLastSeenLineWorks(parseTimestamp(at));
     });
   }, [activeView, currentUser]);
 
   const notionNewCount = useMemo(() => {
-    if (!lastSeenNotion) return 0;
     return notionFeed.items.reduce<number>((count, item) => {
-      const ts = parseTimestamp(item.editedAt);
-      return ts > lastSeenNotion ? count + 1 : count;
+      return isNotionItemNewInner(
+        item.editedAt,
+        item.eventId ?? null,
+        notionReadSet,
+        lastSeenNotion,
+      )
+        ? count + 1
+        : count;
     }, 0);
-  }, [notionFeed.items, lastSeenNotion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notionFeed.items, notionReadSet, lastSeenNotion]);
 
   const lineWorksNewCount = useMemo(() => {
     if (!lastSeenLineWorks) return 0;
@@ -337,10 +351,11 @@ export function WorkTrackingDashboard() {
     }, 0);
   }, [lineWorksArchive.items, lastSeenLineWorks]);
 
-  function isNotionItemNew(editedAt: string | null | undefined): boolean {
-    if (!lastSeenNotion) return false;
-    const ts = parseTimestamp(editedAt);
-    return ts > 0 && ts > lastSeenNotion;
+  function isNotionItemNew(
+    editedAt: string | null | undefined,
+    eventId: string | null | undefined,
+  ): boolean {
+    return isNotionItemNewInner(editedAt, eventId ?? null, notionReadSet, lastSeenNotion);
   }
 
   function isLineWorksItemNew(issuedAt: string | null, receivedAt: string): boolean {
@@ -764,42 +779,41 @@ export function WorkTrackingDashboard() {
     void switchToDate(formatDateKey(current));
   }
 
-  async function handleLoadMoreNotion() {
-    if (!notionFeed.nextCursor || isLoadingMoreNotion) {
-      return;
+  function handleNotionPerPageChange(next: PerPageOption) {
+    setNotionPerPage(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("wt:perPage:notion", String(next));
     }
-    setIsLoadingMoreNotion(true);
-    try {
-      const response = await fetch(
-        `/api/notion-updates?limit=10&cursor=${encodeURIComponent(notionFeed.nextCursor)}&t=${Date.now()}`,
-        { cache: "no-store" },
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const payload = (await response.json()) as NotionFeed;
-      const incoming = Array.isArray(payload.items) ? payload.items : [];
-      setNotionFeed((prev) => {
-        const existingIds = new Set(
-          prev.items.map((entry) => entry.eventId).filter(Boolean),
-        );
-        const merged = [
-          ...prev.items,
-          ...incoming.filter(
-            (entry) => !entry.eventId || !existingIds.has(entry.eventId),
-          ),
-        ];
-        return {
-          lastSyncedAt: payload.lastSyncedAt ?? prev.lastSyncedAt ?? null,
-          items: merged,
-          nextCursor: payload.nextCursor ?? null,
-        };
+    setNotionPage(1);
+  }
+
+  function markNotionEventRead(eventId: string | null | undefined) {
+    if (!eventId) return;
+    setNotionReadSet((prev) => {
+      if (prev.has(eventId)) return prev;
+      const next = new Set(prev);
+      next.add(eventId);
+      return next;
+    });
+    void markNotionRead([eventId]);
+  }
+
+  async function handleNotionMarkAllRead() {
+    // 현재 유저에게 보이는 모든 아이템의 eventId 를 개별 read 로 저장하고,
+    // last_seen.notion 커서도 "지금" 으로 업데이트 해서 이후 수신분만 NEW 처리.
+    const eventIds = notionFeed.items
+      .map((i) => i.eventId)
+      .filter((v): v is string => typeof v === "string" && v.length > 0);
+    if (eventIds.length > 0) {
+      setNotionReadSet((prev) => {
+        const next = new Set(prev);
+        for (const id of eventIds) next.add(id);
+        return next;
       });
-    } catch (error) {
-      console.error("[dashboard] failed to load more notion updates", error);
-    } finally {
-      setIsLoadingMoreNotion(false);
+      void markNotionRead(eventIds);
     }
+    const at = await markLastSeen("notion");
+    if (at) setLastSeenNotion(parseTimestamp(at));
   }
 
   async function handleTaskCreateSubmit(payload: TaskCreateSubmit) {
@@ -1266,6 +1280,20 @@ export function WorkTrackingDashboard() {
             </section>
           ) : activeView === "notion" ? (
             <section className="panel notion-panel">
+              <div className="notion-toolbar">
+                <p className="notion-toolbar-count">
+                  총 {notionFeed.pagination.total.toLocaleString()}건 ·
+                  {notionNewCount > 0 ? ` NEW ${notionNewCount}건` : " NEW 없음"}
+                </p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => void handleNotionMarkAllRead()}
+                  disabled={notionNewCount === 0}
+                >
+                  모두 읽음 처리
+                </button>
+              </div>
               <div className="notion-updates-list">
                 {notionFeed.items.length === 0 ? (
                   <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
@@ -1277,7 +1305,7 @@ export function WorkTrackingDashboard() {
                     >
                       <div>
                         <h4 className="notion-update-title">
-                          {isNotionItemNew(item.editedAt) ? (
+                          {isNotionItemNew(item.editedAt, item.eventId) ? (
                             <span className="new-pill">NEW</span>
                           ) : null}
                           {item.title || "제목 없음"}
@@ -1291,14 +1319,21 @@ export function WorkTrackingDashboard() {
                           {item.editedAt ? relativeTime(item.editedAt) : "시간 없음"}
                         </span>
                         <div className="notion-update-actions">
-                          <a className="notion-update-link" href={item.url || "#"} target="_blank" rel="noreferrer">
+                          <a
+                            className="notion-update-link"
+                            href={item.url || "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => markNotionEventRead(item.eventId)}
+                          >
                             열기
                           </a>
                           {item.url ? (
                             <button
                               type="button"
                               className="notion-update-link as-button"
-                              onClick={() =>
+                              onClick={() => {
+                                markNotionEventRead(item.eventId);
                                 openAttachCandidate({
                                   source: "notion_page",
                                   externalId: item.url!,
@@ -1313,8 +1348,8 @@ export function WorkTrackingDashboard() {
                                     editor: item.editor,
                                     editedAt: item.editedAt,
                                   },
-                                })
-                              }
+                                });
+                              }}
                             >
                               태스크 추가
                             </button>
@@ -1324,17 +1359,17 @@ export function WorkTrackingDashboard() {
                     </article>
                   ))
                 )}
-                {notionFeed.nextCursor ? (
-                  <button
-                    type="button"
-                    className="notion-load-more"
-                    onClick={handleLoadMoreNotion}
-                    disabled={isLoadingMoreNotion}
-                  >
-                    {isLoadingMoreNotion ? "불러오는 중…" : "더보기"}
-                  </button>
-                ) : null}
               </div>
+              {notionFeed.pagination.total > 0 ? (
+                <Pagination
+                  page={notionFeed.pagination.page}
+                  perPage={notionFeed.pagination.perPage}
+                  total={notionFeed.pagination.total}
+                  totalPages={notionFeed.pagination.totalPages}
+                  onPageChange={setNotionPage}
+                  onPerPageChange={handleNotionPerPageChange}
+                />
+              ) : null}
             </section>
           ) : activeView === "storage" ? (
             <section className="panel storage-panel">
@@ -1646,6 +1681,30 @@ function TaskColumn({
       </div>
     </section>
   );
+}
+
+const NOTION_NEW_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Notion row 가 NEW 로 보여야 하는지 판정.
+ * 규칙:
+ *  1) 마지막 편집 시각으로부터 24h 초과 → false (TTL)
+ *  2) 현재 유저가 이미 read 한 event → false
+ *  3) "모두 읽음 처리" 커서(lastSeen) 이전에 편집된 이벤트 → false
+ *  4) 그 외 → true
+ */
+function isNotionItemNewInner(
+  editedAt: string | null | undefined,
+  eventId: string | null,
+  readSet: Set<string>,
+  lastSeen: number,
+): boolean {
+  const ts = parseTimestamp(editedAt);
+  if (ts <= 0) return false;
+  if (Date.now() - ts > NOTION_NEW_TTL_MS) return false;
+  if (eventId && readSet.has(eventId)) return false;
+  if (lastSeen > 0 && ts <= lastSeen) return false;
+  return true;
 }
 
 function syncLabel(value: string | null) {

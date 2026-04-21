@@ -348,6 +348,16 @@ CREATE TABLE IF NOT EXISTS user_last_seen (
   PRIMARY KEY (user_id, source)
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS user_notion_read (
+  user_id   TEXT NOT NULL,
+  event_id  TEXT NOT NULL,
+  read_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, event_id)
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_user_notion_read_user
+  ON user_notion_read(user_id, read_at DESC);
+
 CREATE TABLE IF NOT EXISTS users (
   user_id        TEXT PRIMARY KEY,
   user_name      TEXT,

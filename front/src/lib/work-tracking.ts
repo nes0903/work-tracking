@@ -43,10 +43,20 @@ export interface NotionUpdateItem {
   summary?: string;
 }
 
+export interface NotionFeedPagination {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface NotionFeed {
   lastSyncedAt: string | null;
   items: NotionUpdateItem[];
-  nextCursor?: string | null;
+  pagination: NotionFeedPagination;
+  readEventIds: string[];
 }
 
 export interface GithubEvent {
@@ -103,7 +113,15 @@ export function emptyNotionFeed(): NotionFeed {
   return {
     lastSyncedAt: null,
     items: [],
-    nextCursor: null,
+    pagination: {
+      page: 1,
+      perPage: 20,
+      total: 0,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    },
+    readEventIds: [],
   };
 }
 

@@ -37,57 +37,52 @@ interface NotionEventRow {
 
 export interface NotionFeedPage {
   items: NotionUpdateItem[];
-  nextCursor: string | null;
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
   lastSyncedAt: string | null;
 }
 
-const NOTION_CURSOR_SEPARATOR = "|";
+const NOTION_PER_PAGE_OPTIONS = [20, 50, 70, 100] as const;
+const NOTION_DEFAULT_PER_PAGE = 20;
 
 export function listNotionUpdateEvents(
-  limit: number,
-  cursor: string | null,
+  page: number,
+  perPage: number,
 ): NotionFeedPage {
   const db = getDatabase();
-  const safeLimit = Math.max(1, Math.min(limit, 50));
-  const parsedCursor = parseNotionCursor(cursor);
+  const safePerPage = (NOTION_PER_PAGE_OPTIONS as readonly number[]).includes(
+    perPage,
+  )
+    ? perPage
+    : NOTION_DEFAULT_PER_PAGE;
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  const offset = (safePage - 1) * safePerPage;
 
-  const rows = parsedCursor
-    ? (db
-        .prepare(
-          `
-            SELECT event_id, event_type, page_url, page_link, title, edited_at,
-                   section_title, parent_title, editor_name, summary, received_at
-            FROM notion_update_events
-            WHERE received_at < ?
-               OR (received_at = ? AND event_id < ?)
-            ORDER BY received_at DESC, event_id DESC
-            LIMIT ?
-          `,
-        )
-        .all(
-          parsedCursor.receivedAt,
-          parsedCursor.receivedAt,
-          parsedCursor.eventId,
-          safeLimit + 1,
-        ) as unknown as NotionEventRow[])
-    : (db
-        .prepare(
-          `
-            SELECT event_id, event_type, page_url, page_link, title, edited_at,
-                   section_title, parent_title, editor_name, summary, received_at
-            FROM notion_update_events
-            ORDER BY received_at DESC, event_id DESC
-            LIMIT ?
-          `,
-        )
-        .all(safeLimit + 1) as unknown as NotionEventRow[]);
+  const totalRow = db
+    .prepare(`SELECT COUNT(*) AS c FROM notion_update_events`)
+    .get() as { c: number } | undefined;
+  const total = totalRow?.c ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / safePerPage));
 
-  const hasMore = rows.length > safeLimit;
-  const pageRows = hasMore ? rows.slice(0, safeLimit) : rows;
-  const items = pageRows.map(mapNotionEventRow);
-  const nextCursor = hasMore
-    ? buildNotionCursor(pageRows[pageRows.length - 1])
-    : null;
+  const rows = db
+    .prepare(
+      `
+        SELECT event_id, event_type, page_url, page_link, title, edited_at,
+               section_title, parent_title, editor_name, summary, received_at
+        FROM notion_update_events
+        ORDER BY received_at DESC, event_id DESC
+        LIMIT ? OFFSET ?
+      `,
+    )
+    .all(safePerPage, offset) as unknown as NotionEventRow[];
+
+  const items = rows.map(mapNotionEventRow);
 
   const lastSyncedRow = db
     .prepare(
@@ -97,7 +92,14 @@ export function listNotionUpdateEvents(
 
   return {
     items,
-    nextCursor,
+    pagination: {
+      page: safePage,
+      perPage: safePerPage,
+      total,
+      totalPages,
+      hasNext: safePage < totalPages,
+      hasPrev: safePage > 1,
+    },
     lastSyncedAt: lastSyncedRow?.last_synced_at ?? null,
   };
 }
@@ -117,28 +119,6 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
   };
 }
 
-function parseNotionCursor(cursor: string | null) {
-  if (!cursor) {
-    return null;
-  }
-
-  const separatorIndex = cursor.indexOf(NOTION_CURSOR_SEPARATOR);
-  if (separatorIndex <= 0) {
-    return null;
-  }
-
-  const receivedAt = cursor.slice(0, separatorIndex);
-  const eventId = cursor.slice(separatorIndex + 1);
-  if (!receivedAt || !eventId) {
-    return null;
-  }
-
-  return { receivedAt, eventId };
-}
-
-function buildNotionCursor(row: NotionEventRow) {
-  return `${row.received_at}${NOTION_CURSOR_SEPARATOR}${row.event_id}`;
-}
 
 interface TaskRow {
   id: string;

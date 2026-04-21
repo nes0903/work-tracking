@@ -7,8 +7,8 @@ import {
 
 @Injectable()
 export class FeedsRepository {
-  getNotionFeed(query: NotionFeedQuery) {
-    return getNotionFeed(query);
+  getNotionFeed(query: NotionFeedQuery, userId: string | null) {
+    return getNotionFeed(query, userId);
   }
 
   getGithubFeed() {

@@ -31,6 +31,26 @@ export async function markLastSeen(source: LastSeenSource): Promise<string | nul
   }
 }
 
+export async function markNotionRead(eventIds: string[]): Promise<number> {
+  const ids = eventIds.filter((v) => typeof v === "string" && v.length > 0);
+  if (ids.length === 0) return 0;
+  try {
+    const response = await fetch("/api/last-seen/notion/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventIds: ids }),
+    });
+    if (!response.ok) return 0;
+    const payload = (await response.json()) as {
+      ok: boolean;
+      inserted?: number;
+    };
+    return payload.ok ? payload.inserted ?? 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function parseTimestamp(value: string | null | undefined): number {
   if (!value) return 0;
   const t = Date.parse(value);

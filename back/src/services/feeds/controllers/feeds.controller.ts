@@ -1,4 +1,13 @@
-import { Controller, Get, Query, Sse, MessageEvent, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Query,
+  Req,
+  Sse,
+  MessageEvent,
+  UseGuards,
+} from "@nestjs/common";
+import type { Request } from "express";
 import { Observable } from "rxjs";
 import { AuthGuard } from "@common/auth.guard";
 import { FeedsService } from "../applications/feeds.service";
@@ -11,14 +20,22 @@ export class FeedsController {
   @Get("notion-updates")
   @UseGuards(AuthGuard)
   async getNotionFeed(
-    @Query("limit") limit?: string,
-    @Query("cursor") cursor?: string,
+    @Query("page") pageParam: string | undefined,
+    @Query("perPage") perPageParam: string | undefined,
+    @Req() req: Request,
   ) {
-    const parsedLimit = limit ? Number(limit) : undefined;
-    return this.feedsService.getNotionFeed({
-      limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
-      cursor: cursor ?? null,
-    });
+    const page = Number(pageParam);
+    const perPage = Number(perPageParam);
+    return this.feedsService.getNotionFeed(
+      {
+        page: Number.isFinite(page) && page > 0 ? Math.floor(page) : undefined,
+        perPage:
+          Number.isFinite(perPage) && perPage > 0
+            ? Math.floor(perPage)
+            : undefined,
+      },
+      req.auth?.userId ?? null,
+    );
   }
 
   @Get("github-updates")

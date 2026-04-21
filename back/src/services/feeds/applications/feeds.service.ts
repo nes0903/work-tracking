@@ -6,8 +6,8 @@ import { FeedsRepository } from "../repository/feeds.repository";
 export class FeedsService {
   constructor(private readonly feedsRepository: FeedsRepository) {}
 
-  getNotionFeed(query: NotionFeedQuery) {
-    return this.feedsRepository.getNotionFeed(query);
+  getNotionFeed(query: NotionFeedQuery, userId: string | null) {
+    return this.feedsRepository.getNotionFeed(query, userId);
   }
 
   getGithubFeed() {
