@@ -121,7 +121,6 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
 
 interface TaskRow {
   id: string;
-  lineage_id: string;
   work_date: string;
   title: string;
   category: string;
@@ -133,8 +132,6 @@ interface TaskRow {
   status: TaskStatus;
   created_at: string;
   updated_at: string;
-  carryover_count: number;
-  carried_from_date: string | null;
   completed_at: string | null;
 }
 
@@ -213,7 +210,7 @@ export function createTaskForDate(
     prepareWorkDay(db, dateKey);
 
     const timestamp = new Date().toISOString();
-    const lineageId = createId();
+    const taskId = createId();
 
     const createdBy = input.createdByUserId ?? null;
     const assigneeIds = resolveAssigneeIds(input.assigneeUserIds, createdBy);
@@ -223,16 +220,15 @@ export function createTaskForDate(
     db.prepare(
       `
         INSERT INTO tasks (
-          id, lineage_id, work_date, title, category, priority, due_date, due_time,
-          estimate_minutes, note, status, sort_order, carryover_count,
-          carried_from_date, created_at, updated_at, completed_at,
+          id, work_date, title, category, priority, due_date, due_time,
+          estimate_minutes, note, status, sort_order,
+          created_at, updated_at, completed_at,
           created_by_user_id, assignee_user_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, 0, NULL, ?, ?, NULL, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, ?, ?, NULL, ?, ?)
       `,
     ).run(
-      lineageId,
-      lineageId,
+      taskId,
       dateKey,
       input.title.trim(),
       input.category.trim(),
@@ -247,7 +243,7 @@ export function createTaskForDate(
       primaryAssignee,
     );
 
-    replaceTaskAssignees(db, lineageId, assigneeIds);
+    replaceTaskAssignees(db, taskId, assigneeIds);
 
     touchWorkDay(db, dateKey);
     return {
@@ -501,9 +497,8 @@ function selectDays(db: DatabaseSync): WorkDayMap {
     .prepare(
       `
         SELECT
-          id, lineage_id, work_date, title, category, priority, due_date, due_time,
-          estimate_minutes, note, status, created_at, updated_at,
-          carryover_count, carried_from_date, completed_at
+          id, work_date, title, category, priority, due_date, due_time,
+          estimate_minutes, note, status, created_at, updated_at, completed_at
         FROM tasks
         ORDER BY work_date ASC, datetime(created_at) ASC, id ASC
       `,
@@ -591,13 +586,12 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
   db.prepare(
     `
       INSERT INTO tasks (
-        id, lineage_id, work_date, title, category, priority, due_date, due_time,
-        estimate_minutes, note, status, sort_order, carryover_count,
-        carried_from_date, created_at, updated_at, completed_at
+        id, work_date, title, category, priority, due_date, due_time,
+        estimate_minutes, note, status, sort_order,
+        created_at, updated_at, completed_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
-        lineage_id = excluded.lineage_id,
         work_date = excluded.work_date,
         title = excluded.title,
         category = excluded.category,
@@ -607,15 +601,12 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
         estimate_minutes = excluded.estimate_minutes,
         note = excluded.note,
         status = excluded.status,
-        carryover_count = excluded.carryover_count,
-        carried_from_date = excluded.carried_from_date,
         created_at = excluded.created_at,
         updated_at = excluded.updated_at,
         completed_at = excluded.completed_at
     `,
   ).run(
     task.id,
-    task.lineageId,
     dateKey,
     task.title,
     task.category,
@@ -625,8 +616,6 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
     task.estimate,
     task.note,
     task.status,
-    task.carryoverCount,
-    task.carriedFromDate,
     task.createdAt,
     task.updatedAt,
     task.completedAt,
@@ -645,7 +634,6 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
 function mapTaskRow(row: TaskRow): Task {
   return {
     id: row.id,
-    lineageId: row.lineage_id,
     title: row.title,
     category: row.category,
     priority: row.priority,
@@ -656,8 +644,6 @@ function mapTaskRow(row: TaskRow): Task {
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    carryoverCount: row.carryover_count,
-    carriedFromDate: row.carried_from_date,
     completedAt: row.completed_at,
     assignees: [],
   };

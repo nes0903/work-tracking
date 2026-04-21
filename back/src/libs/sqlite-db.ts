@@ -32,8 +32,14 @@ export function getDatabase() {
   return globalThis.__workTrackingDb__;
 }
 
-function tableHasColumn(db: DatabaseSync, table: string, column: string): boolean {
-  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+function tableHasColumn(
+  db: DatabaseSync,
+  table: string,
+  column: string,
+): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
   return rows.some((row) => row.name === column);
 }
 
@@ -49,6 +55,7 @@ function runColumnMigrations(db: DatabaseSync): void {
   if (!tableHasColumn(db, "tasks", "due_time")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN due_time TEXT`);
   }
+  dropLegacyTaskColumns(db);
 
   // site_links: category (서비스 분류)
   const siteLinksHadCategory = tableHasColumn(db, "site_links", "category");
@@ -63,6 +70,95 @@ function runColumnMigrations(db: DatabaseSync): void {
   seedSiteLinksIfEmpty(db);
   backfillSiteLinkCategories(db);
   backfillTaskAssignees(db);
+}
+
+function dropLegacyTaskColumns(db: DatabaseSync): void {
+  const hasLegacyColumns =
+    tableHasColumn(db, "tasks", "lineage_id") ||
+    tableHasColumn(db, "tasks", "carryover_count") ||
+    tableHasColumn(db, "tasks", "carried_from_date");
+
+  if (!hasLegacyColumns) return;
+
+  db.exec("PRAGMA foreign_keys = OFF;");
+  db.exec("BEGIN");
+
+  try {
+    db.exec(`DROP TABLE IF EXISTS tasks__migrated`);
+    db.exec(`DROP VIEW IF EXISTS v_today_task_summary`);
+    db.exec(`
+      CREATE TABLE tasks__migrated (
+        id TEXT PRIMARY KEY,
+        work_date TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT '',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        due_date TEXT NOT NULL,
+        due_time TEXT,
+        estimate_minutes INTEGER NOT NULL DEFAULT 30,
+        note TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'todo',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        completed_at TEXT,
+        created_by_user_id TEXT,
+        assignee_user_id TEXT,
+        FOREIGN KEY (work_date) REFERENCES work_days(work_date) ON DELETE CASCADE,
+        CHECK (priority IN ('high', 'medium', 'low')),
+        CHECK (status IN ('todo', 'doing', 'done')),
+        CHECK (estimate_minutes >= 0),
+        CHECK (length(due_date) = 10)
+      ) STRICT
+    `);
+    db.exec(`
+      INSERT INTO tasks__migrated (
+        id, work_date, title, category, priority, due_date, due_time,
+        estimate_minutes, note, status, sort_order,
+        created_at, updated_at, completed_at,
+        created_by_user_id, assignee_user_id
+      )
+      SELECT
+        id, work_date, title, category, priority, due_date, due_time,
+        estimate_minutes, note, status, sort_order,
+        created_at, updated_at, completed_at,
+        created_by_user_id, assignee_user_id
+      FROM tasks
+    `);
+    db.exec(`DROP TABLE tasks`);
+    db.exec(`ALTER TABLE tasks__migrated RENAME TO tasks`);
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_tasks_work_date ON tasks(work_date)`,
+    );
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_tasks_work_date_status ON tasks(work_date, status)`,
+    );
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_tasks_work_date_priority ON tasks(work_date, priority)`,
+    );
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_tasks_due_date_status ON tasks(due_date, status)`,
+    );
+    db.exec(`
+      CREATE VIEW IF NOT EXISTS v_today_task_summary AS
+      SELECT
+        work_date,
+        COUNT(*) AS total_tasks,
+        SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) AS todo_tasks,
+        SUM(CASE WHEN status = 'doing' THEN 1 ELSE 0 END) AS doing_tasks,
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done_tasks,
+        SUM(CASE WHEN priority = 'high' AND status <> 'done' THEN 1 ELSE 0 END) AS open_high_priority_tasks,
+        SUM(CASE WHEN due_date < work_date AND status <> 'done' THEN 1 ELSE 0 END) AS overdue_tasks
+      FROM tasks
+      GROUP BY work_date
+    `);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  } finally {
+    db.exec("PRAGMA foreign_keys = ON;");
+  }
 }
 
 /**
@@ -93,25 +189,80 @@ function inferSiteLinkCategory(label: string, url: string): string {
 }
 
 function seedSiteLinksIfEmpty(db: DatabaseSync): void {
-  const count = (db
-    .prepare(`SELECT COUNT(*) AS c FROM site_links`)
-    .get() as { c: number } | undefined)?.c ?? 0;
+  const count =
+    (
+      db.prepare(`SELECT COUNT(*) AS c FROM site_links`).get() as
+        | { c: number }
+        | undefined
+    )?.c ?? 0;
   if (count > 0) return;
 
   const seeds: Array<{ label: string; url: string; category: string }> = [
-    { label: "보고팡 운영", url: "https://dobedub.vogopang.com/library-hub", category: "보고팡" },
-    { label: "보고팡 개발", url: "https://dev.vogopang.com/login?reason=auth_required&redirect=%2F", category: "보고팡" },
-    { label: "보고팡 브로셔", url: "https://senior.dobedub.org/home", category: "보고팡" },
-    { label: "푸딩툰 이용자", url: "https://www.puddingtoon.com/home", category: "푸딩툰" },
-    { label: "푸딩툰 이용자 개발", url: "https://test.puddingtoon.org/home", category: "푸딩툰" },
-    { label: "푸딩툰 관리자", url: "https://admin2.puddingtoon.org", category: "푸딩툰" },
-    { label: "푸딩툰 관리자 개발", url: "https://dev-admin.puddingtoon.org/login", category: "푸딩툰" },
-    { label: "픽미툰 이용자", url: "https://www.pickmetoon.com", category: "픽미툰" },
-    { label: "픽미툰 이용자 개발", url: "https://dev.pickmetoon.com", category: "픽미툰" },
-    { label: "픽미툰 관리자", url: "https://admin.pickmetoon.com", category: "픽미툰" },
-    { label: "픽미툰 관리자 개발", url: "https://admindev.pickmetoon.com", category: "픽미툰" },
-    { label: "덥라이트 운영", url: "https://staging.dubright.org", category: "덥라이트" },
-    { label: "덥라이트 개발", url: "https://test2.dubright.org", category: "덥라이트" },
+    {
+      label: "보고팡 운영",
+      url: "https://dobedub.vogopang.com/library-hub",
+      category: "보고팡",
+    },
+    {
+      label: "보고팡 개발",
+      url: "https://dev.vogopang.com/login?reason=auth_required&redirect=%2F",
+      category: "보고팡",
+    },
+    {
+      label: "보고팡 브로셔",
+      url: "https://senior.dobedub.org/home",
+      category: "보고팡",
+    },
+    {
+      label: "푸딩툰 이용자",
+      url: "https://www.puddingtoon.com/home",
+      category: "푸딩툰",
+    },
+    {
+      label: "푸딩툰 이용자 개발",
+      url: "https://test.puddingtoon.org/home",
+      category: "푸딩툰",
+    },
+    {
+      label: "푸딩툰 관리자",
+      url: "https://admin2.puddingtoon.org",
+      category: "푸딩툰",
+    },
+    {
+      label: "푸딩툰 관리자 개발",
+      url: "https://dev-admin.puddingtoon.org/login",
+      category: "푸딩툰",
+    },
+    {
+      label: "픽미툰 이용자",
+      url: "https://www.pickmetoon.com",
+      category: "픽미툰",
+    },
+    {
+      label: "픽미툰 이용자 개발",
+      url: "https://dev.pickmetoon.com",
+      category: "픽미툰",
+    },
+    {
+      label: "픽미툰 관리자",
+      url: "https://admin.pickmetoon.com",
+      category: "픽미툰",
+    },
+    {
+      label: "픽미툰 관리자 개발",
+      url: "https://admindev.pickmetoon.com",
+      category: "픽미툰",
+    },
+    {
+      label: "덥라이트 운영",
+      url: "https://staging.dubright.org",
+      category: "덥라이트",
+    },
+    {
+      label: "덥라이트 개발",
+      url: "https://test2.dubright.org",
+      category: "덥라이트",
+    },
   ];
 
   const stmt = db.prepare(
@@ -130,9 +281,7 @@ function backfillSiteLinkCategories(db: DatabaseSync): void {
     )
     .all() as Array<{ id: number; label: string; url: string }>;
   if (rows.length === 0) return;
-  const update = db.prepare(
-    `UPDATE site_links SET category = ? WHERE id = ?`,
-  );
+  const update = db.prepare(`UPDATE site_links SET category = ? WHERE id = ?`);
   for (const row of rows) {
     update.run(inferSiteLinkCategory(row.label, row.url), row.id);
   }

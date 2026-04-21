@@ -5,7 +5,6 @@ export type TaskStatus = "todo" | "doing" | "done";
 
 export interface Task {
   id: string;
-  lineageId: string;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -16,8 +15,6 @@ export interface Task {
   status: TaskStatus;
   createdAt: string;
   updatedAt: string;
-  carryoverCount: number;
-  carriedFromDate: string | null;
   completedAt: string | null;
 }
 
@@ -143,7 +140,10 @@ export function createEmptyDay(): WorkDay {
 }
 
 export function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
 
@@ -156,7 +156,9 @@ export function loadDaysFromStorage(): WorkDayMap {
   }
 
   try {
-    return normalizeState(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}"));
+    return normalizeState(
+      JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}"),
+    );
   } catch {
     return {};
   }
@@ -201,12 +203,12 @@ export function normalizeTask(task: unknown, dateKey: string): Task {
   const createdAt = isValidDateTime(value.createdAt)
     ? value.createdAt
     : new Date(`${dateKey}T09:00:00`).toISOString();
-  const updatedAt = isValidDateTime(value.updatedAt) ? value.updatedAt : createdAt;
+  const updatedAt = isValidDateTime(value.updatedAt)
+    ? value.updatedAt
+    : createdAt;
 
   return {
     id,
-    lineageId:
-      typeof value.lineageId === "string" && value.lineageId ? value.lineageId : id,
     title: typeof value.title === "string" ? value.title : "",
     category: typeof value.category === "string" ? value.category : "",
     priority: isTaskPriority(value.priority) ? value.priority : "medium",
@@ -220,8 +222,6 @@ export function normalizeTask(task: unknown, dateKey: string): Task {
     status: isTaskStatus(value.status) ? value.status : "todo",
     createdAt,
     updatedAt,
-    carryoverCount: Math.max(0, Number(value.carryoverCount) || 0),
-    carriedFromDate: isDateKey(value.carriedFromDate) ? value.carriedFromDate : null,
     completedAt: isValidDateTime(value.completedAt) ? value.completedAt : null,
   };
 }
@@ -265,22 +265,33 @@ export function compareTasksForDisplay(left: Task, right: Task) {
 
   return (
     Number(isTaskOverdue(right)) - Number(isTaskOverdue(left)) ||
-    priorityScore[getEffectivePriority(left)] - priorityScore[getEffectivePriority(right)] ||
+    priorityScore[getEffectivePriority(left)] -
+      priorityScore[getEffectivePriority(right)] ||
     left.dueDate.localeCompare(right.dueDate) ||
     new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
   );
 }
 
 export function getEffectivePriority(task: Task): TaskPriority {
-  if (task.status !== "done" && (task.priority === "high" || isTaskOverdue(task))) {
+  if (
+    task.status !== "done" &&
+    (task.priority === "high" || isTaskOverdue(task))
+  ) {
     return "high";
   }
 
   return task.priority;
 }
 
-export function isTaskOverdue(task: Pick<Task, "status" | "dueDate">, referenceDateKey = todayKey()) {
-  return task.status !== "done" && isDateKey(task.dueDate) && task.dueDate < referenceDateKey;
+export function isTaskOverdue(
+  task: Pick<Task, "status" | "dueDate">,
+  referenceDateKey = todayKey(),
+) {
+  return (
+    task.status !== "done" &&
+    isDateKey(task.dueDate) &&
+    task.dueDate < referenceDateKey
+  );
 }
 
 export function getTaskFlag(task: Task, referenceDateKey = todayKey()) {

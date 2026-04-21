@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS work_days (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
-  lineage_id TEXT NOT NULL,
   work_date TEXT NOT NULL,
   title TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT '',
@@ -33,18 +32,16 @@ CREATE TABLE IF NOT EXISTS tasks (
   note TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'todo',
   sort_order INTEGER NOT NULL DEFAULT 0,
-  carryover_count INTEGER NOT NULL DEFAULT 0,
-  carried_from_date TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   completed_at TEXT,
+  created_by_user_id TEXT,
+  assignee_user_id TEXT,
   FOREIGN KEY (work_date) REFERENCES work_days(work_date) ON DELETE CASCADE,
   CHECK (priority IN ('high', 'medium', 'low')),
   CHECK (status IN ('todo', 'doing', 'done')),
   CHECK (estimate_minutes >= 0),
-  CHECK (carryover_count >= 0),
-  CHECK (length(due_date) = 10),
-  CHECK (carried_from_date IS NULL OR length(carried_from_date) = 10)
+  CHECK (length(due_date) = 10)
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_work_date ON tasks(work_date);

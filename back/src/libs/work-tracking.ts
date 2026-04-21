@@ -8,7 +8,6 @@ export interface TaskAssignee {
 
 export interface Task {
   id: string;
-  lineageId: string;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -19,8 +18,6 @@ export interface Task {
   status: TaskStatus;
   createdAt: string;
   updatedAt: string;
-  carryoverCount: number;
-  carriedFromDate: string | null;
   completedAt: string | null;
   assignees: TaskAssignee[];
 }
@@ -164,10 +161,6 @@ function normalizeTask(task: unknown, dateKey: string): Task {
 
   return {
     id,
-    lineageId:
-      typeof value.lineageId === "string" && value.lineageId
-        ? value.lineageId
-        : id,
     title: typeof value.title === "string" ? value.title : "",
     category: typeof value.category === "string" ? value.category : "",
     priority: isTaskPriority(value.priority) ? value.priority : "medium",
@@ -178,23 +171,18 @@ function normalizeTask(task: unknown, dateKey: string): Task {
     status: isTaskStatus(value.status) ? value.status : "todo",
     createdAt,
     updatedAt,
-    carryoverCount: Math.max(0, Number(value.carryoverCount) || 0),
-    carriedFromDate: isDateKey(value.carriedFromDate)
-      ? value.carriedFromDate
-      : null,
     completedAt: isValidDateTime(value.completedAt) ? value.completedAt : null,
     assignees: Array.isArray(value.assignees)
       ? value.assignees
           .filter(
             (a): a is { userId: string; userName: string | null } =>
-              !!a &&
-              typeof (a as { userId?: unknown }).userId === "string",
+              !!a && typeof (a as { userId?: unknown }).userId === "string",
           )
           .map((a) => ({
             userId: (a as { userId: string }).userId,
             userName:
               typeof (a as { userName?: unknown }).userName === "string"
-                ? ((a as { userName: string }).userName)
+                ? (a as { userName: string }).userName
                 : null,
           }))
       : [],

@@ -21,8 +21,6 @@ export interface TaskListItem {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
-  carryoverCount: number;
-  carriedFromDate: string | null;
   createdBy: UserRef | null;
   assignees: UserRef[];
   referenceCount: number;
@@ -62,7 +60,9 @@ export interface TaskQueryInput {
 export const PER_PAGE_OPTIONS = [20, 50, 70, 100] as const;
 export type PerPageOption = (typeof PER_PAGE_OPTIONS)[number];
 
-export async function fetchTasks(input: TaskQueryInput): Promise<TaskQueryResponse> {
+export async function fetchTasks(
+  input: TaskQueryInput,
+): Promise<TaskQueryResponse> {
   const params = new URLSearchParams();
   if (input.from) params.set("from", input.from);
   if (input.to) params.set("to", input.to);
@@ -87,14 +87,21 @@ export async function fetchTasks(input: TaskQueryInput): Promise<TaskQueryRespon
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
-  const payload = (await response.json()) as { ok: boolean } & Partial<TaskQueryResponse>;
+  const payload = (await response.json()) as {
+    ok: boolean;
+  } & Partial<TaskQueryResponse>;
   if (!payload.ok) throw new Error("fetch failed");
   return {
     items: payload.items ?? [],
     users: payload.users ?? [],
     counts: payload.counts ?? { todo: 0, doing: 0, done: 0, total: 0 },
     pagination: payload.pagination ?? {
-      page: 1, perPage: 20, total: 0, totalPages: 1, hasNext: false, hasPrev: false,
+      page: 1,
+      perPage: 20,
+      total: 0,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
     },
   };
 }
@@ -103,8 +110,11 @@ export async function fetchUsers(): Promise<UserRef[]> {
   try {
     const response = await fetch("/api/users", { cache: "no-store" });
     if (!response.ok) return [];
-    const payload = (await response.json()) as { ok: boolean; items?: UserRef[] };
-    return payload.ok ? payload.items ?? [] : [];
+    const payload = (await response.json()) as {
+      ok: boolean;
+      items?: UserRef[];
+    };
+    return payload.ok ? (payload.items ?? []) : [];
   } catch {
     return [];
   }
@@ -133,7 +143,10 @@ export function statusLabel(s: TaskStatus): string {
 }
 
 /** 오늘 기준 마감일까지 남은 표시. 음수면 지남, 0이면 오늘. */
-export function dueBadge(dueDateISO: string): { text: string; tone: "overdue" | "today" | "tomorrow" | "future" | "done" } {
+export function dueBadge(dueDateISO: string): {
+  text: string;
+  tone: "overdue" | "today" | "tomorrow" | "future" | "done";
+} {
   if (!dueDateISO) return { text: "-", tone: "future" };
   const today = new Date();
   today.setHours(0, 0, 0, 0);

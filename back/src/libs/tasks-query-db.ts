@@ -35,8 +35,6 @@ export interface TaskListItem {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
-  carryoverCount: number;
-  carriedFromDate: string | null;
   createdBy: { userId: string; userName: string | null } | null;
   assignees: Array<{ userId: string; userName: string | null }>;
   referenceCount: number;
@@ -73,8 +71,6 @@ interface TaskQueryRow {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
-  carryover_count: number;
-  carried_from_date: string | null;
   created_by_user_id: string | null;
   created_by_name: string | null;
   ref_count: number;
@@ -85,7 +81,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
 
   const page = Math.max(1, params.page ?? 1);
   const perPage = PER_PAGE_OPTIONS.includes(
-    (params.perPage ?? DEFAULT_PER_PAGE) as typeof PER_PAGE_OPTIONS[number],
+    (params.perPage ?? DEFAULT_PER_PAGE) as (typeof PER_PAGE_OPTIONS)[number],
   )
     ? (params.perPage as number)
     : DEFAULT_PER_PAGE;
@@ -219,8 +215,6 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
           t.created_at,
           t.updated_at,
           t.completed_at,
-          t.carryover_count,
-          t.carried_from_date,
           t.created_by_user_id,
           uc.user_name AS created_by_name,
           (SELECT COUNT(*) FROM task_references r WHERE r.task_id = t.id) AS ref_count
@@ -231,7 +225,12 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
        LIMIT ? OFFSET ?
       `,
     )
-    .all(...baseArgs, ...statusArgs, perPage, offset) as unknown as TaskQueryRow[];
+    .all(
+      ...baseArgs,
+      ...statusArgs,
+      perPage,
+      offset,
+    ) as unknown as TaskQueryRow[];
 
   // 다중 담당자 로드: 현재 페이지의 task id 들에 대해서만 한 번의 쿼리로 가져온다
   const taskIds = rows.map((r) => r.id);
@@ -252,11 +251,11 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
         `,
       )
       .all(...taskIds) as Array<{
-        task_id: string;
-        user_id: string;
-        user_name: string | null;
-        sort_order: number;
-      }>;
+      task_id: string;
+      user_id: string;
+      user_name: string | null;
+      sort_order: number;
+    }>;
     for (const r of assigneeRows) {
       const list = assigneesByTask.get(r.task_id) ?? [];
       list.push({ userId: r.user_id, userName: r.user_name });
@@ -278,8 +277,6 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     completedAt: row.completed_at,
-    carryoverCount: row.carryover_count,
-    carriedFromDate: row.carried_from_date,
     createdBy: row.created_by_user_id
       ? { userId: row.created_by_user_id, userName: row.created_by_name }
       : null,
