@@ -20,7 +20,10 @@ interface Props {
   task: TaskListItem | null;
   onClose: () => void;
   onDelete: (task: TaskListItem) => Promise<void> | void;
-  onChangeStatus: (task: TaskListItem, status: TaskStatus) => Promise<void> | void;
+  onChangeStatus: (
+    task: TaskListItem,
+    status: TaskStatus,
+  ) => Promise<void> | void;
   onOpenReference: (ref: TaskReference) => void;
   onAddReference: (task: TaskListItem) => void;
   onEdit: (task: TaskListItem) => void;
@@ -36,26 +39,32 @@ export function TaskDetailDrawer({
   onEdit,
 }: Props) {
   const [references, setReferences] = useState<TaskReference[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadedTaskId, setLoadedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!task) {
-      setReferences([]);
       return;
     }
     let mounted = true;
-    setLoading(true);
-    void fetchReferencesForTasks([task.id]).then((map) => {
-      if (!mounted) return;
-      setReferences(map[task.id] ?? []);
-      setLoading(false);
-    });
+    void fetchReferencesForTasks([task.id])
+      .then((map) => {
+        if (!mounted) return;
+        setReferences(map[task.id] ?? []);
+        setLoadedTaskId(task.id);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setReferences([]);
+        setLoadedTaskId(task.id);
+      });
     return () => {
       mounted = false;
     };
   }, [task]);
 
   if (!task) return null;
+
+  const loading = loadedTaskId !== task.id;
 
   async function handleRemoveRef(ref: TaskReference) {
     const ok = window.confirm("이 참조를 제거할까요?");
@@ -116,12 +125,24 @@ export function TaskDetailDrawer({
             <strong>
               {task.assignees.length === 0
                 ? "미지정"
-                : task.assignees
-                    .map((a) => a.userName ?? a.userId)
-                    .join(", ")}
+                : task.assignees.map((a) => a.userName ?? a.userId).join(", ")}
             </strong>
           </p>
         </section>
+
+        {task.parentTitle ? (
+          <section className="task-drawer-section">
+            <p className="field-label">상위 태스크</p>
+            <p className="task-drawer-meta">{task.parentTitle}</p>
+          </section>
+        ) : null}
+
+        {task.childCount > 0 ? (
+          <section className="task-drawer-section">
+            <p className="field-label">하위 태스크</p>
+            <p className="task-drawer-meta">{task.childCount}개 포함</p>
+          </section>
+        ) : null}
 
         {task.note ? (
           <section className="task-drawer-section">
@@ -162,7 +183,9 @@ export function TaskDetailDrawer({
                       <div className="task-drawer-ref-main">
                         <span className="task-drawer-ref-title">{title}</span>
                         {excerpt ? (
-                          <span className="task-drawer-ref-excerpt">{excerpt}</span>
+                          <span className="task-drawer-ref-excerpt">
+                            {excerpt}
+                          </span>
                         ) : null}
                       </div>
                       <span className="task-drawer-ref-arrow">↗</span>
@@ -205,6 +228,12 @@ export function TaskDetailDrawer({
           <button
             type="button"
             className="text-button task-drawer-delete"
+            disabled={task.childCount > 0}
+            title={
+              task.childCount > 0
+                ? "하위 태스크가 있으면 삭제할 수 없습니다."
+                : undefined
+            }
             onClick={() => void onDelete(task)}
           >
             태스크 삭제
@@ -215,7 +244,10 @@ export function TaskDetailDrawer({
   );
 }
 
-function buildRefDisplay(ref: TaskReference): { title: string; excerpt: string | null } {
+function buildRefDisplay(ref: TaskReference): {
+  title: string;
+  excerpt: string | null;
+} {
   const metadata = (ref.metadata ?? {}) as Record<string, unknown>;
   const channelTitle =
     typeof metadata.channelTitle === "string" && metadata.channelTitle

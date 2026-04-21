@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS work_days (
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
   work_date TEXT NOT NULL,
+  parent_task_id TEXT,
   title TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT '',
   priority TEXT NOT NULL DEFAULT 'medium',
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_by_user_id TEXT,
   assignee_user_id TEXT,
   FOREIGN KEY (work_date) REFERENCES work_days(work_date) ON DELETE CASCADE,
+  FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE RESTRICT,
   CHECK (priority IN ('high', 'medium', 'low')),
   CHECK (status IN ('todo', 'doing', 'done')),
   CHECK (estimate_minutes >= 0),

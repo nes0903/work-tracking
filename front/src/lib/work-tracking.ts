@@ -5,6 +5,7 @@ export type TaskStatus = "todo" | "doing" | "done";
 
 export interface Task {
   id: string;
+  parentTaskId: string | null;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -209,6 +210,10 @@ export function normalizeTask(task: unknown, dateKey: string): Task {
 
   return {
     id,
+    parentTaskId:
+      typeof value.parentTaskId === "string" && value.parentTaskId.trim()
+        ? value.parentTaskId.trim()
+        : null,
     title: typeof value.title === "string" ? value.title : "",
     category: typeof value.category === "string" ? value.category : "",
     priority: isTaskPriority(value.priority) ? value.priority : "medium",

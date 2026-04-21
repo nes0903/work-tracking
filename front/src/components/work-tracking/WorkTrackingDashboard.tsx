@@ -84,21 +84,29 @@ export function WorkTrackingDashboard() {
   const initialDate = todayKey();
   const [days, setDays] = useState<WorkDayMap>({});
   const [activeDate, setActiveDate] = useState(initialDate);
-  const [notionFeed, setNotionFeed] = useState<NotionFeed>(() => emptyNotionFeed());
+  const [notionFeed, setNotionFeed] = useState<NotionFeed>(() =>
+    emptyNotionFeed(),
+  );
   const [notionPage, setNotionPage] = useState(1);
   const [notionPerPage, setNotionPerPage] = useState<PerPageOption>(() => {
     if (typeof window === "undefined") return 20;
     const raw = window.localStorage.getItem("wt:perPage:notion");
     const n = raw ? Number(raw) : 20;
-    return (PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20) as PerPageOption;
+    return (
+      PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20
+    ) as PerPageOption;
   });
   const [notionReadSet, setNotionReadSet] = useState<Set<string>>(new Set());
-  const [githubFeed, setGithubFeed] = useState<GithubFeed>(() => emptyGithubFeed());
+  const [githubFeed, setGithubFeed] = useState<GithubFeed>(() =>
+    emptyGithubFeed(),
+  );
   const [activeView, setActiveView] = useState<
     "dashboard" | "calendar" | "github" | "notion" | "line-works" | "storage"
   >("dashboard");
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
-  const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(null);
+  const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(
+    null,
+  );
   const [refAddTaskId, setRefAddTaskId] = useState<string | null>(null);
   const [siteLinksOpen, setSiteLinksOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
@@ -123,25 +131,47 @@ export function WorkTrackingDashboard() {
     if (typeof window === "undefined") return 20;
     const raw = window.localStorage.getItem("wt:perPage:tasks");
     const n = raw ? Number(raw) : 20;
-    return (PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20) as PerPageOption;
+    return (
+      PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 20
+    ) as PerPageOption;
   });
   const [selectedTask, setSelectedTask] = useState<TaskListItem | null>(null);
-  const [lineWorksArchive, setLineWorksArchive] = useState<LineWorksArchive>(() =>
-    emptyLineWorksArchive(),
+  const [lineWorksArchive, setLineWorksArchive] = useState<LineWorksArchive>(
+    () => emptyLineWorksArchive(),
   );
-  const [selectedLineWorksChannel, setSelectedLineWorksChannel] = useState<string | null>(null);
-  const [taskReferences, setTaskReferences] = useState<Record<string, TaskReference[]>>({});
-  const [attachCandidate, setAttachCandidate] = useState<AttachCandidate | null>(null);
+  const [selectedLineWorksChannel, setSelectedLineWorksChannel] = useState<
+    string | null
+  >(null);
+  const [taskReferences, setTaskReferences] = useState<
+    Record<string, TaskReference[]>
+  >({});
+  const [attachCandidate, setAttachCandidate] =
+    useState<AttachCandidate | null>(null);
   const [attachModalOpen, setAttachModalOpen] = useState(false);
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
-  const [storageChannelLabels, setStorageChannelLabels] = useState<ChannelLabelMap>({});
-  const [previewState, setPreviewState] = useState<
-    { fileName: string | null; url: string } | null
-  >(null);
-  const [messagePreview, setMessagePreview] = useState<MessagePreview | null>(null);
+  const [storageChannelLabels, setStorageChannelLabels] =
+    useState<ChannelLabelMap>({});
+  const [previewState, setPreviewState] = useState<{
+    fileName: string | null;
+    url: string;
+  } | null>(null);
+  const [messagePreview, setMessagePreview] = useState<MessagePreview | null>(
+    null,
+  );
   const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
   const [lastSeenLineWorks, setLastSeenLineWorks] = useState<number>(0);
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
+  const allTasks = useMemo(
+    () =>
+      Object.values(days)
+        .flatMap((day) => day.tasks)
+        .sort(
+          (left, right) =>
+            new Date(left.createdAt).getTime() -
+            new Date(right.createdAt).getTime(),
+        ),
+    [days],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -162,13 +192,19 @@ export function WorkTrackingDashboard() {
           if (!mounted) {
             return;
           }
-          applyDashboardState(today, imported.days, { resetTaskForm: true, syncNotes: true });
+          applyDashboardState(today, imported.days, {
+            resetTaskForm: true,
+            syncNotes: true,
+          });
         } else {
           const state = await fetchDashboardState(today);
           if (!mounted) {
             return;
           }
-          applyDashboardState(today, state.days, { resetTaskForm: true, syncNotes: true });
+          applyDashboardState(today, state.days, {
+            resetTaskForm: true,
+            syncNotes: true,
+          });
         }
       } catch (error) {
         console.error("[dashboard] failed to initialize", error);
@@ -198,8 +234,7 @@ export function WorkTrackingDashboard() {
         setNotionFeed({
           lastSyncedAt: payload.lastSyncedAt ?? null,
           items: Array.isArray(payload.items) ? payload.items : [],
-          pagination:
-            payload.pagination ?? emptyNotionFeed().pagination,
+          pagination: payload.pagination ?? emptyNotionFeed().pagination,
           readEventIds: Array.isArray(payload.readEventIds)
             ? payload.readEventIds
             : [],
@@ -355,10 +390,18 @@ export function WorkTrackingDashboard() {
     editedAt: string | null | undefined,
     eventId: string | null | undefined,
   ): boolean {
-    return isNotionItemNewInner(editedAt, eventId ?? null, notionReadSet, lastSeenNotion);
+    return isNotionItemNewInner(
+      editedAt,
+      eventId ?? null,
+      notionReadSet,
+      lastSeenNotion,
+    );
   }
 
-  function isLineWorksItemNew(issuedAt: string | null, receivedAt: string): boolean {
+  function isLineWorksItemNew(
+    issuedAt: string | null,
+    receivedAt: string,
+  ): boolean {
     if (!lastSeenLineWorks) return false;
     const ts = parseTimestamp(issuedAt ?? receivedAt);
     return ts > 0 && ts > lastSeenLineWorks;
@@ -369,7 +412,9 @@ export function WorkTrackingDashboard() {
       return;
     }
 
-    const stillExists = githubFeed.repos.some((repo) => repo.repo === selectedRepo);
+    const stillExists = githubFeed.repos.some(
+      (repo) => repo.repo === selectedRepo,
+    );
     if (!stillExists) {
       setSelectedRepo(null);
     }
@@ -467,7 +512,10 @@ export function WorkTrackingDashboard() {
     setDashPage(1);
   }
 
-  async function handleDrawerStatusChange(task: TaskListItem, status: DashboardTaskStatus) {
+  async function handleDrawerStatusChange(
+    task: TaskListItem,
+    status: DashboardTaskStatus,
+  ) {
     try {
       await postDashboardAction({
         action: "updateTaskStatus",
@@ -475,7 +523,9 @@ export function WorkTrackingDashboard() {
         taskId: task.id,
         status,
       });
-      setSelectedTask((prev) => (prev && prev.id === task.id ? { ...prev, status } : prev));
+      setSelectedTask((prev) =>
+        prev && prev.id === task.id ? { ...prev, status } : prev,
+      );
       if (activeView === "dashboard") {
         await reloadDashboardTasks();
       }
@@ -485,7 +535,9 @@ export function WorkTrackingDashboard() {
   }
 
   async function handleDrawerDelete(task: TaskListItem) {
-    const ok = window.confirm("이 태스크를 삭제합니다. 연결된 참조도 함께 제거됩니다.");
+    const ok = window.confirm(
+      "이 태스크를 삭제합니다. 연결된 참조도 함께 제거됩니다.",
+    );
     if (!ok) return;
     try {
       await postDashboardAction({
@@ -497,6 +549,9 @@ export function WorkTrackingDashboard() {
       await reloadDashboardTasks();
     } catch (error) {
       console.error("[dashboard] delete failed", error);
+      window.alert(
+        error instanceof Error ? error.message : "태스크 삭제에 실패했습니다.",
+      );
     }
   }
 
@@ -510,30 +565,34 @@ export function WorkTrackingDashboard() {
         }
         break;
       case "line_works_attachment": {
-        const metadata = ref.metadata as
-          | { attachmentId?: number | string; fileName?: string; mimeType?: string }
-          | null;
+        const metadata = ref.metadata as {
+          attachmentId?: number | string;
+          fileName?: string;
+          mimeType?: string;
+        } | null;
         const raw = metadata?.attachmentId ?? ref.externalId;
         const id = Number(raw);
         if (Number.isFinite(id) && id > 0) {
-          void openAttachment(id, metadata?.fileName ?? null, metadata?.mimeType ?? null);
+          void openAttachment(
+            id,
+            metadata?.fileName ?? null,
+            metadata?.mimeType ?? null,
+          );
         } else {
           console.warn("[reference] invalid attachment id", ref);
         }
         break;
       }
       case "line_works_message": {
-        const metadata = ref.metadata as
-          | {
-              channelId?: string;
-              channelTitle?: string;
-              userId?: string;
-              userName?: string;
-              issuedAt?: string;
-              contentType?: string;
-              text?: string;
-            }
-          | null;
+        const metadata = ref.metadata as {
+          channelId?: string;
+          channelTitle?: string;
+          userId?: string;
+          userName?: string;
+          issuedAt?: string;
+          contentType?: string;
+          text?: string;
+        } | null;
         const body =
           (typeof metadata?.text === "string" && metadata.text) ||
           ref.excerpt ||
@@ -563,7 +622,9 @@ export function WorkTrackingDashboard() {
   }
 
   async function handleStorageDelete(id: number) {
-    const confirmed = window.confirm("이 파일을 S3와 DB에서 영구 삭제합니다. 진행할까요?");
+    const confirmed = window.confirm(
+      "이 파일을 S3와 DB에서 영구 삭제합니다. 진행할까요?",
+    );
     if (!confirmed) return;
     const ok = await deleteStorageItem(id);
     if (ok) {
@@ -573,9 +634,11 @@ export function WorkTrackingDashboard() {
     }
   }
 
-  async function resolveAttachmentUrl(
-    id: number,
-  ): Promise<{ url: string; fileName: string | null; mimeType: string | null } | null> {
+  async function resolveAttachmentUrl(id: number): Promise<{
+    url: string;
+    fileName: string | null;
+    mimeType: string | null;
+  } | null> {
     try {
       const response = await fetch(`/api/line-works-attachments/${id}`, {
         cache: "no-store",
@@ -609,7 +672,10 @@ export function WorkTrackingDashboard() {
     // Office 파일이 아닐 가능성을 대비해 클릭 시점에 빈 탭을 먼저 열어둠(팝업 차단 회피).
     // 주의: `noopener` 를 주면 window.open 반환값이 null 이 되어 이후 location.href 주입이
     // 불가능하므로, 여기서는 `noopener` 를 빼고 직접 opener 를 끊는다.
-    const officeHint = isOfficeFile(hintedFileName ?? null, hintedMimeType ?? null);
+    const officeHint = isOfficeFile(
+      hintedFileName ?? null,
+      hintedMimeType ?? null,
+    );
     const pendingTab = officeHint ? null : window.open("about:blank", "_blank");
 
     const resolved = await resolveAttachmentUrl(id);
@@ -666,7 +732,9 @@ export function WorkTrackingDashboard() {
     if (ok) {
       setTaskReferences((prev) => {
         const next = { ...prev };
-        const list = (next[taskId] ?? []).filter((ref) => ref.id !== referenceId);
+        const list = (next[taskId] ?? []).filter(
+          (ref) => ref.id !== referenceId,
+        );
         if (list.length === 0) {
           delete next[taskId];
         } else {
@@ -678,15 +746,24 @@ export function WorkTrackingDashboard() {
   }
 
   const todoTasks = useMemo(
-    () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "todo")),
+    () =>
+      sortTasksForDisplay(
+        activeDay.tasks.filter((task) => task.status === "todo"),
+      ),
     [activeDay.tasks],
   );
   const doingTasks = useMemo(
-    () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "doing")),
+    () =>
+      sortTasksForDisplay(
+        activeDay.tasks.filter((task) => task.status === "doing"),
+      ),
     [activeDay.tasks],
   );
   const doneTasks = useMemo(
-    () => sortTasksForDisplay(activeDay.tasks.filter((task) => task.status === "done")),
+    () =>
+      sortTasksForDisplay(
+        activeDay.tasks.filter((task) => task.status === "done"),
+      ),
     [activeDay.tasks],
   );
   const repoList = useMemo(
@@ -699,7 +776,9 @@ export function WorkTrackingDashboard() {
 
   const visibleRepos = useMemo(
     () =>
-      githubFeed.repos.filter((repo) => (selectedRepo === null ? true : repo.repo === selectedRepo)),
+      githubFeed.repos.filter((repo) =>
+        selectedRepo === null ? true : repo.repo === selectedRepo,
+      ),
     [githubFeed.repos, selectedRepo],
   );
 
@@ -716,10 +795,17 @@ export function WorkTrackingDashboard() {
   }
 
   async function fetchDashboardState(dateKey: string) {
-    const response = await fetch(`/api/dashboard?date=${encodeURIComponent(dateKey)}`, {
-      cache: "no-store",
-    });
-    const payload = (await response.json()) as { ok: boolean; days?: WorkDayMap; error?: string };
+    const response = await fetch(
+      `/api/dashboard?date=${encodeURIComponent(dateKey)}`,
+      {
+        cache: "no-store",
+      },
+    );
+    const payload = (await response.json()) as {
+      ok: boolean;
+      days?: WorkDayMap;
+      error?: string;
+    };
 
     if (!response.ok || !payload.ok || !payload.days) {
       throw new Error(payload.error || `HTTP ${response.status}`);
@@ -738,7 +824,11 @@ export function WorkTrackingDashboard() {
       },
       body: JSON.stringify(payload),
     });
-    const body = (await response.json()) as { ok: boolean; days?: WorkDayMap; error?: string };
+    const body = (await response.json()) as {
+      ok: boolean;
+      days?: WorkDayMap;
+      error?: string;
+    };
 
     if (!response.ok || !body.ok || !body.days) {
       throw new Error(body.error || `HTTP ${response.status}`);
@@ -824,6 +914,7 @@ export function WorkTrackingDashboard() {
         taskId: payload.taskId,
         patch: {
           title: payload.title,
+          parentTaskId: payload.parentTaskId,
           category: payload.category,
           priority: payload.priority,
           dueDate: payload.dueDate || taskEditTarget.workDate,
@@ -875,6 +966,7 @@ export function WorkTrackingDashboard() {
       date: activeDate,
       task: {
         title: payload.title,
+        parentTaskId: payload.parentTaskId,
         category: payload.category,
         priority: payload.priority,
         dueDate: payload.dueDate || activeDate,
@@ -890,7 +982,8 @@ export function WorkTrackingDashboard() {
       const tasksForDate = getDay(result.days, activeDate).tasks;
       const latest = tasksForDate.reduce<Task | null>((acc, task) => {
         if (!acc) return task;
-        return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
+        return new Date(task.createdAt).getTime() >
+          new Date(acc.createdAt).getTime()
           ? task
           : acc;
       }, null);
@@ -994,7 +1087,8 @@ export function WorkTrackingDashboard() {
       const tasksForDate = getDay(result.days, activeDate).tasks;
       const latest = tasksForDate.reduce<Task | null>((acc, task) => {
         if (!acc) return task;
-        return new Date(task.createdAt).getTime() > new Date(acc.createdAt).getTime()
+        return new Date(task.createdAt).getTime() >
+          new Date(acc.createdAt).getTime()
           ? task
           : acc;
       }, null);
@@ -1119,7 +1213,9 @@ export function WorkTrackingDashboard() {
           {currentUser ? (
             <div className="sidebar-user">
               <div className="sidebar-user-info">
-                <p className="sidebar-user-name">{currentUser.userName ?? "조직 구성원"}</p>
+                <p className="sidebar-user-name">
+                  {currentUser.userName ?? "조직 구성원"}
+                </p>
                 {currentUser.email ? (
                   <p className="sidebar-user-email">{currentUser.email}</p>
                 ) : null}
@@ -1174,7 +1270,8 @@ export function WorkTrackingDashboard() {
                     : `채팅방 ${shortChannelLabel(
                         selectedLineWorksChannel,
                         lineWorksArchive.channels.find(
-                          (channel) => channel.channelId === selectedLineWorksChannel,
+                          (channel) =>
+                            channel.channelId === selectedLineWorksChannel,
                         )?.title,
                       )} 의 수신 내역입니다.`}
                 </p>
@@ -1182,7 +1279,10 @@ export function WorkTrackingDashboard() {
             ) : (
               <>
                 <h2>File Storage</h2>
-                <p>S3 에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이 발급됩니다.</p>
+                <p>
+                  S3 에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이
+                  발급됩니다.
+                </p>
               </>
             )}
           </div>
@@ -1237,7 +1337,6 @@ export function WorkTrackingDashboard() {
         </header>
 
         <main className="content">
-
           {activeView === "calendar" ? (
             <CalendarView
               onOpenAttachment={openAttachment}
@@ -1273,7 +1372,10 @@ export function WorkTrackingDashboard() {
                   </p>
                 ) : (
                   visibleRepos.map((repo) => (
-                    <GithubRepoCard key={`${repo.repo}-${repo.defaultBranch}`} repo={repo} />
+                    <GithubRepoCard
+                      key={`${repo.repo}-${repo.defaultBranch}`}
+                      repo={repo}
+                    />
                   ))
                 )}
               </div>
@@ -1283,7 +1385,9 @@ export function WorkTrackingDashboard() {
               <div className="notion-toolbar">
                 <p className="notion-toolbar-count">
                   총 {notionFeed.pagination.total.toLocaleString()}건 ·
-                  {notionNewCount > 0 ? ` NEW ${notionNewCount}건` : " NEW 없음"}
+                  {notionNewCount > 0
+                    ? ` NEW ${notionNewCount}건`
+                    : " NEW 없음"}
                 </p>
                 <button
                   type="button"
@@ -1296,11 +1400,16 @@ export function WorkTrackingDashboard() {
               </div>
               <div className="notion-updates-list">
                 {notionFeed.items.length === 0 ? (
-                  <p className="empty-note">동기화된 Notion 업데이트가 없습니다.</p>
+                  <p className="empty-note">
+                    동기화된 Notion 업데이트가 없습니다.
+                  </p>
                 ) : (
                   notionFeed.items.map((item, index) => (
                     <article
-                      key={item.eventId ?? `${item.title}-${item.editedAt}-${index}`}
+                      key={
+                        item.eventId ??
+                        `${item.title}-${item.editedAt}-${index}`
+                      }
                       className="notion-update-item"
                     >
                       <div>
@@ -1311,12 +1420,16 @@ export function WorkTrackingDashboard() {
                           {item.title || "제목 없음"}
                         </h4>
                         <p className="notion-update-subtitle">
-                          {[item.section, item.parent].filter(Boolean).join(" / ") || "경로 없음"}
+                          {[item.section, item.parent]
+                            .filter(Boolean)
+                            .join(" / ") || "경로 없음"}
                         </p>
                       </div>
                       <div className="notion-update-side">
                         <span className="notion-update-time">
-                          {item.editedAt ? relativeTime(item.editedAt) : "시간 없음"}
+                          {item.editedAt
+                            ? relativeTime(item.editedAt)
+                            : "시간 없음"}
                         </span>
                         <div className="notion-update-actions">
                           <a
@@ -1339,8 +1452,9 @@ export function WorkTrackingDashboard() {
                                   externalId: item.url!,
                                   title: item.title || "Notion 페이지",
                                   excerpt:
-                                    [item.section, item.parent].filter(Boolean).join(" / ") ||
-                                    null,
+                                    [item.section, item.parent]
+                                      .filter(Boolean)
+                                      .join(" / ") || null,
                                   externalUrl: item.url!,
                                   metadata: {
                                     section: item.section,
@@ -1396,10 +1510,13 @@ export function WorkTrackingDashboard() {
                       key={channel.channelId}
                       type="button"
                       className={`github-filter-chip ${selectedLineWorksChannel === channel.channelId ? "active" : ""}`.trim()}
-                      onClick={() => setSelectedLineWorksChannel(channel.channelId)}
+                      onClick={() =>
+                        setSelectedLineWorksChannel(channel.channelId)
+                      }
                       title={channel.channelId}
                     >
-                      {shortChannelLabel(channel.channelId, channel.title)} · {channel.count}
+                      {shortChannelLabel(channel.channelId, channel.title)} ·{" "}
+                      {channel.count}
                     </button>
                   ))}
                 </div>
@@ -1412,21 +1529,33 @@ export function WorkTrackingDashboard() {
                   lineWorksArchive.items.map((message) => {
                     const view = buildLineWorksView(message);
                     return (
-                      <article key={message.messageId} className="line-works-message">
+                      <article
+                        key={message.messageId}
+                        className="line-works-message"
+                      >
                         <div className="line-works-message-main">
                           <h4 className="line-works-message-title">
-                            {isLineWorksItemNew(message.issuedAt, message.receivedAt) ? (
+                            {isLineWorksItemNew(
+                              message.issuedAt,
+                              message.receivedAt,
+                            ) ? (
                               <span className="new-pill">NEW</span>
                             ) : null}
-                            <span className="line-works-title-text">{view.title}</span>
+                            <span className="line-works-title-text">
+                              {view.title}
+                            </span>
                           </h4>
                           {view.subtitle ? (
-                            <p className="line-works-message-subtitle">{view.subtitle}</p>
+                            <p className="line-works-message-subtitle">
+                              {view.subtitle}
+                            </p>
                           ) : null}
                         </div>
                         <div className="line-works-message-side">
                           <span className="line-works-message-time">
-                            {relativeTime(message.issuedAt ?? message.receivedAt)}
+                            {relativeTime(
+                              message.issuedAt ?? message.receivedAt,
+                            )}
                           </span>
                           <div className="line-works-message-actions">
                             {(() => {
@@ -1476,9 +1605,8 @@ export function WorkTrackingDashboard() {
                                 openAttachCandidate({
                                   source: "line_works_message",
                                   externalId: message.messageId,
-                                  title:
-                                    (message.text?.slice(0, 60) ??
-                                      `[${message.contentType}]`) as string,
+                                  title: (message.text?.slice(0, 60) ??
+                                    `[${message.contentType}]`) as string,
                                   excerpt: message.text,
                                   metadata: {
                                     channelId: message.channelId,
@@ -1508,7 +1636,9 @@ export function WorkTrackingDashboard() {
                 value={dashFilters}
                 onChange={setDashFilters}
                 users={taskQuery?.users ?? []}
-                counts={taskQuery?.counts ?? { todo: 0, doing: 0, done: 0, total: 0 }}
+                counts={
+                  taskQuery?.counts ?? { todo: 0, doing: 0, done: 0, total: 0 }
+                }
               />
 
               <div className="dashboard-tasks-toolbar">
@@ -1587,6 +1717,7 @@ export function WorkTrackingDashboard() {
             setTaskEditTarget({
               id: task.id,
               title: task.title,
+              parentTaskId: task.parentTaskId,
               category: task.category,
               priority: task.priority,
               status: task.status,
@@ -1605,6 +1736,7 @@ export function WorkTrackingDashboard() {
         defaultDueDate={activeDate}
         mode={taskEditTarget ? "edit" : "create"}
         initialTask={taskEditTarget}
+        availableTasks={allTasks}
         users={taskQuery?.users ?? []}
         currentUserId={currentUser?.userId ?? null}
         onClose={() => {
@@ -1738,7 +1870,8 @@ function buildLineWorksView(message: LineWorksArchiveMessage): LineWorksView {
   const firstAttachment = message.attachments[0];
   const firstLink = message.links[0];
   const isDM =
-    message.channelType === "SINGLE_USER" || message.channelId.startsWith("dm:");
+    message.channelType === "SINGLE_USER" ||
+    message.channelId.startsWith("dm:");
 
   // 1) 제목 우선순위: 텍스트 → 파일명 → 링크 URL → placeholder
   let title: string;
@@ -1773,7 +1906,9 @@ function buildLineWorksView(message: LineWorksArchiveMessage): LineWorksView {
   // 2) subtitle: "채팅방 / 작성자 / contentType" (없는 값은 skip)
   const channelName = (() => {
     const raw =
-      typeof message.channelTitle === "string" ? message.channelTitle.trim() : "";
+      typeof message.channelTitle === "string"
+        ? message.channelTitle.trim()
+        : "";
     if (raw) return isDM ? `DM · ${raw}` : raw;
     return isDM ? "DM" : "채팅방";
   })();
@@ -1799,11 +1934,12 @@ function shortChannelLabel(channelId: string, title?: string | null): string {
   }
   if (channelId.startsWith("dm:")) {
     const userId = channelId.slice(3);
-    return userId.length <= 10 ? `DM · ${userId}` : `DM · ${userId.slice(0, 4)}…${userId.slice(-4)}`;
+    return userId.length <= 10
+      ? `DM · ${userId}`
+      : `DM · ${userId.slice(0, 4)}…${userId.slice(-4)}`;
   }
   if (channelId.length <= 14) {
     return channelId;
   }
   return `${channelId.slice(0, 6)}…${channelId.slice(-4)}`;
 }
-

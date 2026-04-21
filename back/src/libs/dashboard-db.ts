@@ -121,6 +121,7 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
 
 interface TaskRow {
   id: string;
+  parent_task_id: string | null;
   work_date: string;
   title: string;
   category: string;
@@ -142,12 +143,15 @@ interface WorkDayRow {
   timer_duration_minutes: number;
 }
 
+const MAX_TASK_DEPTH = 3;
+
 export interface DashboardState {
   days: WorkDayMap;
 }
 
 export interface CreateTaskInput {
   title: string;
+  parentTaskId?: string | null;
   category: string;
   priority: TaskPriority;
   dueDate: string;
@@ -202,6 +206,135 @@ export function importLegacyDays(
   });
 }
 
+interface TaskHierarchyNode {
+  id: string;
+  parentTaskId: string | null;
+}
+
+function listTaskHierarchyNodes(db: DatabaseSync): TaskHierarchyNode[] {
+  return (
+    db.prepare(`SELECT id, parent_task_id FROM tasks`).all() as Array<{
+      id: string;
+      parent_task_id: string | null;
+    }>
+  ).map((row) => ({
+    id: row.id,
+    parentTaskId: row.parent_task_id ?? null,
+  }));
+}
+
+function buildParentMap(
+  nodes: TaskHierarchyNode[],
+): Map<string, string | null> {
+  return new Map(nodes.map((node) => [node.id, node.parentTaskId]));
+}
+
+function buildChildrenMap(nodes: TaskHierarchyNode[]): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  for (const node of nodes) {
+    if (!node.parentTaskId) continue;
+    const list = result.get(node.parentTaskId) ?? [];
+    list.push(node.id);
+    result.set(node.parentTaskId, list);
+  }
+  return result;
+}
+
+function getTaskDepth(
+  taskId: string,
+  parentById: Map<string, string | null>,
+  cache = new Map<string, number>(),
+  visiting = new Set<string>(),
+): number {
+  const cached = cache.get(taskId);
+  if (cached) return cached;
+  if (visiting.has(taskId)) {
+    throw new Error("태스크 위계에 순환이 있습니다.");
+  }
+  visiting.add(taskId);
+  const parentId = parentById.get(taskId) ?? null;
+  const depth = parentId
+    ? getTaskDepth(parentId, parentById, cache, visiting) + 1
+    : 1;
+  visiting.delete(taskId);
+  cache.set(taskId, depth);
+  return depth;
+}
+
+function getSubtreeHeight(
+  taskId: string,
+  childrenById: Map<string, string[]>,
+  cache = new Map<string, number>(),
+): number {
+  const cached = cache.get(taskId);
+  if (cached) return cached;
+  const children = childrenById.get(taskId) ?? [];
+  const height =
+    children.length === 0
+      ? 1
+      : 1 +
+        Math.max(
+          ...children.map((childId) =>
+            getSubtreeHeight(childId, childrenById, cache),
+          ),
+        );
+  cache.set(taskId, height);
+  return height;
+}
+
+function normalizeParentTaskId(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") {
+    throw new Error("parentTaskId must be a string or null");
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function validateParentTaskAssignment(
+  db: DatabaseSync,
+  targetTaskId: string | null,
+  requestedParentTaskId: string | null,
+): string | null {
+  if (!requestedParentTaskId) return null;
+
+  const nodes = listTaskHierarchyNodes(db);
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const parentById = buildParentMap(nodes);
+  const childrenById = buildChildrenMap(nodes);
+
+  if (!nodeById.has(requestedParentTaskId)) {
+    throw new Error("선택한 상위 태스크를 찾을 수 없습니다.");
+  }
+
+  if (targetTaskId && requestedParentTaskId === targetTaskId) {
+    throw new Error("태스크를 자기 자신 하위로 둘 수 없습니다.");
+  }
+
+  if (targetTaskId) {
+    let cursor: string | null = requestedParentTaskId;
+    while (cursor) {
+      if (cursor === targetTaskId) {
+        throw new Error("하위 태스크를 상위 태스크로 지정할 수 없습니다.");
+      }
+      cursor = parentById.get(cursor) ?? null;
+    }
+  }
+
+  const parentDepth = getTaskDepth(requestedParentTaskId, parentById);
+  const subtreeHeight = targetTaskId
+    ? getSubtreeHeight(targetTaskId, childrenById)
+    : 1;
+
+  if (parentDepth + subtreeHeight > MAX_TASK_DEPTH) {
+    throw new Error(
+      `태스크 위계는 최대 ${MAX_TASK_DEPTH}단계까지만 허용됩니다.`,
+    );
+  }
+
+  return requestedParentTaskId;
+}
+
 export function createTaskForDate(
   dateKey: string,
   input: CreateTaskInput,
@@ -211,6 +344,11 @@ export function createTaskForDate(
 
     const timestamp = new Date().toISOString();
     const taskId = createId();
+    const parentTaskId = validateParentTaskAssignment(
+      db,
+      null,
+      normalizeParentTaskId(input.parentTaskId),
+    );
 
     const createdBy = input.createdByUserId ?? null;
     const assigneeIds = resolveAssigneeIds(input.assigneeUserIds, createdBy);
@@ -220,16 +358,17 @@ export function createTaskForDate(
     db.prepare(
       `
         INSERT INTO tasks (
-          id, work_date, title, category, priority, due_date, due_time,
+          id, work_date, parent_task_id, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, sort_order,
           created_at, updated_at, completed_at,
           created_by_user_id, assignee_user_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, ?, ?, NULL, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, ?, ?, NULL, ?, ?)
       `,
     ).run(
       taskId,
       dateKey,
+      parentTaskId,
       input.title.trim(),
       input.category.trim(),
       input.priority,
@@ -254,6 +393,7 @@ export function createTaskForDate(
 
 export interface UpdateTaskInput {
   title?: string;
+  parentTaskId?: string | null;
   category?: string;
   priority?: TaskPriority;
   dueDate?: string;
@@ -277,6 +417,15 @@ export function updateTaskForDate(
     if (patch.title !== undefined) {
       sets.push("title = ?");
       args.push(String(patch.title).trim());
+    }
+    if (patch.parentTaskId !== undefined) {
+      const parentTaskId = validateParentTaskAssignment(
+        db,
+        taskId,
+        normalizeParentTaskId(patch.parentTaskId),
+      );
+      sets.push("parent_task_id = ?");
+      args.push(parentTaskId);
     }
     if (patch.category !== undefined) {
       sets.push("category = ?");
@@ -367,6 +516,15 @@ export function deleteTaskForDate(
 ): DashboardState {
   return withTransaction((db) => {
     prepareWorkDay(db, dateKey);
+    const childCount =
+      (
+        db
+          .prepare(`SELECT COUNT(*) AS c FROM tasks WHERE parent_task_id = ?`)
+          .get(taskId) as { c: number } | undefined
+      )?.c ?? 0;
+    if (childCount > 0) {
+      throw new Error("하위 태스크가 있어 삭제할 수 없습니다.");
+    }
     db.prepare("DELETE FROM tasks WHERE id = ? AND work_date = ?").run(
       taskId,
       dateKey,
@@ -382,9 +540,16 @@ export function deleteTaskForDate(
 export function clearCompletedForDate(dateKey: string): DashboardState {
   return withTransaction((db) => {
     prepareWorkDay(db, dateKey);
-    db.prepare("DELETE FROM tasks WHERE work_date = ? AND status = 'done'").run(
-      dateKey,
-    );
+    db.prepare(
+      `
+        DELETE FROM tasks
+        WHERE work_date = ?
+          AND status = 'done'
+          AND NOT EXISTS (
+            SELECT 1 FROM tasks child WHERE child.parent_task_id = tasks.id
+          )
+      `,
+    ).run(dateKey);
     touchWorkDay(db, dateKey);
 
     return {
@@ -497,7 +662,7 @@ function selectDays(db: DatabaseSync): WorkDayMap {
     .prepare(
       `
         SELECT
-          id, work_date, title, category, priority, due_date, due_time,
+          id, work_date, parent_task_id, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, created_at, updated_at, completed_at
         FROM tasks
         ORDER BY work_date ASC, datetime(created_at) ASC, id ASC
@@ -586,13 +751,14 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
   db.prepare(
     `
       INSERT INTO tasks (
-        id, work_date, title, category, priority, due_date, due_time,
+        id, work_date, parent_task_id, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order,
         created_at, updated_at, completed_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         work_date = excluded.work_date,
+        parent_task_id = excluded.parent_task_id,
         title = excluded.title,
         category = excluded.category,
         priority = excluded.priority,
@@ -608,6 +774,7 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
   ).run(
     task.id,
     dateKey,
+    task.parentTaskId,
     task.title,
     task.category,
     task.priority,
@@ -634,6 +801,7 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
 function mapTaskRow(row: TaskRow): Task {
   return {
     id: row.id,
+    parentTaskId: row.parent_task_id,
     title: row.title,
     category: row.category,
     priority: row.priority,

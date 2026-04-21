@@ -9,6 +9,10 @@ export interface UserRef {
 
 export interface TaskListItem {
   id: string;
+  parentTaskId: string | null;
+  parentTitle: string | null;
+  depth: number;
+  childCount: number;
   title: string;
   category: string;
   priority: TaskPriority;

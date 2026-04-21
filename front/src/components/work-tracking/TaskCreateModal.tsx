@@ -9,6 +9,7 @@ import type { PendingReference } from "@/lib/pending-references";
 import type { ChannelLabelMap, StorageItem } from "@/lib/storage";
 import type {
   NotionUpdateItem,
+  Task,
   TaskPriority,
   TaskStatus,
 } from "@/lib/work-tracking";
@@ -17,6 +18,7 @@ import { ReferenceCollector } from "./ReferenceCollector";
 
 export interface TaskCreateSubmit {
   taskId?: string;
+  parentTaskId: string | null;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -30,6 +32,7 @@ export interface TaskCreateSubmit {
 
 export interface TaskEditInitial {
   id: string;
+  parentTaskId: string | null;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -46,6 +49,7 @@ interface Props {
   defaultDueDate: string;
   mode?: "create" | "edit";
   initialTask?: TaskEditInitial | null;
+  availableTasks: Task[];
   users: UserRef[];
   currentUserId: string | null;
   onClose: () => void;
@@ -59,6 +63,7 @@ interface Props {
 
 interface FormState {
   title: string;
+  parentTaskId: string;
   category: string;
   priority: TaskPriority;
   status: TaskStatus;
@@ -71,6 +76,7 @@ interface FormState {
 function initialForm(dueDate: string, defaultAssignees: string[]): FormState {
   return {
     title: "",
+    parentTaskId: "",
     category: "",
     priority: "medium",
     status: "todo",
@@ -84,6 +90,7 @@ function initialForm(dueDate: string, defaultAssignees: string[]): FormState {
 function formFromTask(task: TaskEditInitial): FormState {
   return {
     title: task.title,
+    parentTaskId: task.parentTaskId ?? "",
     category: task.category,
     priority: task.priority,
     status: task.status,
@@ -94,11 +101,87 @@ function formFromTask(task: TaskEditInitial): FormState {
   };
 }
 
+interface ParentTaskOption {
+  id: string;
+  label: string;
+}
+
+function buildParentOptions(
+  tasks: Task[],
+  currentTaskId: string | null,
+): ParentTaskOption[] {
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const childrenById = new Map<string, string[]>();
+
+  for (const task of tasks) {
+    if (!task.parentTaskId) continue;
+    const list = childrenById.get(task.parentTaskId) ?? [];
+    list.push(task.id);
+    childrenById.set(task.parentTaskId, list);
+  }
+
+  const depthCache = new Map<string, number>();
+  const getDepth = (taskId: string): number => {
+    const cached = depthCache.get(taskId);
+    if (cached) return cached;
+    const task = taskById.get(taskId);
+    const depth =
+      task?.parentTaskId && taskById.has(task.parentTaskId)
+        ? getDepth(task.parentTaskId) + 1
+        : 1;
+    depthCache.set(taskId, depth);
+    return depth;
+  };
+
+  const descendants = new Set<string>();
+  if (currentTaskId) {
+    const stack = [...(childrenById.get(currentTaskId) ?? [])];
+    while (stack.length > 0) {
+      const nextId = stack.pop()!;
+      if (descendants.has(nextId)) continue;
+      descendants.add(nextId);
+      stack.push(...(childrenById.get(nextId) ?? []));
+    }
+  }
+
+  const subtreeHeightCache = new Map<string, number>();
+  const getSubtreeHeight = (taskId: string): number => {
+    const cached = subtreeHeightCache.get(taskId);
+    if (cached) return cached;
+    const children = childrenById.get(taskId) ?? [];
+    const height =
+      children.length === 0
+        ? 1
+        : 1 + Math.max(...children.map((childId) => getSubtreeHeight(childId)));
+    subtreeHeightCache.set(taskId, height);
+    return height;
+  };
+
+  const currentSubtreeHeight = currentTaskId
+    ? getSubtreeHeight(currentTaskId)
+    : 1;
+
+  return tasks
+    .filter((task) => task.id !== currentTaskId)
+    .filter((task) => !descendants.has(task.id))
+    .filter((task) => getDepth(task.id) + currentSubtreeHeight <= 3)
+    .sort((left, right) => {
+      const depthDiff = getDepth(left.id) - getDepth(right.id);
+      if (depthDiff !== 0) return depthDiff;
+      return left.title.localeCompare(right.title);
+    })
+    .map((task) => ({
+      id: task.id,
+      label: `${"· ".repeat(Math.max(0, getDepth(task.id) - 1))}${task.title || "제목 없음"}`,
+    }));
+}
+
 export function TaskCreateModal({
   open,
   defaultDueDate,
   mode = "create",
   initialTask = null,
+  availableTasks,
   users,
   currentUserId,
   onClose,
@@ -116,7 +199,9 @@ export function TaskCreateModal({
       ? formFromTask(initialTask)
       : initialForm(defaultDueDate, defaultCreateAssignees),
   );
-  const [pendingReferences, setPendingReferences] = useState<PendingReference[]>([]);
+  const [pendingReferences, setPendingReferences] = useState<
+    PendingReference[]
+  >([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -134,6 +219,11 @@ export function TaskCreateModal({
 
   if (!open) return null;
 
+  const parentOptions = buildParentOptions(
+    availableTasks,
+    initialTask?.id ?? null,
+  );
+
   const toggleAssignee = (userId: string) => {
     setForm((current) => {
       const has = current.assigneeUserIds.includes(userId);
@@ -150,12 +240,15 @@ export function TaskCreateModal({
     event.preventDefault();
     if (submitting) return;
 
-    const dueTime = /^\d{2}:\d{2}$/.test(form.dueTime.trim()) ? form.dueTime.trim() : null;
+    const dueTime = /^\d{2}:\d{2}$/.test(form.dueTime.trim())
+      ? form.dueTime.trim()
+      : null;
 
     setSubmitting(true);
     try {
       await onSubmit({
         taskId: isEdit && initialTask ? initialTask.id : undefined,
+        parentTaskId: form.parentTaskId || null,
         title: form.title,
         category: form.category,
         priority: form.priority,
@@ -169,6 +262,9 @@ export function TaskCreateModal({
       onClose();
     } catch (error) {
       console.error("[task-create-modal] submit failed", error);
+      window.alert(
+        error instanceof Error ? error.message : "태스크 저장에 실패했습니다.",
+      );
       setSubmitting(false);
     }
   }
@@ -196,7 +292,10 @@ export function TaskCreateModal({
           </button>
         </header>
 
-        <form className="task-form task-create-modal-form" onSubmit={handleSubmit}>
+        <form
+          className="task-form task-create-modal-form"
+          onSubmit={handleSubmit}
+        >
           <label>
             <span className="field-label">업무명</span>
             <input
@@ -205,7 +304,10 @@ export function TaskCreateModal({
               placeholder="예: 통계 API 검증"
               value={form.title}
               onChange={(event) =>
-                setForm((current) => ({ ...current, title: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
               }
               required
               autoFocus
@@ -220,9 +322,33 @@ export function TaskCreateModal({
               placeholder="예: 백엔드, 회의, 문서"
               value={form.category}
               onChange={(event) =>
-                setForm((current) => ({ ...current, category: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  category: event.target.value,
+                }))
               }
             />
+          </label>
+
+          <label>
+            <span className="field-label">상위 태스크</span>
+            <select
+              name="parentTaskId"
+              value={form.parentTaskId}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  parentTaskId: event.target.value,
+                }))
+              }
+            >
+              <option value="">없음</option>
+              {parentOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="split-fields due-split">
@@ -269,7 +395,10 @@ export function TaskCreateModal({
                 name="dueDate"
                 value={form.dueDate}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, dueDate: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    dueDate: event.target.value,
+                  }))
                 }
               />
             </label>
@@ -280,7 +409,10 @@ export function TaskCreateModal({
                 name="dueTime"
                 value={form.dueTime}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, dueTime: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    dueTime: event.target.value,
+                  }))
                 }
               />
             </label>
@@ -346,7 +478,11 @@ export function TaskCreateModal({
             >
               취소
             </button>
-            <button type="submit" className="primary-button" disabled={submitting}>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={submitting}
+            >
               {submitting ? "저장 중..." : isEdit ? "저장" : "업무 추가"}
             </button>
           </div>

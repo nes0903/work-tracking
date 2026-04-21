@@ -51,7 +51,8 @@
   --content-max-width: 1600px;
 
   /* Typography */
-  --font-body: "Inter", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --font-body:
+    "Inter", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   --font-display: "Inter", "Apple SD Gothic Neo", system-ui, sans-serif;
 }
 
@@ -178,7 +179,9 @@ button {
   font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .sidebar-nav-link:hover {
@@ -309,7 +312,9 @@ button {
   border-radius: 999px;
   font-size: 0.78rem;
   cursor: pointer;
-  transition: background 200ms linear, color 200ms linear;
+  transition:
+    background 200ms linear,
+    color 200ms linear;
 }
 
 .filter-chip:hover {
@@ -361,6 +366,10 @@ button {
   margin: 0;
   display: grid;
   gap: 4px;
+}
+
+.task-tree-rows {
+  gap: 6px;
 }
 
 .task-row {
@@ -418,6 +427,12 @@ button {
   white-space: nowrap;
 }
 
+.task-row-branch {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--on-surface-muted);
+}
+
 .task-row-meta {
   display: inline-flex;
   gap: 10px;
@@ -433,6 +448,32 @@ button {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.7rem;
+}
+
+.task-row-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.task-row-status.status-todo {
+  background: rgba(43, 90, 171, 0.14);
+  color: var(--primary);
+}
+
+.task-row-status.status-doing {
+  background: rgba(214, 134, 61, 0.16);
+  color: #8e4b0d;
+}
+
+.task-row-status.status-done {
+  background: rgba(47, 107, 74, 0.14);
+  color: var(--positive);
+}
+
+.task-row-parent {
+  color: var(--on-surface-muted);
 }
 
 .task-row-mine {
@@ -784,7 +825,9 @@ button {
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 200ms linear, color 200ms linear;
+  transition:
+    background 200ms linear,
+    color 200ms linear;
 }
 
 .ref-tab:hover {
@@ -1300,7 +1343,9 @@ button {
   text-decoration: none;
   font-size: 0.8rem;
   font-weight: 500;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .sidebar-link:hover {
@@ -1353,7 +1398,9 @@ button {
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .sidebar-user-logout:hover {
@@ -1466,7 +1513,9 @@ button {
   background: var(--surface-container-lowest);
   color: var(--on-surface-variant);
   box-shadow: inset 0 0 0 1px var(--outline-variant);
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .icon-button:hover {
@@ -1546,7 +1595,10 @@ button {
   font-weight: 600;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 300ms linear, transform 200ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    transform 200ms linear,
+    color 300ms linear;
 }
 
 .primary-button {
@@ -1910,7 +1962,9 @@ button {
   padding: 6px 12px;
   font-size: 0.72rem;
   font-weight: 500;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .task-action:hover {
@@ -2006,7 +2060,9 @@ button {
   color: var(--on-surface-variant);
   font-size: 0.76rem;
   font-weight: 500;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .github-filter-chip:hover {
@@ -2297,7 +2353,9 @@ button {
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 300ms linear, color 300ms linear;
+  transition:
+    background 300ms linear,
+    color 300ms linear;
 }
 
 .notion-load-more:hover:not(:disabled) {
@@ -2583,7 +2641,9 @@ button {
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 200ms linear, color 200ms linear;
+  transition:
+    background 200ms linear,
+    color 200ms linear;
 }
 
 .modal-tab.active {
@@ -3104,7 +3164,9 @@ button {
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background 300ms linear, transform 200ms linear;
+  transition:
+    background 300ms linear,
+    transform 200ms linear;
 }
 
 .login-button:hover {
@@ -3592,7 +3654,10 @@ button {
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 150ms linear, color 150ms linear, border-color 150ms linear;
+  transition:
+    background 150ms linear,
+    color 150ms linear,
+    border-color 150ms linear;
 }
 
 .assignee-chip:hover {
@@ -3701,7 +3766,9 @@ button {
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
-  transition: background 120ms, border-color 120ms;
+  transition:
+    background 120ms,
+    border-color 120ms;
   text-align: left;
 }
 

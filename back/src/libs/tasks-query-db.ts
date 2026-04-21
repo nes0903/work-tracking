@@ -23,6 +23,10 @@ export interface TaskQueryParams {
 
 export interface TaskListItem {
   id: string;
+  parentTaskId: string | null;
+  parentTitle: string | null;
+  depth: number;
+  childCount: number;
   title: string;
   category: string;
   priority: TaskPriority;
@@ -59,6 +63,8 @@ const DEFAULT_PER_PAGE = 20;
 
 interface TaskQueryRow {
   id: string;
+  parent_task_id: string | null;
+  parent_title: string | null;
   work_date: string;
   title: string;
   category: string;
@@ -74,6 +80,7 @@ interface TaskQueryRow {
   created_by_user_id: string | null;
   created_by_name: string | null;
   ref_count: number;
+  child_count: number;
 }
 
 export function queryTasks(params: TaskQueryParams): TaskQueryResult {
@@ -180,6 +187,26 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
   const total = totalRow?.c ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
+  const hierarchyRows = db
+    .prepare(`SELECT id, parent_task_id FROM tasks`)
+    .all() as Array<{ id: string; parent_task_id: string | null }>;
+  const parentById = new Map(
+    hierarchyRows.map((row) => [row.id, row.parent_task_id ?? null]),
+  );
+  const depthCache = new Map<string, number>();
+
+  const getDepth = (taskId: string, visiting = new Set<string>()): number => {
+    const cached = depthCache.get(taskId);
+    if (cached) return cached;
+    if (visiting.has(taskId)) return 1;
+    visiting.add(taskId);
+    const parentId = parentById.get(taskId) ?? null;
+    const depth = parentId ? getDepth(parentId, visiting) + 1 : 1;
+    visiting.delete(taskId);
+    depthCache.set(taskId, depth);
+    return depth;
+  };
+
   // 정렬
   const priorityRank = `CASE t.priority WHEN 'high' THEN 3 WHEN 'medium' THEN 2 WHEN 'low' THEN 1 ELSE 0 END`;
   const dir = order.toUpperCase();
@@ -203,6 +230,8 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
       `
         SELECT
           t.id,
+          t.parent_task_id,
+          pt.title AS parent_title,
           t.work_date,
           t.title,
           t.category,
@@ -217,9 +246,11 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
           t.completed_at,
           t.created_by_user_id,
           uc.user_name AS created_by_name,
-          (SELECT COUNT(*) FROM task_references r WHERE r.task_id = t.id) AS ref_count
+          (SELECT COUNT(*) FROM task_references r WHERE r.task_id = t.id) AS ref_count,
+          (SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = t.id) AS child_count
         FROM tasks t
    LEFT JOIN users uc ON uc.user_id = t.created_by_user_id
+   LEFT JOIN tasks pt ON pt.id = t.parent_task_id
        WHERE ${fullWhereSql}
     ORDER BY ${orderSql}
        LIMIT ? OFFSET ?
@@ -265,6 +296,10 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
 
   const items: TaskListItem[] = rows.map((row) => ({
     id: row.id,
+    parentTaskId: row.parent_task_id,
+    parentTitle: row.parent_title,
+    depth: getDepth(row.id),
+    childCount: row.child_count ?? 0,
     title: row.title,
     category: row.category,
     priority: row.priority,

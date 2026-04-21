@@ -55,6 +55,12 @@ function runColumnMigrations(db: DatabaseSync): void {
   if (!tableHasColumn(db, "tasks", "due_time")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN due_time TEXT`);
   }
+  if (!tableHasColumn(db, "tasks", "parent_task_id")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN parent_task_id TEXT`);
+  }
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON tasks(parent_task_id)`,
+  );
   dropLegacyTaskColumns(db);
 
   // site_links: category (서비스 분류)
@@ -90,6 +96,7 @@ function dropLegacyTaskColumns(db: DatabaseSync): void {
       CREATE TABLE tasks__migrated (
         id TEXT PRIMARY KEY,
         work_date TEXT NOT NULL,
+        parent_task_id TEXT,
         title TEXT NOT NULL,
         category TEXT NOT NULL DEFAULT '',
         priority TEXT NOT NULL DEFAULT 'medium',
@@ -105,6 +112,7 @@ function dropLegacyTaskColumns(db: DatabaseSync): void {
         created_by_user_id TEXT,
         assignee_user_id TEXT,
         FOREIGN KEY (work_date) REFERENCES work_days(work_date) ON DELETE CASCADE,
+        FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE RESTRICT,
         CHECK (priority IN ('high', 'medium', 'low')),
         CHECK (status IN ('todo', 'doing', 'done')),
         CHECK (estimate_minutes >= 0),
@@ -113,13 +121,13 @@ function dropLegacyTaskColumns(db: DatabaseSync): void {
     `);
     db.exec(`
       INSERT INTO tasks__migrated (
-        id, work_date, title, category, priority, due_date, due_time,
+        id, work_date, parent_task_id, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order,
         created_at, updated_at, completed_at,
         created_by_user_id, assignee_user_id
       )
       SELECT
-        id, work_date, title, category, priority, due_date, due_time,
+        id, work_date, parent_task_id, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order,
         created_at, updated_at, completed_at,
         created_by_user_id, assignee_user_id
@@ -129,6 +137,9 @@ function dropLegacyTaskColumns(db: DatabaseSync): void {
     db.exec(`ALTER TABLE tasks__migrated RENAME TO tasks`);
     db.exec(
       `CREATE INDEX IF NOT EXISTS idx_tasks_work_date ON tasks(work_date)`,
+    );
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON tasks(parent_task_id)`,
     );
     db.exec(
       `CREATE INDEX IF NOT EXISTS idx_tasks_work_date_status ON tasks(work_date, status)`,

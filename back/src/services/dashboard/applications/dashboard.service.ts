@@ -34,6 +34,16 @@ function hasAssigneeField(source: unknown): boolean {
   return "assigneeUserIds" in obj || "assigneeUserId" in obj;
 }
 
+function extractParentTaskId(source: unknown): string | null | undefined {
+  if (!source || typeof source !== "object") return undefined;
+  const obj = source as Record<string, unknown>;
+  if (!("parentTaskId" in obj)) return undefined;
+  if (obj.parentTaskId === null || obj.parentTaskId === undefined) return null;
+  if (typeof obj.parentTaskId !== "string") return null;
+  const trimmed = obj.parentTaskId.trim();
+  return trimmed ? trimmed : null;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(private readonly dashboardRepository: DashboardRepository) {}
@@ -61,10 +71,12 @@ export class DashboardService {
         const assigneeUserIds = extractAssigneeIds(payload?.task);
         return this.dashboardRepository.createTask(date, {
           title: String(payload?.task?.title ?? ""),
+          parentTaskId: extractParentTaskId(payload?.task) ?? null,
           category: String(payload?.task?.category ?? ""),
           priority: payload?.task?.priority,
           dueDate: String(payload?.task?.dueDate ?? date),
-          dueTime: typeof rawDueTime === "string" && rawDueTime ? rawDueTime : null,
+          dueTime:
+            typeof rawDueTime === "string" && rawDueTime ? rawDueTime : null,
           estimate: Number(payload?.task?.estimate ?? 0),
           note: String(payload?.task?.note ?? ""),
           createdByUserId: sessionUserId ?? null,
@@ -88,7 +100,11 @@ export class DashboardService {
           typeof this.dashboardRepository.updateTask
         >[2] = {};
         if (typeof patch.title === "string") cleaned.title = patch.title;
-        if (typeof patch.category === "string") cleaned.category = patch.category;
+        if ("parentTaskId" in patch) {
+          cleaned.parentTaskId = extractParentTaskId(patch) ?? null;
+        }
+        if (typeof patch.category === "string")
+          cleaned.category = patch.category;
         if (
           patch.priority === "high" ||
           patch.priority === "medium" ||
@@ -98,7 +114,8 @@ export class DashboardService {
         }
         if (typeof patch.dueDate === "string") cleaned.dueDate = patch.dueDate;
         if (patch.dueTime === null) cleaned.dueTime = null;
-        else if (typeof patch.dueTime === "string") cleaned.dueTime = patch.dueTime;
+        else if (typeof patch.dueTime === "string")
+          cleaned.dueTime = patch.dueTime;
         if (typeof patch.note === "string") cleaned.note = patch.note;
         if (hasAssigneeField(patch)) {
           cleaned.assigneeUserIds = extractAssigneeIds(patch);
