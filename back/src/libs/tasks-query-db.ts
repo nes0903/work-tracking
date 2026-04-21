@@ -38,7 +38,7 @@ export interface TaskListItem {
   carryoverCount: number;
   carriedFromDate: string | null;
   createdBy: { userId: string; userName: string | null } | null;
-  assignee: { userId: string; userName: string | null } | null;
+  assignees: Array<{ userId: string; userName: string | null }>;
   referenceCount: number;
 }
 
@@ -76,9 +76,7 @@ interface TaskQueryRow {
   carryover_count: number;
   carried_from_date: string | null;
   created_by_user_id: string | null;
-  assignee_user_id: string | null;
   created_by_name: string | null;
-  assignee_name: string | null;
   ref_count: number;
 }
 
@@ -115,7 +113,10 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
 
   const assigneeId = resolveUser(params.assignee);
   if (assigneeId) {
-    baseWhere.push(`t.assignee_user_id = ?`);
+    // 다중 담당자 지원: task_assignees 에 해당 user 가 포함된 task 만
+    baseWhere.push(
+      `EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = t.id AND ta.user_id = ?)`,
+    );
     baseArgs.push(assigneeId);
   }
 
@@ -221,19 +222,47 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
           t.carryover_count,
           t.carried_from_date,
           t.created_by_user_id,
-          t.assignee_user_id,
           uc.user_name AS created_by_name,
-          ua.user_name AS assignee_name,
           (SELECT COUNT(*) FROM task_references r WHERE r.task_id = t.id) AS ref_count
         FROM tasks t
    LEFT JOIN users uc ON uc.user_id = t.created_by_user_id
-   LEFT JOIN users ua ON ua.user_id = t.assignee_user_id
        WHERE ${fullWhereSql}
     ORDER BY ${orderSql}
        LIMIT ? OFFSET ?
       `,
     )
     .all(...baseArgs, ...statusArgs, perPage, offset) as unknown as TaskQueryRow[];
+
+  // 다중 담당자 로드: 현재 페이지의 task id 들에 대해서만 한 번의 쿼리로 가져온다
+  const taskIds = rows.map((r) => r.id);
+  const assigneesByTask = new Map<
+    string,
+    Array<{ userId: string; userName: string | null }>
+  >();
+  if (taskIds.length > 0) {
+    const placeholders = taskIds.map(() => "?").join(",");
+    const assigneeRows = db
+      .prepare(
+        `
+          SELECT ta.task_id, ta.user_id, u.user_name, ta.sort_order
+            FROM task_assignees ta
+       LEFT JOIN users u ON u.user_id = ta.user_id
+           WHERE ta.task_id IN (${placeholders})
+        ORDER BY ta.task_id ASC, ta.sort_order ASC, ta.user_id ASC
+        `,
+      )
+      .all(...taskIds) as Array<{
+        task_id: string;
+        user_id: string;
+        user_name: string | null;
+        sort_order: number;
+      }>;
+    for (const r of assigneeRows) {
+      const list = assigneesByTask.get(r.task_id) ?? [];
+      list.push({ userId: r.user_id, userName: r.user_name });
+      assigneesByTask.set(r.task_id, list);
+    }
+  }
 
   const items: TaskListItem[] = rows.map((row) => ({
     id: row.id,
@@ -254,9 +283,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
     createdBy: row.created_by_user_id
       ? { userId: row.created_by_user_id, userName: row.created_by_name }
       : null,
-    assignee: row.assignee_user_id
-      ? { userId: row.assignee_user_id, userName: row.assignee_name }
-      : null,
+    assignees: assigneesByTask.get(row.id) ?? [],
     referenceCount: row.ref_count ?? 0,
   }));
 

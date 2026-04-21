@@ -52,6 +52,18 @@ CREATE INDEX IF NOT EXISTS idx_tasks_work_date_status ON tasks(work_date, status
 CREATE INDEX IF NOT EXISTS idx_tasks_work_date_priority ON tasks(work_date, priority);
 CREATE INDEX IF NOT EXISTS idx_tasks_due_date_status ON tasks(due_date, status);
 
+CREATE TABLE IF NOT EXISTS task_assignees (
+  task_id    TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (task_id, user_id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_task_assignees_user ON task_assignees(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_assignees_task ON task_assignees(task_id);
+
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id TEXT PRIMARY KEY,
   work_date TEXT NOT NULL,

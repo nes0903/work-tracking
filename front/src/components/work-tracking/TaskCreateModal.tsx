@@ -12,6 +12,7 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "@/lib/work-tracking";
+import type { UserRef } from "@/lib/tasks-api";
 import { ReferenceCollector } from "./ReferenceCollector";
 
 export interface TaskCreateSubmit {
@@ -23,6 +24,7 @@ export interface TaskCreateSubmit {
   dueDate: string;
   dueTime: string | null;
   note: string;
+  assigneeUserIds: string[];
   pendingReferences: PendingReference[];
 }
 
@@ -36,6 +38,7 @@ export interface TaskEditInitial {
   dueTime: string | null;
   note: string;
   workDate: string;
+  assigneeUserIds: string[];
 }
 
 interface Props {
@@ -43,6 +46,8 @@ interface Props {
   defaultDueDate: string;
   mode?: "create" | "edit";
   initialTask?: TaskEditInitial | null;
+  users: UserRef[];
+  currentUserId: string | null;
   onClose: () => void;
   onSubmit: (payload: TaskCreateSubmit) => Promise<void>;
   notionItems: NotionUpdateItem[];
@@ -60,9 +65,10 @@ interface FormState {
   dueDate: string;
   dueTime: string;
   note: string;
+  assigneeUserIds: string[];
 }
 
-function initialForm(dueDate: string): FormState {
+function initialForm(dueDate: string, defaultAssignees: string[]): FormState {
   return {
     title: "",
     category: "",
@@ -71,6 +77,7 @@ function initialForm(dueDate: string): FormState {
     dueDate,
     dueTime: "",
     note: "",
+    assigneeUserIds: defaultAssignees,
   };
 }
 
@@ -83,6 +90,7 @@ function formFromTask(task: TaskEditInitial): FormState {
     dueDate: task.dueDate || task.workDate,
     dueTime: task.dueTime ?? "",
     note: task.note,
+    assigneeUserIds: task.assigneeUserIds,
   };
 }
 
@@ -91,6 +99,8 @@ export function TaskCreateModal({
   defaultDueDate,
   mode = "create",
   initialTask = null,
+  users,
+  currentUserId,
   onClose,
   onSubmit,
   notionItems,
@@ -100,8 +110,11 @@ export function TaskCreateModal({
   channelLabels,
 }: Props) {
   const isEdit = mode === "edit" && !!initialTask;
+  const defaultCreateAssignees = currentUserId ? [currentUserId] : [];
   const [form, setForm] = useState<FormState>(() =>
-    isEdit && initialTask ? formFromTask(initialTask) : initialForm(defaultDueDate),
+    isEdit && initialTask
+      ? formFromTask(initialTask)
+      : initialForm(defaultDueDate, defaultCreateAssignees),
   );
   const [pendingReferences, setPendingReferences] = useState<PendingReference[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -111,14 +124,27 @@ export function TaskCreateModal({
       if (mode === "edit" && initialTask) {
         setForm(formFromTask(initialTask));
       } else {
-        setForm(initialForm(defaultDueDate));
+        setForm(initialForm(defaultDueDate, defaultCreateAssignees));
       }
       setPendingReferences([]);
       setSubmitting(false);
     }
-  }, [open, defaultDueDate, mode, initialTask]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultDueDate, mode, initialTask, currentUserId]);
 
   if (!open) return null;
+
+  const toggleAssignee = (userId: string) => {
+    setForm((current) => {
+      const has = current.assigneeUserIds.includes(userId);
+      return {
+        ...current,
+        assigneeUserIds: has
+          ? current.assigneeUserIds.filter((id) => id !== userId)
+          : [...current.assigneeUserIds, userId],
+      };
+    });
+  };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,6 +163,7 @@ export function TaskCreateModal({
         dueDate: form.dueDate || defaultDueDate,
         dueTime,
         note: form.note,
+        assigneeUserIds: form.assigneeUserIds,
         pendingReferences,
       });
       onClose();
@@ -257,6 +284,32 @@ export function TaskCreateModal({
                 }
               />
             </label>
+          </div>
+
+          <div className="assignee-picker">
+            <p className="field-label">
+              담당자 ({form.assigneeUserIds.length}명)
+            </p>
+            {users.length === 0 ? (
+              <p className="empty-note">선택 가능한 유저가 없습니다.</p>
+            ) : (
+              <ul className="assignee-picker-list">
+                {users.map((u) => {
+                  const active = form.assigneeUserIds.includes(u.userId);
+                  return (
+                    <li key={u.userId}>
+                      <button
+                        type="button"
+                        className={`assignee-chip ${active ? "active" : ""}`.trim()}
+                        onClick={() => toggleAssignee(u.userId)}
+                      >
+                        {active ? "✓" : "+"} {u.userName ?? u.userId}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           <label>

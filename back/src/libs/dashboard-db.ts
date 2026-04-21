@@ -179,7 +179,8 @@ export interface CreateTaskInput {
   estimate: number;
   note: string;
   createdByUserId?: string | null;
-  assigneeUserId?: string | null;
+  /** 다중 담당자. 빈 배열이면 createdByUserId 로 fallback. */
+  assigneeUserIds?: string[];
 }
 
 export function getDashboardState(dateKey: string): DashboardState {
@@ -236,7 +237,9 @@ export function createTaskForDate(
     const lineageId = createId();
 
     const createdBy = input.createdByUserId ?? null;
-    const assignee = input.assigneeUserId ?? createdBy;
+    const assigneeIds = resolveAssigneeIds(input.assigneeUserIds, createdBy);
+    // 하위호환: 레거시 컬럼에 첫 번째 담당자 기록 (차후 제거 예정)
+    const primaryAssignee = assigneeIds[0] ?? createdBy;
 
     db.prepare(
       `
@@ -262,8 +265,10 @@ export function createTaskForDate(
       timestamp,
       timestamp,
       createdBy,
-      assignee,
+      primaryAssignee,
     );
+
+    replaceTaskAssignees(db, lineageId, assigneeIds);
 
     touchWorkDay(db, dateKey);
     return {
@@ -279,7 +284,8 @@ export interface UpdateTaskInput {
   dueDate?: string;
   dueTime?: string | null;
   note?: string;
-  assigneeUserId?: string | null;
+  /** 전체 교체 시맨틱. 전달되면 기존 담당자 모두 제거 후 재설정. */
+  assigneeUserIds?: string[];
 }
 
 export function updateTaskForDate(
@@ -317,9 +323,12 @@ export function updateTaskForDate(
       sets.push("note = ?");
       args.push(String(patch.note));
     }
-    if (patch.assigneeUserId !== undefined) {
+
+    if (patch.assigneeUserIds !== undefined) {
+      const ids = resolveAssigneeIds(patch.assigneeUserIds, null);
+      // 레거시 컬럼에도 first assignee 를 반영해 호환 유지
       sets.push("assignee_user_id = ?");
-      args.push(patch.assigneeUserId ?? null);
+      args.push(ids[0] ?? null);
     }
 
     if (sets.length > 0) {
@@ -331,6 +340,14 @@ export function updateTaskForDate(
       ).run(...args, taskId, dateKey);
 
       touchWorkDay(db, dateKey);
+    }
+
+    if (patch.assigneeUserIds !== undefined) {
+      replaceTaskAssignees(
+        db,
+        taskId,
+        resolveAssigneeIds(patch.assigneeUserIds, null),
+      );
     }
 
     return {
@@ -526,11 +543,18 @@ function selectDays(db: DatabaseSync): WorkDayMap {
     ]),
   ) as WorkDayMap;
 
+  const assigneeMap = listAssigneesForTasks(
+    db,
+    tasks.map((row) => row.id),
+  );
+
   for (const row of tasks) {
     if (!days[row.work_date]) {
       days[row.work_date] = createEmptyDay();
     }
-    days[row.work_date].tasks.push(mapTaskRow(row));
+    const mapped = mapTaskRow(row);
+    mapped.assignees = assigneeMap.get(row.id) ?? [];
+    days[row.work_date].tasks.push(mapped);
   }
 
   return days;
@@ -597,8 +621,9 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
       continue;
     }
 
+    const newId = createId();
     insertStatement.run(
-      createId(),
+      newId,
       row.lineage_id,
       targetDateKey,
       row.title,
@@ -616,6 +641,11 @@ function rolloverPendingTasks(db: DatabaseSync, targetDateKey: string) {
       row.created_by_user_id,
       row.assignee_user_id,
     );
+    // 이전 task 의 담당자 행들을 신규 id 로 복사
+    db.prepare(
+      `INSERT INTO task_assignees (task_id, user_id, sort_order)
+       SELECT ?, user_id, sort_order FROM task_assignees WHERE task_id = ?`,
+    ).run(newId, row.id);
     deleteStatement.run(row.id);
     existingLineages.add(row.lineage_id);
   }
@@ -701,6 +731,15 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
     task.updatedAt,
     task.completedAt,
   );
+
+  // assignees 가 제공된 경우에만 교체. (import 경로 호환)
+  if (Array.isArray(task.assignees) && task.assignees.length > 0) {
+    replaceTaskAssignees(
+      db,
+      task.id,
+      task.assignees.map((a) => a.userId),
+    );
+  }
 }
 
 function mapTaskRow(row: TaskRow): Task {
@@ -720,6 +759,7 @@ function mapTaskRow(row: TaskRow): Task {
     carryoverCount: row.carryover_count,
     carriedFromDate: row.carried_from_date,
     completedAt: row.completed_at,
+    assignees: [],
   };
 }
 
@@ -727,4 +767,78 @@ function normalizeDueTime(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return /^\d{2}:\d{2}$/.test(trimmed) ? trimmed : null;
+}
+
+function resolveAssigneeIds(
+  ids: string[] | undefined,
+  fallbackUserId: string | null,
+): string[] {
+  if (Array.isArray(ids)) {
+    const cleaned = Array.from(
+      new Set(
+        ids
+          .filter((v): v is string => typeof v === "string")
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0),
+      ),
+    );
+    if (cleaned.length > 0) return cleaned;
+  }
+  if (fallbackUserId && fallbackUserId.trim()) {
+    return [fallbackUserId.trim()];
+  }
+  return [];
+}
+
+/**
+ * task_assignees 를 주어진 userIds 로 교체한다.
+ * 호출자는 트랜잭션 안에서 호출할 것.
+ */
+function replaceTaskAssignees(
+  db: DatabaseSync,
+  taskId: string,
+  userIds: string[],
+): void {
+  db.prepare(`DELETE FROM task_assignees WHERE task_id = ?`).run(taskId);
+  if (userIds.length === 0) return;
+  const stmt = db.prepare(
+    `INSERT INTO task_assignees (task_id, user_id, sort_order) VALUES (?, ?, ?)`,
+  );
+  for (let i = 0; i < userIds.length; i++) {
+    stmt.run(taskId, userIds[i], i);
+  }
+}
+
+function listAssigneesForTasks(
+  db: DatabaseSync,
+  taskIds: string[],
+): Map<string, { userId: string; userName: string | null }[]> {
+  const result = new Map<string, { userId: string; userName: string | null }[]>();
+  if (taskIds.length === 0) return result;
+  const placeholders = taskIds.map(() => "?").join(",");
+  const rows = db
+    .prepare(
+      `
+        SELECT ta.task_id,
+               ta.user_id,
+               u.user_name,
+               ta.sort_order
+          FROM task_assignees ta
+     LEFT JOIN users u ON u.user_id = ta.user_id
+         WHERE ta.task_id IN (${placeholders})
+      ORDER BY ta.task_id ASC, ta.sort_order ASC, ta.user_id ASC
+      `,
+    )
+    .all(...taskIds) as Array<{
+      task_id: string;
+      user_id: string;
+      user_name: string | null;
+      sort_order: number;
+    }>;
+  for (const row of rows) {
+    const list = result.get(row.task_id) ?? [];
+    list.push({ userId: row.user_id, userName: row.user_name });
+    result.set(row.task_id, list);
+  }
+  return result;
 }

@@ -9,7 +9,7 @@ export interface CalendarTaskSummary {
   workDate: string;
   dueDate: string;
   dueTime: string | null;
-  assigneeName: string | null;
+  assigneeNames: string[];
   createdByName: string | null;
 }
 
@@ -96,12 +96,10 @@ export function queryCalendar(from: string, to: string): CalendarResult {
         SELECT
           t.id, t.title, t.category, t.priority, t.status,
           t.work_date, t.due_date, t.due_time,
-          t.created_by_user_id, t.assignee_user_id,
-          uc.user_name AS created_by_name,
-          ua.user_name AS assignee_name
+          t.created_by_user_id,
+          uc.user_name AS created_by_name
         FROM tasks t
    LEFT JOIN users uc ON uc.user_id = t.created_by_user_id
-   LEFT JOIN users ua ON ua.user_id = t.assignee_user_id
        WHERE t.work_date >= ? AND t.work_date <= ?
     ORDER BY t.work_date ASC, datetime(t.created_at) ASC
       `,
@@ -116,10 +114,31 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       due_date: string;
       due_time: string | null;
       created_by_user_id: string | null;
-      assignee_user_id: string | null;
       created_by_name: string | null;
-      assignee_name: string | null;
     }>;
+
+  // 다중 담당자 로드
+  const taskIds = taskRows.map((r) => r.id);
+  const assigneeNamesByTask = new Map<string, string[]>();
+  if (taskIds.length > 0) {
+    const placeholders = taskIds.map(() => "?").join(",");
+    const assigneeRows = db
+      .prepare(
+        `
+          SELECT ta.task_id, COALESCE(u.user_name, ta.user_id) AS name
+            FROM task_assignees ta
+       LEFT JOIN users u ON u.user_id = ta.user_id
+           WHERE ta.task_id IN (${placeholders})
+        ORDER BY ta.task_id, ta.sort_order, ta.user_id
+        `,
+      )
+      .all(...taskIds) as Array<{ task_id: string; name: string }>;
+    for (const row of assigneeRows) {
+      const list = assigneeNamesByTask.get(row.task_id) ?? [];
+      list.push(row.name);
+      assigneeNamesByTask.set(row.task_id, list);
+    }
+  }
 
   for (const row of taskRows) {
     const bucket = ensureBucket(days, row.work_date);
@@ -132,7 +151,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       workDate: row.work_date,
       dueDate: row.due_date,
       dueTime: row.due_time,
-      assigneeName: row.assignee_name,
+      assigneeNames: assigneeNamesByTask.get(row.id) ?? [],
       createdByName: row.created_by_name,
     });
   }

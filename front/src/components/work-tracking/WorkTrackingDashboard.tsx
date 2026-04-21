@@ -815,6 +815,7 @@ export function WorkTrackingDashboard() {
           dueDate: payload.dueDate || taskEditTarget.workDate,
           dueTime: payload.dueTime,
           note: payload.note,
+          assigneeUserIds: payload.assigneeUserIds,
         },
       });
 
@@ -828,6 +829,11 @@ export function WorkTrackingDashboard() {
       }
 
       const nextStatus = payload.status ?? taskEditTarget.status;
+      const userPool = taskQuery?.users ?? [];
+      const nextAssignees = payload.assigneeUserIds.map((id) => {
+        const found = userPool.find((u) => u.userId === id);
+        return { userId: id, userName: found?.userName ?? null };
+      });
       setTaskEditTarget(null);
       setSelectedTask((prev) =>
         prev && prev.id === payload.taskId
@@ -840,6 +846,7 @@ export function WorkTrackingDashboard() {
               dueDate: payload.dueDate || taskEditTarget.workDate,
               dueTime: payload.dueTime,
               note: payload.note,
+              assignees: nextAssignees,
             }
           : prev,
       );
@@ -860,6 +867,7 @@ export function WorkTrackingDashboard() {
         dueTime: payload.dueTime,
         estimate: 0,
         note: payload.note,
+        assigneeUserIds: payload.assigneeUserIds,
       },
     });
     applyDashboardState(activeDate, result.days, { syncNotes: false });
@@ -1551,6 +1559,7 @@ export function WorkTrackingDashboard() {
               dueTime: task.dueTime,
               note: task.note,
               workDate: task.workDate,
+              assigneeUserIds: task.assignees.map((a) => a.userId),
             });
             setTaskCreateOpen(true);
           }}
@@ -1561,6 +1570,8 @@ export function WorkTrackingDashboard() {
         defaultDueDate={activeDate}
         mode={taskEditTarget ? "edit" : "create"}
         initialTask={taskEditTarget}
+        users={taskQuery?.users ?? []}
+        currentUserId={currentUser?.userId ?? null}
         onClose={() => {
           setTaskCreateOpen(false);
           setTaskEditTarget(null);

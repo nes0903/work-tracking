@@ -7,7 +7,7 @@ export interface CalendarTaskSummary {
   workDate: string;
   dueDate: string;
   dueTime: string | null;
-  assigneeName: string | null;
+  assigneeNames: string[];
   createdByName: string | null;
 }
 

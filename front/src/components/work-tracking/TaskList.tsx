@@ -60,7 +60,9 @@ function TaskRow({
   currentUserId: string | null;
 }) {
   const badge = dueBadge(task.dueDate);
-  const isMine = currentUserId && task.assignee?.userId === currentUserId;
+  const isMine =
+    currentUserId !== null &&
+    task.assignees.some((a) => a.userId === currentUserId);
 
   return (
     <button type="button" className="task-row" onClick={() => onSelect(task)}>
@@ -91,7 +93,16 @@ function TaskRow({
 
 function formatAssignment(task: TaskListItem): string {
   const creator = task.createdBy?.userName ?? "미지정";
-  const assignee = task.assignee?.userName ?? "미지정";
-  if (creator === assignee) return creator;
-  return `${creator} → ${assignee}`;
+  const assigneeNames =
+    task.assignees.length === 0
+      ? "미지정"
+      : task.assignees
+          .slice(0, 3)
+          .map((a) => a.userName ?? a.userId)
+          .join(", ") + (task.assignees.length > 3 ? ` 외 ${task.assignees.length - 3}명` : "");
+  if (task.assignees.length === 0) return creator;
+  if (task.assignees.length === 1 && task.assignees[0].userName === creator) {
+    return creator;
+  }
+  return `${creator} → ${assigneeNames}`;
 }

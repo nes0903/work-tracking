@@ -62,6 +62,25 @@ function runColumnMigrations(db: DatabaseSync): void {
 
   seedSiteLinksIfEmpty(db);
   backfillSiteLinkCategories(db);
+  backfillTaskAssignees(db);
+}
+
+/**
+ * 단일 assignee_user_id → 정규화된 task_assignees 로 1회 복사.
+ * task_assignees 가 비어있고 tasks.assignee_user_id 에 값이 있을 때만 실행.
+ */
+function backfillTaskAssignees(db: DatabaseSync): void {
+  if (!tableHasColumn(db, "tasks", "assignee_user_id")) return;
+  const existing = db
+    .prepare(`SELECT COUNT(*) AS c FROM task_assignees`)
+    .get() as { c: number } | undefined;
+  if ((existing?.c ?? 0) > 0) return;
+
+  db.exec(`
+    INSERT OR IGNORE INTO task_assignees (task_id, user_id)
+    SELECT id, assignee_user_id FROM tasks
+     WHERE assignee_user_id IS NOT NULL AND TRIM(assignee_user_id) <> ''
+  `);
 }
 
 function inferSiteLinkCategory(label: string, url: string): string {

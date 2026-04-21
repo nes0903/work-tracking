@@ -113,7 +113,13 @@ export function TaskDetailDrawer({
           <p className="task-drawer-meta">
             <strong>{task.createdBy?.userName ?? "미지정"}</strong>
             <span className="task-drawer-arrow">→</span>
-            <strong>{task.assignee?.userName ?? "미지정"}</strong>
+            <strong>
+              {task.assignees.length === 0
+                ? "미지정"
+                : task.assignees
+                    .map((a) => a.userName ?? a.userId)
+                    .join(", ")}
+            </strong>
           </p>
         </section>
 

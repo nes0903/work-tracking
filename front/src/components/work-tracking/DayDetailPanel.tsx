@@ -121,7 +121,15 @@ function TaskItem({ task }: { task: CalendarTaskSummary }) {
         <span className="calendar-day-item-meta">
           {task.category ? <span>📂 {task.category}</span> : null}
           {task.dueTime ? <span>⏰ {task.dueTime}</span> : null}
-          <span>👤 {task.assigneeName ?? "미지정"}</span>
+          <span>
+            👤{" "}
+            {task.assigneeNames.length === 0
+              ? "미지정"
+              : task.assigneeNames.slice(0, 2).join(", ") +
+                (task.assigneeNames.length > 2
+                  ? ` 외 ${task.assigneeNames.length - 2}명`
+                  : "")}
+          </span>
           <span className={`status-tag status-${task.status}`}>
             {task.status === "todo"
               ? "할 일"

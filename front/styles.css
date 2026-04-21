@@ -3554,6 +3554,44 @@ button {
   gap: 12px;
 }
 
+.assignee-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assignee-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.assignee-chip {
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms linear, color 150ms linear, border-color 150ms linear;
+}
+
+.assignee-chip:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.assignee-chip.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
 .task-create-modal-actions {
   display: flex;
   justify-content: flex-end;

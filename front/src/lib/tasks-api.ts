@@ -24,7 +24,7 @@ export interface TaskListItem {
   carryoverCount: number;
   carriedFromDate: string | null;
   createdBy: UserRef | null;
-  assignee: UserRef | null;
+  assignees: UserRef[];
   referenceCount: number;
 }
 

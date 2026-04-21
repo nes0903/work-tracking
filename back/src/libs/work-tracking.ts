@@ -1,6 +1,11 @@
 export type TaskPriority = "high" | "medium" | "low";
 export type TaskStatus = "todo" | "doing" | "done";
 
+export interface TaskAssignee {
+  userId: string;
+  userName: string | null;
+}
+
 export interface Task {
   id: string;
   lineageId: string;
@@ -17,6 +22,7 @@ export interface Task {
   carryoverCount: number;
   carriedFromDate: string | null;
   completedAt: string | null;
+  assignees: TaskAssignee[];
 }
 
 export interface WorkDay {
@@ -177,6 +183,21 @@ function normalizeTask(task: unknown, dateKey: string): Task {
       ? value.carriedFromDate
       : null,
     completedAt: isValidDateTime(value.completedAt) ? value.completedAt : null,
+    assignees: Array.isArray(value.assignees)
+      ? value.assignees
+          .filter(
+            (a): a is { userId: string; userName: string | null } =>
+              !!a &&
+              typeof (a as { userId?: unknown }).userId === "string",
+          )
+          .map((a) => ({
+            userId: (a as { userId: string }).userId,
+            userName:
+              typeof (a as { userName?: unknown }).userName === "string"
+                ? ((a as { userName: string }).userName)
+                : null,
+          }))
+      : [],
   };
 }
 
