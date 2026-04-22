@@ -23,26 +23,45 @@ export function TaskList({ items, onSelect, currentUserId }: Props) {
     return <p className="empty-note">조건에 맞는 태스크가 없습니다.</p>;
   }
 
-  const rows = buildTreeRows(items);
+  const groups: Record<"todo" | "doing" | "done", TaskListItem[]> = {
+    todo: [],
+    doing: [],
+    done: [],
+  };
+  for (const item of items) {
+    groups[item.status].push(item);
+  }
 
   return (
     <div className="task-list-groups">
-      <div className="task-list-section-head">
-        <h3>태스크 트리</h3>
-        <span className="task-list-section-count">{items.length}</span>
-      </div>
-      <ul className="task-rows task-tree-rows">
-        {rows.map(({ task, visibleDepth }) => (
-          <li key={task.id}>
-            <TaskRow
-              task={task}
-              visibleDepth={visibleDepth}
-              onSelect={onSelect}
-              currentUserId={currentUserId ?? null}
-            />
-          </li>
-        ))}
-      </ul>
+      {(["todo", "doing", "done"] as const).map((status) => {
+        const rows = buildTreeRows(groups[status]);
+        return groups[status].length === 0 ? null : (
+          <section
+            key={status}
+            className={`task-list-section status-${status}`}
+          >
+            <header className="task-list-section-head">
+              <h3>{statusLabel(status)}</h3>
+              <span className="task-list-section-count">
+                {groups[status].length}
+              </span>
+            </header>
+            <ul className="task-rows task-tree-rows">
+              {rows.map(({ task, visibleDepth }) => (
+                <li key={task.id}>
+                  <TaskRow
+                    task={task}
+                    visibleDepth={visibleDepth}
+                    onSelect={onSelect}
+                    currentUserId={currentUserId ?? null}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -114,9 +133,6 @@ function TaskRow({
           {task.title || "제목 없음"}
         </span>
         <span className="task-row-meta">
-          <span className={`task-row-status status-${task.status}`}>
-            {statusLabel(task.status)}
-          </span>
           {task.category ? (
             <span className="task-row-category">{task.category}</span>
           ) : null}

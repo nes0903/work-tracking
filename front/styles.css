@@ -450,28 +450,6 @@ button {
   font-size: 0.7rem;
 }
 
-.task-row-status {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.task-row-status.status-todo {
-  background: rgba(43, 90, 171, 0.14);
-  color: var(--primary);
-}
-
-.task-row-status.status-doing {
-  background: rgba(214, 134, 61, 0.16);
-  color: #8e4b0d;
-}
-
-.task-row-status.status-done {
-  background: rgba(47, 107, 74, 0.14);
-  color: var(--positive);
-}
-
 .task-row-parent {
   color: var(--on-surface-muted);
 }
