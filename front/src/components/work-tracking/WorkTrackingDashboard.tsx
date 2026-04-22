@@ -1877,7 +1877,7 @@ function buildLineWorksView(message: LineWorksArchiveMessage): LineWorksView {
   let title: string;
   let openAction: LineWorksView["openAction"] = null;
   if (text) {
-    title = text.length > 140 ? `${text.slice(0, 140)}…` : text;
+    title = text;
     if (firstAttachment) {
       openAction = {
         kind: "file",
