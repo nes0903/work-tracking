@@ -8,6 +8,7 @@ import {
   fetchLineWorksArchive,
   formatFileSize,
   type LineWorksArchive,
+  type LineWorksArchiveAttachment,
   type LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
 import { isOfficeFile } from "@/lib/file-preview";
@@ -160,6 +161,9 @@ export function WorkTrackingDashboard() {
   );
   const [lastSeenNotion, setLastSeenNotion] = useState<number>(0);
   const [lastSeenLineWorks, setLastSeenLineWorks] = useState<number>(0);
+  const [attachmentPreviewUrls, setAttachmentPreviewUrls] = useState<
+    Record<number, string | null>
+  >({});
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
   const allTasks = useMemo(
     () =>
@@ -663,6 +667,21 @@ export function WorkTrackingDashboard() {
       return null;
     }
   }
+
+  const ensureAttachmentPreviewUrl = useCallback(
+    async (attachment: LineWorksArchiveAttachment) => {
+      if (attachmentPreviewUrls[attachment.id] !== undefined) {
+        return attachmentPreviewUrls[attachment.id];
+      }
+      const resolved = await resolveAttachmentUrl(attachment.id);
+      setAttachmentPreviewUrls((current) => ({
+        ...current,
+        [attachment.id]: resolved?.url ?? null,
+      }));
+      return resolved?.url ?? null;
+    },
+    [attachmentPreviewUrls],
+  );
 
   async function openAttachment(
     id: number,
@@ -1550,6 +1569,14 @@ export function WorkTrackingDashboard() {
                               {view.subtitle}
                             </p>
                           ) : null}
+                          {message.attachments.length > 0 ? (
+                            <LineWorksAttachmentPreviews
+                              attachments={message.attachments}
+                              urls={attachmentPreviewUrls}
+                              onEnsureUrl={ensureAttachmentPreviewUrl}
+                              onOpen={openAttachment}
+                            />
+                          ) : null}
                         </div>
                         <div className="line-works-message-side">
                           <span className="line-works-message-time">
@@ -1813,6 +1840,206 @@ function TaskColumn({
       </div>
     </section>
   );
+}
+
+function LineWorksAttachmentPreviews({
+  attachments,
+  urls,
+  onEnsureUrl,
+  onOpen,
+}: {
+  attachments: LineWorksArchiveAttachment[];
+  urls: Record<number, string | null>;
+  onEnsureUrl: (
+    attachment: LineWorksArchiveAttachment,
+  ) => Promise<string | null>;
+  onOpen: (
+    id: number,
+    hintedFileName?: string | null,
+    hintedMimeType?: string | null,
+  ) => Promise<void>;
+}) {
+  useEffect(() => {
+    let mounted = true;
+    for (const attachment of attachments) {
+      if (
+        !isInlinePreviewable(attachment) ||
+        urls[attachment.id] !== undefined
+      ) {
+        continue;
+      }
+      void onEnsureUrl(attachment).then(() => {
+        if (!mounted) return;
+      });
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [attachments, onEnsureUrl, urls]);
+
+  return (
+    <div className="line-works-attachment-previews">
+      {attachments.map((attachment) => {
+        const kind = attachmentPreviewKind(attachment);
+        const url = urls[attachment.id];
+        const fileName = attachment.fileName ?? "파일";
+        const meta = [
+          attachment.mimeType,
+          formatFileSize(attachment.fileSize),
+        ].filter(Boolean);
+
+        if (kind === "image") {
+          return (
+            <button
+              key={attachment.id}
+              type="button"
+              className="line-works-preview-card image"
+              onClick={() =>
+                void onOpen(
+                  attachment.id,
+                  attachment.fileName,
+                  attachment.mimeType,
+                )
+              }
+            >
+              {url === undefined ? (
+                <span className="line-works-preview-loading">
+                  이미지 불러오는 중...
+                </span>
+              ) : url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs are short-lived and not configured for next/image optimization.
+                <img src={url} alt={fileName} loading="lazy" />
+              ) : (
+                <span className="line-works-preview-loading">
+                  미리보기 불가
+                </span>
+              )}
+              <span className="line-works-preview-caption">{fileName}</span>
+            </button>
+          );
+        }
+
+        if (kind === "video") {
+          return (
+            <div key={attachment.id} className="line-works-preview-card media">
+              {url === undefined ? (
+                <span className="line-works-preview-loading">
+                  동영상 불러오는 중...
+                </span>
+              ) : url ? (
+                <video src={url} controls preload="metadata" />
+              ) : (
+                <span className="line-works-preview-loading">
+                  미리보기 불가
+                </span>
+              )}
+              <button
+                type="button"
+                className="line-works-preview-file"
+                onClick={() =>
+                  void onOpen(
+                    attachment.id,
+                    attachment.fileName,
+                    attachment.mimeType,
+                  )
+                }
+              >
+                {fileName}
+              </button>
+            </div>
+          );
+        }
+
+        if (kind === "audio") {
+          return (
+            <div key={attachment.id} className="line-works-preview-card audio">
+              <span className="line-works-preview-icon">오디오</span>
+              {url === undefined ? (
+                <span className="line-works-preview-loading">
+                  불러오는 중...
+                </span>
+              ) : url ? (
+                <audio src={url} controls preload="metadata" />
+              ) : (
+                <span className="line-works-preview-loading">
+                  미리보기 불가
+                </span>
+              )}
+              <button
+                type="button"
+                className="line-works-preview-file"
+                onClick={() =>
+                  void onOpen(
+                    attachment.id,
+                    attachment.fileName,
+                    attachment.mimeType,
+                  )
+                }
+              >
+                {fileName}
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <button
+            key={attachment.id}
+            type="button"
+            className="line-works-preview-card file"
+            onClick={() =>
+              void onOpen(
+                attachment.id,
+                attachment.fileName,
+                attachment.mimeType,
+              )
+            }
+          >
+            <span className="line-works-preview-icon">
+              {fileIconLabel(attachment)}
+            </span>
+            <span className="line-works-preview-file">{fileName}</span>
+            {meta.length > 0 ? (
+              <span className="line-works-preview-meta">
+                {meta.join(" · ")}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function isInlinePreviewable(attachment: LineWorksArchiveAttachment): boolean {
+  const kind = attachmentPreviewKind(attachment);
+  return kind === "image" || kind === "video" || kind === "audio";
+}
+
+function attachmentPreviewKind(
+  attachment: LineWorksArchiveAttachment,
+): "image" | "video" | "audio" | "pdf" | "file" {
+  const mime = attachment.mimeType?.toLowerCase() ?? "";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  if (mime === "application/pdf") return "pdf";
+
+  const ext = attachment.fileName?.split(".").pop()?.toLowerCase() ?? "";
+  if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext)) {
+    return "image";
+  }
+  if (["mp4", "webm", "mov", "m4v"].includes(ext)) return "video";
+  if (["mp3", "wav", "m4a", "ogg"].includes(ext)) return "audio";
+  if (ext === "pdf") return "pdf";
+  return "file";
+}
+
+function fileIconLabel(attachment: LineWorksArchiveAttachment): string {
+  const kind = attachmentPreviewKind(attachment);
+  if (kind === "pdf") return "PDF";
+  if (isOfficeFile(attachment.fileName, attachment.mimeType)) return "문서";
+  return "파일";
 }
 
 const NOTION_NEW_TTL_MS = 24 * 60 * 60 * 1000;

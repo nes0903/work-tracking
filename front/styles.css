@@ -2413,6 +2413,124 @@ button {
   line-height: 1.5;
 }
 
+.line-works-attachment-previews {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.line-works-preview-card {
+  min-width: 0;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  overflow: hidden;
+}
+
+.line-works-preview-card.image,
+.line-works-preview-card.file {
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  text-align: left;
+}
+
+.line-works-preview-card.image {
+  display: grid;
+  gap: 0;
+  padding: 0;
+}
+
+.line-works-preview-card.image img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  background: var(--surface-container);
+}
+
+.line-works-preview-card.media,
+.line-works-preview-card.audio {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.line-works-preview-card.media video {
+  width: 100%;
+  max-height: 280px;
+  border-radius: var(--radius-sm);
+  background: #000;
+}
+
+.line-works-preview-card.audio audio {
+  width: 100%;
+}
+
+.line-works-preview-card.file {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  padding: 12px;
+}
+
+.line-works-preview-card:hover {
+  background: var(--surface-container);
+}
+
+.line-works-preview-caption,
+.line-works-preview-file {
+  min-width: 0;
+  color: var(--on-surface);
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.line-works-preview-caption {
+  padding: 9px 10px;
+}
+
+.line-works-preview-file {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.line-works-preview-file:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.line-works-preview-icon {
+  grid-row: span 2;
+  align-self: start;
+  min-width: 42px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.line-works-preview-meta,
+.line-works-preview-loading {
+  color: var(--on-surface-muted);
+  font-size: 0.72rem;
+}
+
+.line-works-preview-loading {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+  padding: 12px;
+  background: var(--surface-container);
+}
+
 .line-works-message-side {
   display: flex;
   flex-direction: column;
