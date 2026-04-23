@@ -335,6 +335,14 @@ export interface ArchiveResult {
   items: ArchiveMessage[];
   channels: ArchiveChannelSummary[];
   lastReceivedAt: string | null;
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 interface MessageDbRow {
@@ -375,14 +383,33 @@ interface ChannelSummaryRowWithMeta {
 
 export function listArchive(options?: {
   channelId?: string;
-  limit?: number;
+  page?: number;
+  perPage?: number;
 }): ArchiveResult {
   const db = getDatabase();
-  const rawLimit = options?.limit ?? 50;
-  const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 50, 1), 200);
+  const rawPage = options?.page ?? 1;
+  const rawPerPage = options?.perPage ?? 50;
+  const page = Math.max(Number.isFinite(rawPage) ? Math.floor(rawPage) : 1, 1);
+  const perPage = Math.min(
+    Math.max(Number.isFinite(rawPerPage) ? Math.floor(rawPerPage) : 50, 1),
+    200,
+  );
+  const offset = (page - 1) * perPage;
 
   const useChannelFilter = Boolean(options?.channelId);
   const channelParams = useChannelFilter ? [options!.channelId!] : [];
+
+  const totalRow = db
+    .prepare(
+      `
+        SELECT COUNT(*) AS c
+        FROM line_works_messages m
+        ${useChannelFilter ? "WHERE m.channel_id = ?" : ""}
+      `,
+    )
+    .get(...channelParams) as { c: number } | undefined;
+  const total = totalRow?.c ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const messages = db
     .prepare(
@@ -394,12 +421,12 @@ export function listArchive(options?: {
         LEFT JOIN users u ON u.user_id = m.user_id
         ${useChannelFilter ? "WHERE m.channel_id = ?" : ""}
         ORDER BY COALESCE(m.issued_at, m.received_at) DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
       `,
     )
-    .all(...channelParams, limit) as unknown as (MessageDbRow & {
-      user_name: string | null;
-    })[];
+    .all(...channelParams, perPage, offset) as unknown as (MessageDbRow & {
+    user_name: string | null;
+  })[];
 
   const messageIds = messages.map((row) => row.message_id);
 
@@ -505,5 +532,13 @@ export function listArchive(options?: {
     items,
     channels,
     lastReceivedAt: lastRow?.last ?? null,
+    pagination: {
+      page,
+      perPage,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
   };
 }

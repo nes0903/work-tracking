@@ -8,12 +8,15 @@ export class LineWorksArchiveController {
   @Get()
   list(
     @Query("channelId") channelId?: string,
-    @Query("limit") limitStr?: string,
+    @Query("page") pageStr?: string,
+    @Query("perPage") perPageStr?: string,
   ) {
-    const limit = limitStr ? Number(limitStr) : undefined;
+    const page = pageStr ? Number(pageStr) : undefined;
+    const perPage = perPageStr ? Number(perPageStr) : undefined;
     const result = listArchive({
       channelId: channelId && channelId.trim() ? channelId.trim() : undefined,
-      limit: Number.isFinite(limit) ? (limit as number) : undefined,
+      page: Number.isFinite(page) ? (page as number) : undefined,
+      perPage: Number.isFinite(perPage) ? (perPage as number) : undefined,
     });
     return { ok: true, ...result };
   }

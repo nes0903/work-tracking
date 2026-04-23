@@ -140,6 +140,18 @@ export function WorkTrackingDashboard() {
   const [lineWorksArchive, setLineWorksArchive] = useState<LineWorksArchive>(
     () => emptyLineWorksArchive(),
   );
+  const [lineWorksPage, setLineWorksPage] = useState(1);
+  const [lineWorksPerPage, setLineWorksPerPage] = useState<PerPageOption>(
+    () => {
+      if (typeof window === "undefined") return 50;
+      const raw = window.localStorage.getItem("wt:perPage:lineWorks");
+      const n = raw ? Number(raw) : 50;
+      return (
+        PER_PAGE_OPTIONS.includes(n as PerPageOption) ? n : 50
+      ) as PerPageOption;
+    },
+  );
+  const [lineWorksLoading, setLineWorksLoading] = useState(false);
   const [selectedLineWorksChannel, setSelectedLineWorksChannel] = useState<
     string | null
   >(null);
@@ -288,9 +300,10 @@ export function WorkTrackingDashboard() {
 
     async function loadLineWorks() {
       try {
-        const archive = await fetchLineWorksArchive(null);
+        const archive = await fetchLineWorksArchive(null, 1, lineWorksPerPage);
         if (mounted) {
           setLineWorksArchive(archive);
+          setLineWorksPage(1);
         }
       } catch (error) {
         console.error("[dashboard] failed to load line works archive", error);
@@ -330,7 +343,7 @@ export function WorkTrackingDashboard() {
       mounted = false;
       eventSource.close();
     };
-  }, []);
+  }, [lineWorksPerPage]);
 
   useEffect(() => {
     let mounted = true;
@@ -425,24 +438,38 @@ export function WorkTrackingDashboard() {
   }, [githubFeed.repos, selectedRepo]);
 
   useEffect(() => {
-    // 채널 필터가 변경되면 재조회. 필터 없음(null)일 땐 mount/SSE 경로로 충분.
-    if (activeView !== "line-works" || selectedLineWorksChannel === null) {
-      return;
-    }
-    let mounted = true;
-    void fetchLineWorksArchive(selectedLineWorksChannel)
-      .then((next) => {
-        if (mounted) {
-          setLineWorksArchive(next);
-        }
-      })
-      .catch((error) => {
+    setLineWorksPage(1);
+  }, [selectedLineWorksChannel]);
+
+  const loadLineWorksArchivePage = useCallback(
+    async (page: number, perPage: PerPageOption, channelId: string | null) => {
+      setLineWorksLoading(true);
+      try {
+        const next = await fetchLineWorksArchive(channelId, page, perPage);
+        setLineWorksArchive(next);
+      } catch (error) {
         console.error("[dashboard] failed to load line works archive", error);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [activeView, selectedLineWorksChannel]);
+      } finally {
+        setLineWorksLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (activeView !== "line-works") return;
+    void loadLineWorksArchivePage(
+      lineWorksPage,
+      lineWorksPerPage,
+      selectedLineWorksChannel,
+    );
+  }, [
+    activeView,
+    lineWorksPage,
+    lineWorksPerPage,
+    loadLineWorksArchivePage,
+    selectedLineWorksChannel,
+  ]);
 
   const reloadTaskReferences = useCallback(async () => {
     const taskIds = activeDay.tasks.map((task) => task.id);
@@ -894,6 +921,14 @@ export function WorkTrackingDashboard() {
       window.localStorage.setItem("wt:perPage:notion", String(next));
     }
     setNotionPage(1);
+  }
+
+  function handleLineWorksPerPageChange(next: PerPageOption) {
+    setLineWorksPerPage(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("wt:perPage:lineWorks", String(next));
+    }
+    setLineWorksPage(1);
   }
 
   function markNotionEventRead(eventId: string | null | undefined) {
@@ -1542,7 +1577,9 @@ export function WorkTrackingDashboard() {
               ) : null}
 
               <div className="line-works-messages">
-                {lineWorksArchive.items.length === 0 ? (
+                {lineWorksLoading && lineWorksArchive.items.length === 0 ? (
+                  <p className="empty-note">불러오는 중...</p>
+                ) : lineWorksArchive.items.length === 0 ? (
                   <p className="empty-note">수신된 메시지가 없습니다.</p>
                 ) : (
                   lineWorksArchive.items.map((message) => {
@@ -1656,6 +1693,17 @@ export function WorkTrackingDashboard() {
                   })
                 )}
               </div>
+              {lineWorksArchive.pagination.total > 0 ? (
+                <Pagination
+                  page={lineWorksArchive.pagination.page}
+                  perPage={lineWorksArchive.pagination.perPage}
+                  total={lineWorksArchive.pagination.total}
+                  totalPages={lineWorksArchive.pagination.totalPages}
+                  onPageChange={setLineWorksPage}
+                  onPerPageChange={handleLineWorksPerPageChange}
+                  disabled={lineWorksLoading}
+                />
+              ) : null}
             </section>
           ) : (
             <>
