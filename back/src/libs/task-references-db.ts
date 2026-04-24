@@ -4,6 +4,7 @@ export type ReferenceSource =
   | "line_works_message"
   | "line_works_attachment"
   | "notion_page"
+  | "site_link"
   | "figma_node"
   | "url";
 
@@ -334,6 +335,44 @@ export function autoFillReference(
             editedAt: row.edited_at,
           }
         : null,
+    };
+  }
+
+  if (source === "site_link") {
+    const id = Number(externalId);
+    if (!Number.isInteger(id)) {
+      return { title: null, excerpt: null, externalUrl: null, metadata: null };
+    }
+    const row = db
+      .prepare(
+        `SELECT id, label, url, category, sort_order, updated_at
+           FROM site_links
+          WHERE id = ?`,
+      )
+      .get(id) as
+      | {
+          id: number;
+          label: string;
+          url: string;
+          category: string | null;
+          sort_order: number;
+          updated_at: string;
+        }
+      | undefined;
+    if (!row) {
+      return { title: null, excerpt: null, externalUrl: null, metadata: null };
+    }
+    return {
+      title: truncate(row.label, 200),
+      excerpt: truncate(row.category, 200),
+      externalUrl: row.url,
+      metadata: {
+        siteLinkId: row.id,
+        url: row.url,
+        category: row.category,
+        sortOrder: row.sort_order,
+        updatedAt: row.updated_at,
+      },
     };
   }
 

@@ -285,8 +285,33 @@ function buildRefDisplay(ref: TaskReference): {
     };
   }
 
+  if (ref.source === "site_link") {
+    const url =
+      (typeof metadata.url === "string" && metadata.url) ||
+      ref.externalUrl ||
+      null;
+    const category =
+      typeof metadata.category === "string" && metadata.category
+        ? metadata.category
+        : null;
+    const host = url ? safeHostname(url) : null;
+    const parts = [category, host].filter(Boolean);
+    return {
+      title: ref.title ?? url ?? "링크",
+      excerpt: parts.length > 0 ? parts.join(" · ") : ref.excerpt ?? url,
+    };
+  }
+
   return {
     title: ref.title ?? "제목 없음",
     excerpt: ref.excerpt ?? null,
   };
+}
+
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }

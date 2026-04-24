@@ -2,6 +2,7 @@ export type ReferenceSource =
   | "line_works_message"
   | "line_works_attachment"
   | "notion_page"
+  | "site_link"
   | "figma_node"
   | "url";
 
@@ -103,6 +104,8 @@ export function sourceLabel(source: ReferenceSource): string {
       return "Works 파일";
     case "notion_page":
       return "Notion";
+    case "site_link":
+      return "링크 저장소";
     case "figma_node":
       return "Figma";
     case "url":
@@ -118,6 +121,8 @@ export function sourceIcon(source: ReferenceSource): string {
       return "📎";
     case "notion_page":
       return "📝";
+    case "site_link":
+      return "🔖";
     case "figma_node":
       return "🎨";
     case "url":

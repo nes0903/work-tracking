@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isFigmaUrl, parseFigmaUrl } from "@/lib/figma-url";
 import { formatFileSize } from "@/lib/line-works-archive";
 import type {
   LineWorksArchiveChannelSummary,
   LineWorksArchiveMessage,
 } from "@/lib/line-works-archive";
+import { fetchSiteLinks, type SiteLink } from "@/lib/site-links-api";
 import {
   isPendingSelected,
   pendingKey,
@@ -19,7 +20,13 @@ import {
 import type { ChannelLabelMap, StorageItem } from "@/lib/storage";
 import type { NotionUpdateItem } from "@/lib/work-tracking";
 
-type TabId = "notion" | "line-works" | "figma" | "storage" | "other-url";
+type TabId =
+  | "notion"
+  | "line-works"
+  | "figma"
+  | "storage"
+  | "site-links"
+  | "other-url";
 
 interface Props {
   pending: PendingReference[];
@@ -87,6 +94,13 @@ export function ReferenceCollector({
         </button>
         <button
           type="button"
+          className={`ref-tab ${tab === "site-links" ? "active" : ""}`.trim()}
+          onClick={() => setTab("site-links")}
+        >
+          링크 저장소
+        </button>
+        <button
+          type="button"
           className={`ref-tab ${tab === "other-url" ? "active" : ""}`.trim()}
           onClick={() => setTab("other-url")}
         >
@@ -114,6 +128,9 @@ export function ReferenceCollector({
             pending={pending}
             onToggle={toggle}
           />
+        ) : null}
+        {tab === "site-links" ? (
+          <SiteLinksTab pending={pending} onToggle={toggle} />
         ) : null}
         {tab === "other-url" ? <OtherUrlTab onAdd={addFresh} /> : null}
       </div>
@@ -643,6 +660,122 @@ function StorageTab({
       </ul>
     </div>
   );
+}
+
+/* ============================================================
+   링크 저장소 탭
+   ============================================================ */
+function SiteLinksTab({
+  pending,
+  onToggle,
+}: {
+  pending: PendingReference[];
+  onToggle: (ref: PendingReference) => void;
+}) {
+  const [links, setLinks] = useState<SiteLink[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    void fetchSiteLinks()
+      .then((items) => {
+        if (mounted) setLinks(items);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? links.filter((link) => {
+          return (
+            link.label.toLowerCase().includes(q) ||
+            link.url.toLowerCase().includes(q) ||
+            (link.category ?? "").toLowerCase().includes(q)
+          );
+        })
+      : links;
+    return list.slice(0, 100);
+  }, [links, query]);
+
+  if (loading) {
+    return <p className="empty-note">링크 저장소를 불러오는 중...</p>;
+  }
+
+  if (links.length === 0) {
+    return <p className="empty-note">저장된 링크가 없습니다.</p>;
+  }
+
+  return (
+    <div className="ref-picker">
+      <input
+        type="text"
+        className="ref-search"
+        placeholder="이름·URL·카테고리 검색..."
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <ul className="ref-picker-list">
+        {filtered.map((link) => {
+          const hostname = safeHostname(link.url);
+          const subtitle = [link.category, hostname].filter(Boolean).join(" / ");
+          const ref: PendingReference = {
+            source: "site_link",
+            externalId: String(link.id),
+            title: link.label,
+            excerpt: subtitle || link.url,
+            externalUrl: link.url,
+            metadata: {
+              siteLinkId: link.id,
+              url: link.url,
+              category: link.category,
+              sortOrder: link.sortOrder,
+            },
+          };
+          const selected = isPendingSelected(pending, {
+            source: "site_link",
+            externalId: String(link.id),
+          });
+
+          return (
+            <li key={link.id}>
+              <button
+                type="button"
+                className={`ref-picker-item ${selected ? "selected" : ""}`.trim()}
+                onClick={() => onToggle(ref)}
+                title={link.url}
+              >
+                <div className="ref-picker-main">
+                  <span className="ref-picker-title">🔖 {link.label}</span>
+                  <span className="ref-picker-meta">
+                    {subtitle || link.url}
+                  </span>
+                </div>
+                <span className="ref-picker-indicator">
+                  {selected ? "✓" : "+"}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 /* ============================================================

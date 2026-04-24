@@ -3,6 +3,7 @@ export type PendingReferenceSource =
   | "notion_page"
   | "line_works_message"
   | "line_works_attachment"
+  | "site_link"
   | "figma_node";
 
 export interface PendingReference {
@@ -59,6 +60,8 @@ export function sourceIcon(source: PendingReferenceSource): string {
       return "💬";
     case "line_works_attachment":
       return "📎";
+    case "site_link":
+      return "🔖";
     case "figma_node":
       return "🎨";
     default:
@@ -76,6 +79,8 @@ export function sourceLabel(source: PendingReferenceSource): string {
       return "Works 메시지";
     case "line_works_attachment":
       return "Works 파일";
+    case "site_link":
+      return "링크 저장소";
     case "figma_node":
       return "Figma";
     default:
