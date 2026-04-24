@@ -9,6 +9,7 @@ export interface SiteLink {
 }
 
 export const SITE_LINK_CATEGORIES = [
+  "Works",
   "보고팡",
   "푸딩툰",
   "픽미툰",
@@ -25,15 +26,17 @@ export async function fetchSiteLinks(): Promise<SiteLink[]> {
       ok: boolean;
       items?: SiteLink[];
     };
-    return payload.ok ? payload.items ?? [] : [];
+    return payload.ok ? (payload.items ?? []) : [];
   } catch {
     return [];
   }
 }
 
-export async function createSiteLink(
-  input: { label: string; url: string; category?: string | null },
-): Promise<SiteLink | null> {
+export async function createSiteLink(input: {
+  label: string;
+  url: string;
+  category?: string | null;
+}): Promise<SiteLink | null> {
   try {
     const response = await fetch("/api/site-links", {
       method: "POST",

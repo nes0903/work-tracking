@@ -6,10 +6,14 @@ import {
   copyToClipboard,
   emptyLineWorksArchive,
   fetchLineWorksArchive,
+  fetchLineWorksLinkPreview,
   formatFileSize,
+  saveLineWorksLink,
   type LineWorksArchive,
   type LineWorksArchiveAttachment,
+  type LineWorksArchiveLink,
   type LineWorksArchiveMessage,
+  type LineWorksLinkPreview,
 } from "@/lib/line-works-archive";
 import { isOfficeFile } from "@/lib/file-preview";
 import { fetchCurrentUser, logout, type SessionUser } from "@/lib/session";
@@ -176,6 +180,12 @@ export function WorkTrackingDashboard() {
   const [attachmentPreviewUrls, setAttachmentPreviewUrls] = useState<
     Record<number, string | null>
   >({});
+  const [linkPreviews, setLinkPreviews] = useState<
+    Record<number, LineWorksLinkPreview | null>
+  >({});
+  const [savedLineWorksLinks, setSavedLineWorksLinks] = useState<
+    Record<number, number | null>
+  >({});
   const activeDay = useMemo(() => getDay(days, activeDate), [activeDate, days]);
   const allTasks = useMemo(
     () =>
@@ -254,6 +264,9 @@ export function WorkTrackingDashboard() {
           readEventIds: Array.isArray(payload.readEventIds)
             ? payload.readEventIds
             : [],
+          newCount: Number.isFinite(payload.newCount)
+            ? Math.max(0, Math.floor(payload.newCount))
+            : 0,
         });
         setNotionReadSet(new Set(payload.readEventIds ?? []));
       } catch {
@@ -381,19 +394,7 @@ export function WorkTrackingDashboard() {
     });
   }, [activeView, currentUser]);
 
-  const notionNewCount = useMemo(() => {
-    return notionFeed.items.reduce<number>((count, item) => {
-      return isNotionItemNewInner(
-        item.editedAt,
-        item.eventId ?? null,
-        notionReadSet,
-        lastSeenNotion,
-      )
-        ? count + 1
-        : count;
-    }, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notionFeed.items, notionReadSet, lastSeenNotion]);
+  const notionNewCount = notionFeed.newCount;
 
   const lineWorksNewCount = useMemo(() => {
     if (!lastSeenLineWorks) return 0;
@@ -710,6 +711,39 @@ export function WorkTrackingDashboard() {
     [attachmentPreviewUrls],
   );
 
+  const ensureLineWorksLinkPreview = useCallback(
+    async (link: LineWorksArchiveLink) => {
+      if (linkPreviews[link.id] !== undefined) {
+        return linkPreviews[link.id];
+      }
+      const preview = await fetchLineWorksLinkPreview(link.id);
+      setLinkPreviews((current) => ({
+        ...current,
+        [link.id]: preview,
+      }));
+      return preview;
+    },
+    [linkPreviews],
+  );
+
+  const handleSaveLineWorksLink = useCallback(
+    async (link: LineWorksArchiveLink) => {
+      const existing = savedLineWorksLinks[link.id] ?? link.savedSiteLinkId;
+      if (existing) return existing;
+      const saved = await saveLineWorksLink(link.id);
+      if (!saved) {
+        window.alert("링크 저장에 실패했습니다.");
+        return null;
+      }
+      setSavedLineWorksLinks((current) => ({
+        ...current,
+        [link.id]: saved.item.id,
+      }));
+      return saved.item.id;
+    },
+    [savedLineWorksLinks],
+  );
+
   async function openAttachment(
     id: number,
     hintedFileName?: string | null,
@@ -933,12 +967,22 @@ export function WorkTrackingDashboard() {
 
   function markNotionEventRead(eventId: string | null | undefined) {
     if (!eventId) return;
+    const item = notionFeed.items.find((entry) => entry.eventId === eventId);
+    const wasNew = item
+      ? isNotionItemNew(item.editedAt, item.eventId)
+      : false;
     setNotionReadSet((prev) => {
       if (prev.has(eventId)) return prev;
       const next = new Set(prev);
       next.add(eventId);
       return next;
     });
+    if (wasNew) {
+      setNotionFeed((prev) => ({
+        ...prev,
+        newCount: Math.max(0, prev.newCount - 1),
+      }));
+    }
     void markNotionRead([eventId]);
   }
 
@@ -957,7 +1001,10 @@ export function WorkTrackingDashboard() {
       void markNotionRead(eventIds);
     }
     const at = await markLastSeen("notion");
-    if (at) setLastSeenNotion(parseTimestamp(at));
+    if (at) {
+      setLastSeenNotion(parseTimestamp(at));
+      setNotionFeed((prev) => ({ ...prev, newCount: 0 }));
+    }
   }
 
   async function handleTaskCreateSubmit(payload: TaskCreateSubmit) {
@@ -1614,6 +1661,15 @@ export function WorkTrackingDashboard() {
                               onOpen={openAttachment}
                             />
                           ) : null}
+                          {message.links.length > 0 ? (
+                            <LineWorksLinkPreviews
+                              links={message.links}
+                              previews={linkPreviews}
+                              savedLinks={savedLineWorksLinks}
+                              onEnsurePreview={ensureLineWorksLinkPreview}
+                              onSave={handleSaveLineWorksLink}
+                            />
+                          ) : null}
                         </div>
                         <div className="line-works-message-side">
                           <span className="line-works-message-time">
@@ -2057,6 +2113,95 @@ function LineWorksAttachmentPreviews({
       })}
     </div>
   );
+}
+
+function LineWorksLinkPreviews({
+  links,
+  previews,
+  savedLinks,
+  onEnsurePreview,
+  onSave,
+}: {
+  links: LineWorksArchiveLink[];
+  previews: Record<number, LineWorksLinkPreview | null>;
+  savedLinks: Record<number, number | null>;
+  onEnsurePreview: (
+    link: LineWorksArchiveLink,
+  ) => Promise<LineWorksLinkPreview | null>;
+  onSave: (link: LineWorksArchiveLink) => Promise<number | null>;
+}) {
+  useEffect(() => {
+    for (const link of links) {
+      if (previews[link.id] !== undefined) continue;
+      void onEnsurePreview(link);
+    }
+  }, [links, onEnsurePreview, previews]);
+
+  return (
+    <div className="line-works-link-previews">
+      {links.map((link) => {
+        const preview = previews[link.id];
+        const savedSiteLinkId = savedLinks[link.id] ?? link.savedSiteLinkId;
+        const fallbackHost = safeHostname(link.url);
+        const title =
+          preview?.status === "success"
+            ? preview.title || fallbackHost || link.url
+            : fallbackHost || link.url;
+        const description =
+          preview?.status === "success" ? preview.description : null;
+        const siteName =
+          preview?.status === "success" ? preview.siteName : fallbackHost;
+        const imageUrl =
+          preview?.status === "success" ? preview.imageUrl : null;
+
+        return (
+          <article key={link.id} className="line-works-link-preview">
+            <a
+              className="line-works-link-preview-main"
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {imageUrl ? (
+                <span className="line-works-link-preview-image">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- external Open Graph images are not configured for next/image optimization. */}
+                  <img src={imageUrl} alt="" loading="lazy" />
+                </span>
+              ) : (
+                <span className="line-works-link-preview-fallback">
+                  {siteName?.slice(0, 1).toUpperCase() || "L"}
+                </span>
+              )}
+              <span className="line-works-link-preview-copy">
+                <span className="line-works-link-preview-site">
+                  {siteName || "링크"}
+                </span>
+                <strong>{title}</strong>
+                {description ? <span>{description}</span> : null}
+                <span className="line-works-link-preview-url">{link.url}</span>
+              </span>
+            </a>
+            <button
+              type="button"
+              className="line-works-link-save"
+              disabled={Boolean(savedSiteLinkId)}
+              onClick={() => void onSave(link)}
+            >
+              {savedSiteLinkId ? "저장됨" : "링크 저장"}
+            </button>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 function isInlinePreviewable(attachment: LineWorksArchiveAttachment): boolean {

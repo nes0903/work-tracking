@@ -1,4 +1,5 @@
 import {
+  countNewNotionUpdateEvents,
   getGithubFeedFromStore,
   listNotionUpdateEvents,
   type NotionFeedPage,
@@ -13,6 +14,7 @@ export interface NotionFeedQuery {
 
 export interface NotionFeedResult extends NotionFeedPage {
   readEventIds: string[];
+  newCount: number;
 }
 
 export async function getNotionFeed(
@@ -24,15 +26,17 @@ export async function getNotionFeed(
   const feed = listNotionUpdateEvents(page, perPage);
 
   let readEventIds: string[] = [];
+  let newCount = 0;
   if (userId) {
     const ids = feed.items
       .map((it) => it.eventId)
       .filter((v): v is string => typeof v === "string" && v.length > 0);
     const readSet = getNotionReadSet(userId, ids);
     readEventIds = ids.filter((id) => readSet.has(id));
+    newCount = countNewNotionUpdateEvents(userId);
   }
 
-  return { ...feed, readEventIds };
+  return { ...feed, readEventIds, newCount };
 }
 
 export async function getGithubFeed() {

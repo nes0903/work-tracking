@@ -152,6 +152,16 @@ export function insertLinks(messageId: string, urls: string[]): void {
   }
 }
 
+export function getLineWorksLinkById(
+  id: number,
+): { id: number; messageId: string; url: string } | null {
+  const db = getDatabase();
+  const row = db
+    .prepare(`SELECT id, message_id, url FROM line_works_links WHERE id = ?`)
+    .get(id) as { id: number; message_id: string; url: string } | undefined;
+  return row ? { id: row.id, messageId: row.message_id, url: row.url } : null;
+}
+
 export function getAttachmentById(id: number): AttachmentRow | null {
   const db = getDatabase();
   const row = db
@@ -307,6 +317,7 @@ export interface ArchiveAttachment {
 export interface ArchiveLink {
   id: number;
   url: string;
+  savedSiteLinkId: number | null;
 }
 
 export interface ArchiveMessage {
@@ -367,6 +378,7 @@ interface LinkListRow {
   id: number;
   message_id: string;
   url: string;
+  saved_site_link_id: number | null;
 }
 
 interface ChannelSummaryRow {
@@ -458,6 +470,26 @@ export function listArchive(options?: {
       .all(...messageIds) as unknown as LinkListRow[];
   }
 
+  if (links.length > 0) {
+    const linkUrls = Array.from(new Set(links.map((row) => row.url)));
+    const placeholders = linkUrls.map(() => "?").join(",");
+    const savedRows = db
+      .prepare(
+        `
+          SELECT url, MIN(id) AS id
+            FROM site_links
+           WHERE url IN (${placeholders})
+        GROUP BY url
+        `,
+      )
+      .all(...linkUrls) as Array<{ url: string; id: number }>;
+    const savedByUrl = new Map(savedRows.map((row) => [row.url, row.id]));
+    links = links.map((row) => ({
+      ...row,
+      saved_site_link_id: savedByUrl.get(row.url) ?? null,
+    }));
+  }
+
   const attachmentsByMessage = new Map<string, ArchiveAttachment[]>();
   for (const row of attachments) {
     const list = attachmentsByMessage.get(row.message_id) ?? [];
@@ -473,7 +505,11 @@ export function listArchive(options?: {
   const linksByMessage = new Map<string, ArchiveLink[]>();
   for (const row of links) {
     const list = linksByMessage.get(row.message_id) ?? [];
-    list.push({ id: row.id, url: row.url });
+    list.push({
+      id: row.id,
+      url: row.url,
+      savedSiteLinkId: row.saved_site_link_id,
+    });
     linksByMessage.set(row.message_id, list);
   }
 

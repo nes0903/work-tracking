@@ -76,6 +76,27 @@ function runColumnMigrations(db: DatabaseSync): void {
   seedSiteLinksIfEmpty(db);
   backfillSiteLinkCategories(db);
   backfillTaskAssignees(db);
+  ensureLineWorksLinkPreviewSchema(db);
+}
+
+function ensureLineWorksLinkPreviewSchema(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS line_works_link_previews (
+      url           TEXT PRIMARY KEY,
+      title         TEXT,
+      description   TEXT,
+      image_url     TEXT,
+      site_name     TEXT,
+      status        TEXT NOT NULL DEFAULT 'success',
+      error_message TEXT,
+      fetched_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      CHECK (status IN ('success', 'failed'))
+    ) STRICT
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_line_works_link_previews_fetched
+      ON line_works_link_previews(fetched_at DESC)
+  `);
 }
 
 function dropLegacyTaskColumns(db: DatabaseSync): void {

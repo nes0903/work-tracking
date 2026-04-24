@@ -1,3 +1,6 @@
+import type { SiteLink } from "@/lib/site-links-api";
+import type { PerPageOption } from "@/lib/tasks-api";
+
 export interface LineWorksArchiveAttachment {
   id: number;
   fileName: string | null;
@@ -8,6 +11,18 @@ export interface LineWorksArchiveAttachment {
 export interface LineWorksArchiveLink {
   id: number;
   url: string;
+  savedSiteLinkId: number | null;
+}
+
+export interface LineWorksLinkPreview {
+  url: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  siteName: string | null;
+  status: "success" | "failed";
+  errorMessage: string | null;
+  fetchedAt: string;
 }
 
 export interface LineWorksArchiveMessage {
@@ -131,6 +146,46 @@ export async function openLineWorksAttachment(
   window.open(payload.url, "_blank", "noopener");
 }
 
+export async function fetchLineWorksLinkPreview(
+  linkId: number,
+): Promise<LineWorksLinkPreview | null> {
+  try {
+    const response = await fetch(`/api/line-works-links/${linkId}/preview`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as {
+      ok: boolean;
+      preview?: LineWorksLinkPreview;
+    };
+    return payload.ok ? (payload.preview ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveLineWorksLink(
+  linkId: number,
+): Promise<{ item: SiteLink; alreadySaved: boolean } | null> {
+  try {
+    const response = await fetch(`/api/line-works-links/${linkId}/save`, {
+      method: "POST",
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as {
+      ok: boolean;
+      item?: SiteLink;
+      alreadySaved?: boolean;
+    };
+    return payload.ok && payload.item
+      ? { item: payload.item, alreadySaved: Boolean(payload.alreadySaved) }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes === null || bytes === undefined) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -167,4 +222,3 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     return false;
   }
 }
-import type { PerPageOption } from "@/lib/tasks-api";

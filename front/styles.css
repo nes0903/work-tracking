@@ -2531,6 +2531,102 @@ button {
   background: var(--surface-container);
 }
 
+.line-works-link-previews {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.line-works-link-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+}
+
+.line-works-link-preview-main {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.line-works-link-preview-image,
+.line-works-link-preview-fallback {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-container);
+}
+
+.line-works-link-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.line-works-link-preview-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--on-surface-muted);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.line-works-link-preview-copy {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.line-works-link-preview-copy strong {
+  color: var(--on-surface);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.line-works-link-preview-copy span {
+  color: var(--on-surface-muted);
+  font-size: 0.73rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.line-works-link-preview-site {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.line-works-link-preview-url {
+  opacity: 0.85;
+}
+
+.line-works-link-save {
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  background: var(--surface-container-lowest);
+  color: var(--primary);
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.line-works-link-save:disabled {
+  cursor: default;
+  color: var(--positive);
+  background: rgba(47, 107, 74, 0.1);
+}
+
 .line-works-message-side {
   display: flex;
   flex-direction: column;

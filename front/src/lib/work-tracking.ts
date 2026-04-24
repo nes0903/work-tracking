@@ -55,6 +55,7 @@ export interface NotionFeed {
   items: NotionUpdateItem[];
   pagination: NotionFeedPagination;
   readEventIds: string[];
+  newCount: number;
 }
 
 export interface GithubEvent {
@@ -120,6 +121,7 @@ export function emptyNotionFeed(): NotionFeed {
       hasPrev: false,
     },
     readEventIds: [],
+    newCount: 0,
   };
 }
 

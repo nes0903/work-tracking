@@ -72,6 +72,20 @@ export function createSiteLink(input: {
   return hydrate(row);
 }
 
+export function findSiteLinkByUrl(url: string): SiteLink | null {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT ${SELECT_COLS}
+         FROM site_links
+        WHERE url = ?
+        ORDER BY id ASC
+        LIMIT 1`,
+    )
+    .get(url) as unknown as SiteLinkRow | undefined;
+  return row ? hydrate(row) : null;
+}
+
 export interface UpdateSiteLinkInput {
   label?: string;
   url?: string;

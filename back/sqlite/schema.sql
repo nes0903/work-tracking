@@ -332,6 +332,21 @@ CREATE TABLE IF NOT EXISTS line_works_links (
 CREATE INDEX IF NOT EXISTS idx_line_works_links_message
   ON line_works_links(message_id);
 
+CREATE TABLE IF NOT EXISTS line_works_link_previews (
+  url           TEXT PRIMARY KEY,
+  title         TEXT,
+  description   TEXT,
+  image_url     TEXT,
+  site_name     TEXT,
+  status        TEXT NOT NULL DEFAULT 'success',
+  error_message TEXT,
+  fetched_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (status IN ('success', 'failed'))
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_line_works_link_previews_fetched
+  ON line_works_link_previews(fetched_at DESC);
+
 CREATE TABLE IF NOT EXISTS line_works_channels (
   channel_id       TEXT PRIMARY KEY,
   title            TEXT,

@@ -50,6 +50,7 @@ export interface NotionFeedPage {
 
 const NOTION_PER_PAGE_OPTIONS = [20, 50, 70, 100] as const;
 const NOTION_DEFAULT_PER_PAGE = 20;
+const NOTION_NEW_TTL_MS = 24 * 60 * 60 * 1000;
 
 export function listNotionUpdateEvents(
   page: number,
@@ -117,6 +118,32 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
     editor: row.editor_name,
     summary: row.summary,
   };
+}
+
+export function countNewNotionUpdateEvents(userId: string): number {
+  const db = getDatabase();
+  const cutoff = new Date(Date.now() - NOTION_NEW_TTL_MS).toISOString();
+  const row = db
+    .prepare(
+      `
+        SELECT COUNT(*) AS c
+        FROM notion_update_events e
+        LEFT JOIN user_notion_read r
+          ON r.user_id = ? AND r.event_id = e.event_id
+        LEFT JOIN user_last_seen s
+          ON s.user_id = ? AND s.source = 'notion'
+        WHERE e.edited_at IS NOT NULL
+          AND datetime(e.edited_at) >= datetime(?)
+          AND r.event_id IS NULL
+          AND (
+            s.last_seen_at IS NULL
+            OR datetime(e.edited_at) > datetime(s.last_seen_at)
+          )
+      `,
+    )
+    .get(userId, userId, cutoff) as { c: number } | undefined;
+
+  return row?.c ?? 0;
 }
 
 interface TaskRow {
