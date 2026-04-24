@@ -11,9 +11,14 @@ import {
   type SiteLinkCategory,
 } from "@/lib/site-links-api";
 
-interface Props {
+interface ModalProps {
   open: boolean;
   onClose: () => void;
+}
+
+interface WorkspaceProps {
+  active: boolean;
+  onClose?: () => void;
 }
 
 const DEFAULT_NEW_CATEGORY: SiteLinkCategory = "기타";
@@ -25,7 +30,34 @@ function normalizeCategory(value: string | null | undefined): SiteLinkCategory {
   return "기타";
 }
 
-export function SiteLinksModal({ open, onClose }: Props) {
+export function SiteLinksPanel() {
+  return (
+    <section className="panel site-links-panel">
+      <SiteLinksWorkspace active={true} />
+    </section>
+  );
+}
+
+export function SiteLinksModal({ open, onClose }: ModalProps) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="modal-backdrop site-links-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="site-links-modal">
+        <SiteLinksWorkspace active={open} onClose={onClose} />
+      </div>
+    </div>
+  );
+}
+
+function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   const [links, setLinks] = useState<SiteLink[]>([]);
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -33,16 +65,18 @@ export function SiteLinksModal({ open, onClose }: Props) {
 
   const [newLabel, setNewLabel] = useState("");
   const [newUrl, setNewUrl] = useState("");
-  const [newCategory, setNewCategory] = useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
+  const [newCategory, setNewCategory] =
+    useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
   const [submitting, setSubmitting] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editUrl, setEditUrl] = useState("");
-  const [editCategory, setEditCategory] = useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
+  const [editCategory, setEditCategory] =
+    useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
 
   useEffect(() => {
-    if (!open) return;
+    if (!active) return;
     let mounted = true;
     setLoading(true);
     void fetchSiteLinks()
@@ -55,18 +89,17 @@ export function SiteLinksModal({ open, onClose }: Props) {
     return () => {
       mounted = false;
     };
-  }, [open]);
+  }, [active]);
 
   useEffect(() => {
-    if (!open) {
-      setEditMode(false);
-      setQuery("");
-      setNewLabel("");
-      setNewUrl("");
-      setNewCategory(DEFAULT_NEW_CATEGORY);
-      setEditingId(null);
-    }
-  }, [open]);
+    if (active) return;
+    setEditMode(false);
+    setQuery("");
+    setNewLabel("");
+    setNewUrl("");
+    setNewCategory(DEFAULT_NEW_CATEGORY);
+    setEditingId(null);
+  }, [active]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -91,8 +124,6 @@ export function SiteLinksModal({ open, onClose }: Props) {
     }
     return map;
   }, [filtered]);
-
-  if (!open) return null;
 
   async function handleCreate() {
     const label = newLabel.trim();
@@ -165,25 +196,18 @@ export function SiteLinksModal({ open, onClose }: Props) {
   const totalFiltered = filtered.length;
 
   return (
-    <div
-      className="modal-backdrop site-links-backdrop"
-      role="dialog"
-      aria-modal="true"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="site-links-modal">
-        <header className="site-links-head">
-          <h3>사이트 링크</h3>
-          <div className="site-links-head-actions">
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => setEditMode((v) => !v)}
-            >
-              {editMode ? "완료" : "편집"}
-            </button>
+    <>
+      <header className="site-links-head">
+        <h3>링크 저장소</h3>
+        <div className="site-links-head-actions">
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setEditMode((v) => !v)}
+          >
+            {editMode ? "완료" : "편집"}
+          </button>
+          {onClose ? (
             <button
               type="button"
               className="modal-close"
@@ -192,175 +216,175 @@ export function SiteLinksModal({ open, onClose }: Props) {
             >
               ×
             </button>
-          </div>
-        </header>
-
-        <div className="site-links-search">
-          <input
-            type="text"
-            placeholder="이름·URL·카테고리 검색"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {query ? (
-            <button
-              type="button"
-              className="text-button site-links-search-clear"
-              onClick={() => setQuery("")}
-            >
-              초기화
-            </button>
           ) : null}
         </div>
+      </header>
 
-        <div className="site-links-body">
-          {loading ? (
-            <p className="empty-note">불러오는 중...</p>
-          ) : totalFiltered === 0 ? (
-            <p className="empty-note">
-              {query ? `"${query}" 검색 결과가 없습니다.` : "등록된 링크가 없습니다."}
-            </p>
-          ) : (
-            SITE_LINK_CATEGORIES.map((cat) => {
-              const items = grouped.get(cat) ?? [];
-              if (items.length === 0) return null;
-              return (
-                <section key={cat} className="site-links-section">
-                  <h4 className="site-links-section-title">
-                    {cat}
-                    <span className="site-links-section-count">{items.length}</span>
-                  </h4>
-                  <ul className="site-links-list">
-                    {items.map((link) => {
-                      const isEditing = editingId === link.id;
-                      return (
-                        <li key={link.id} className="site-links-item">
-                          {editMode && isEditing ? (
-                            <div className="site-links-edit">
-                              <input
-                                type="text"
-                                value={editLabel}
-                                onChange={(event) => setEditLabel(event.target.value)}
-                                placeholder="이름"
-                              />
-                              <input
-                                type="url"
-                                value={editUrl}
-                                onChange={(event) => setEditUrl(event.target.value)}
-                                placeholder="https://..."
-                              />
-                              <select
-                                value={editCategory}
-                                onChange={(event) =>
-                                  setEditCategory(event.target.value as SiteLinkCategory)
-                                }
-                              >
-                                {SITE_LINK_CATEGORIES.map((c) => (
-                                  <option key={c} value={c}>
-                                    {c}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="site-links-edit-actions">
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  onClick={cancelEdit}
-                                >
-                                  취소
-                                </button>
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  onClick={() => void saveEdit()}
-                                >
-                                  저장
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
+      <div className="site-links-search">
+        <input
+          type="text"
+          placeholder="이름·URL·카테고리 검색"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        {query ? (
+          <button
+            type="button"
+            className="text-button site-links-search-clear"
+            onClick={() => setQuery("")}
+          >
+            초기화
+          </button>
+        ) : null}
+      </div>
+
+      <div className="site-links-body">
+        {loading ? (
+          <p className="empty-note">불러오는 중...</p>
+        ) : totalFiltered === 0 ? (
+          <p className="empty-note">
+            {query ? `"${query}" 검색 결과가 없습니다.` : "등록된 링크가 없습니다."}
+          </p>
+        ) : (
+          SITE_LINK_CATEGORIES.map((cat) => {
+            const items = grouped.get(cat) ?? [];
+            if (items.length === 0) return null;
+            return (
+              <section key={cat} className="site-links-section">
+                <h4 className="site-links-section-title">
+                  {cat}
+                  <span className="site-links-section-count">{items.length}</span>
+                </h4>
+                <ul className="site-links-list">
+                  {items.map((link) => {
+                    const isEditing = editingId === link.id;
+                    return (
+                      <li key={link.id} className="site-links-item">
+                        {editMode && isEditing ? (
+                          <div className="site-links-edit">
+                            <input
+                              type="text"
+                              value={editLabel}
+                              onChange={(event) => setEditLabel(event.target.value)}
+                              placeholder="이름"
+                            />
+                            <input
+                              type="url"
+                              value={editUrl}
+                              onChange={(event) => setEditUrl(event.target.value)}
+                              placeholder="https://..."
+                            />
+                            <select
+                              value={editCategory}
+                              onChange={(event) =>
+                                setEditCategory(event.target.value as SiteLinkCategory)
+                              }
+                            >
+                              {SITE_LINK_CATEGORIES.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="site-links-edit-actions">
                               <button
                                 type="button"
-                                className="site-links-open"
-                                onClick={() => handleOpen(link)}
-                                disabled={editMode}
-                                title={link.url}
+                                className="secondary-button"
+                                onClick={cancelEdit}
                               >
-                                <span className="site-links-label">{link.label}</span>
-                                <span className="site-links-url">{link.url}</span>
+                                취소
                               </button>
-                              {editMode ? (
-                                <div className="site-links-item-actions">
-                                  <button
-                                    type="button"
-                                    className="text-button"
-                                    onClick={() => startEdit(link)}
-                                  >
-                                    수정
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="text-button site-links-remove"
-                                    onClick={() => void handleDelete(link.id)}
-                                  >
-                                    삭제
-                                  </button>
-                                </div>
-                              ) : null}
-                            </>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              );
-            })
-          )}
+                              <button
+                                type="button"
+                                className="primary-button"
+                                onClick={() => void saveEdit()}
+                              >
+                                저장
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="site-links-open"
+                              onClick={() => handleOpen(link)}
+                              disabled={editMode}
+                              title={link.url}
+                            >
+                              <span className="site-links-label">{link.label}</span>
+                              <span className="site-links-url">{link.url}</span>
+                            </button>
+                            {editMode ? (
+                              <div className="site-links-item-actions">
+                                <button
+                                  type="button"
+                                  className="text-button"
+                                  onClick={() => startEdit(link)}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  type="button"
+                                  className="text-button site-links-remove"
+                                  onClick={() => void handleDelete(link.id)}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })
+        )}
 
-          {editMode ? (
-            <div className="site-links-new">
-              <p className="field-label">+ 새 링크</p>
-              <input
-                type="text"
-                value={newLabel}
-                onChange={(event) => setNewLabel(event.target.value)}
-                placeholder="이름 (예: 새 프로젝트)"
-                disabled={submitting}
-              />
-              <input
-                type="url"
-                value={newUrl}
-                onChange={(event) => setNewUrl(event.target.value)}
-                placeholder="https://..."
-                disabled={submitting}
-              />
-              <select
-                value={newCategory}
-                onChange={(event) =>
-                  setNewCategory(event.target.value as SiteLinkCategory)
-                }
-                disabled={submitting}
-              >
-                {SITE_LINK_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => void handleCreate()}
-                disabled={submitting || !newLabel.trim() || !newUrl.trim()}
-              >
-                {submitting ? "추가 중..." : "추가"}
-              </button>
-            </div>
-          ) : null}
-        </div>
+        {editMode ? (
+          <div className="site-links-new">
+            <p className="field-label">+ 새 링크</p>
+            <input
+              type="text"
+              value={newLabel}
+              onChange={(event) => setNewLabel(event.target.value)}
+              placeholder="이름 (예: 새 프로젝트)"
+              disabled={submitting}
+            />
+            <input
+              type="url"
+              value={newUrl}
+              onChange={(event) => setNewUrl(event.target.value)}
+              placeholder="https://..."
+              disabled={submitting}
+            />
+            <select
+              value={newCategory}
+              onChange={(event) =>
+                setNewCategory(event.target.value as SiteLinkCategory)
+              }
+              disabled={submitting}
+            >
+              {SITE_LINK_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void handleCreate()}
+              disabled={submitting || !newLabel.trim() || !newUrl.trim()}
+            >
+              {submitting ? "추가 중..." : "추가"}
+            </button>
+          </div>
+        ) : null}
       </div>
-    </div>
+    </>
   );
 }

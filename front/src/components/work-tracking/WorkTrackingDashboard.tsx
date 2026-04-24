@@ -45,7 +45,7 @@ import {
   type MessagePreview,
 } from "./MessagePreviewModal";
 import { Pagination } from "./Pagination";
-import { SiteLinksModal } from "./SiteLinksModal";
+import { SiteLinksPanel } from "./SiteLinksModal";
 import { StorageTreeView } from "./StorageTreeView";
 import { TaskCard, type TaskAction } from "./TaskCard";
 import {
@@ -106,14 +106,19 @@ export function WorkTrackingDashboard() {
     emptyGithubFeed(),
   );
   const [activeView, setActiveView] = useState<
-    "dashboard" | "calendar" | "github" | "notion" | "line-works" | "storage"
+    | "dashboard"
+    | "calendar"
+    | "github"
+    | "notion"
+    | "line-works"
+    | "storage"
+    | "links"
   >("dashboard");
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
   const [taskEditTarget, setTaskEditTarget] = useState<TaskEditInitial | null>(
     null,
   );
   const [refAddTaskId, setRefAddTaskId] = useState<string | null>(null);
-  const [siteLinksOpen, setSiteLinksOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
@@ -1300,17 +1305,16 @@ export function WorkTrackingDashboard() {
               <span className="sidebar-nav-count">{storageItems.length}</span>
             ) : null}
           </button>
+          <button
+            type="button"
+            className={`sidebar-nav-link ${activeView === "links" ? "active" : ""}`.trim()}
+            onClick={() => setActiveView("links")}
+          >
+            Link Storage
+          </button>
         </nav>
 
         <div className="sidebar-footer">
-          <button
-            type="button"
-            className="sidebar-link sidebar-site-links-trigger"
-            onClick={() => setSiteLinksOpen(true)}
-          >
-            🔗 사이트 링크
-          </button>
-
           {currentUser ? (
             <div className="sidebar-user">
               <div className="sidebar-user-info">
@@ -1374,8 +1378,13 @@ export function WorkTrackingDashboard() {
                           (channel) =>
                             channel.channelId === selectedLineWorksChannel,
                         )?.title,
-                      )} 의 수신 내역입니다.`}
+                  )} 의 수신 내역입니다.`}
                 </p>
+              </>
+            ) : activeView === "links" ? (
+              <>
+                <h2>Link Storage</h2>
+                <p>저장한 외부 링크를 카테고리별로 검색하고 관리합니다.</p>
               </>
             ) : (
               <>
@@ -1388,7 +1397,9 @@ export function WorkTrackingDashboard() {
             )}
           </div>
           <div className="topbar-right">
-            {activeView === "dashboard" || activeView === "calendar" ? null : (
+            {activeView === "github" ||
+            activeView === "notion" ||
+            activeView === "line-works" ? (
               <div className="github-meta">
                 <span>마지막 동기화</span>
                 <strong>
@@ -1401,7 +1412,7 @@ export function WorkTrackingDashboard() {
                   )}
                 </strong>
               </div>
-            )}
+            ) : null}
             <div className="date-panel">
               <div className="date-row">
                 <button
@@ -1586,6 +1597,8 @@ export function WorkTrackingDashboard() {
                 />
               ) : null}
             </section>
+          ) : activeView === "links" ? (
+            <SiteLinksPanel />
           ) : activeView === "storage" ? (
             <section className="panel storage-panel">
               <StorageTreeView
@@ -1894,10 +1907,6 @@ export function WorkTrackingDashboard() {
         lineWorksChannels={lineWorksArchive.channels}
         storageItems={storageItems}
         channelLabels={storageChannelLabels}
-      />
-      <SiteLinksModal
-        open={siteLinksOpen}
-        onClose={() => setSiteLinksOpen(false)}
       />
     </>
   );

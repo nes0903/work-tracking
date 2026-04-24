@@ -3574,17 +3574,9 @@ button {
 /* ============================================================
    Site links modal
    ============================================================ */
-.sidebar-site-links-trigger {
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.site-links-panel {
+  padding: 0;
+  overflow: hidden;
 }
 
 .site-links-backdrop {
