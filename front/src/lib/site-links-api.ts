@@ -8,15 +8,7 @@ export interface SiteLink {
   updatedAt: string;
 }
 
-export const SITE_LINK_CATEGORIES = [
-  "Works",
-  "보고팡",
-  "푸딩툰",
-  "픽미툰",
-  "덥라이트",
-  "기타",
-] as const;
-export type SiteLinkCategory = (typeof SITE_LINK_CATEGORIES)[number];
+export type SiteLinkCategory = string;
 
 export async function fetchSiteLinks(): Promise<SiteLink[]> {
   try {
@@ -25,6 +17,68 @@ export async function fetchSiteLinks(): Promise<SiteLink[]> {
     const payload = (await response.json()) as {
       ok: boolean;
       items?: SiteLink[];
+    };
+    return payload.ok ? (payload.items ?? []) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSiteLinkCategories(): Promise<string[]> {
+  try {
+    const response = await fetch("/api/site-links/categories", {
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    const payload = (await response.json()) as {
+      ok: boolean;
+      items?: string[];
+    };
+    return payload.ok ? (payload.items ?? []) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createSiteLinkCategory(name: string): Promise<string[]> {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  try {
+    const response = await fetch("/api/site-links/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: trimmed }),
+    });
+    if (!response.ok) return [];
+    const payload = (await response.json()) as {
+      ok: boolean;
+      items?: string[];
+    };
+    return payload.ok ? (payload.items ?? []) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function renameSiteLinkCategory(
+  oldName: string,
+  newName: string,
+): Promise<string[]> {
+  const next = newName.trim();
+  if (!oldName.trim() || !next) return [];
+  try {
+    const response = await fetch(
+      `/api/site-links/categories/${encodeURIComponent(oldName)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: next }),
+      },
+    );
+    if (!response.ok) return [];
+    const payload = (await response.json()) as {
+      ok: boolean;
+      items?: string[];
     };
     return payload.ok ? (payload.items ?? []) : [];
   } catch {

@@ -3651,6 +3651,21 @@ button {
   gap: 14px;
 }
 
+.site-links-category-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
+}
+
+.site-links-category-tools input {
+  flex: 1;
+  min-width: 0;
+}
+
 .site-links-section {
   display: flex;
   flex-direction: column;
@@ -3675,6 +3690,12 @@ button {
   background: var(--surface-container);
   padding: 1px 6px;
   border-radius: 999px;
+}
+
+.site-links-category-rename {
+  margin-left: auto;
+  font-size: 0.7rem;
+  padding: 2px 6px;
 }
 
 .site-links-list {

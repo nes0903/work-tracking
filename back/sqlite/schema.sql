@@ -419,4 +419,14 @@ CREATE INDEX IF NOT EXISTS idx_site_links_order ON site_links(sort_order);
 -- ALTER TABLE ADD 이후에 만든다. (구버전 DB에는 category 컬럼이 아직 없을 수 있어 여기서 만들면
 -- "no such column: category" 로 부팅이 실패함)
 
+CREATE TABLE IF NOT EXISTS site_link_categories (
+  name       TEXT PRIMARY KEY,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_site_link_categories_order
+  ON site_link_categories(sort_order, name);
+
 COMMIT;

@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  createSiteLinkCategory,
   createSiteLink,
   deleteSiteLink,
+  fetchSiteLinkCategories,
   fetchSiteLinks,
-  SITE_LINK_CATEGORIES,
+  renameSiteLinkCategory,
   updateSiteLink,
   type SiteLink,
-  type SiteLinkCategory,
 } from "@/lib/site-links-api";
 
 interface ModalProps {
@@ -21,13 +22,25 @@ interface WorkspaceProps {
   onClose?: () => void;
 }
 
-const DEFAULT_NEW_CATEGORY: SiteLinkCategory = "기타";
+const DEFAULT_NEW_CATEGORY = "기타";
 
-function normalizeCategory(value: string | null | undefined): SiteLinkCategory {
-  if (value && (SITE_LINK_CATEGORIES as readonly string[]).includes(value)) {
-    return value as SiteLinkCategory;
+function normalizeCategory(value: string | null | undefined): string {
+  return value?.trim() || DEFAULT_NEW_CATEGORY;
+}
+
+function mergeCategories(...lists: string[][]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const list of lists) {
+    for (const item of list) {
+      const category = normalizeCategory(item);
+      if (seen.has(category)) continue;
+      seen.add(category);
+      result.push(category);
+    }
   }
-  return "기타";
+  if (!seen.has(DEFAULT_NEW_CATEGORY)) result.push(DEFAULT_NEW_CATEGORY);
+  return result;
 }
 
 export function SiteLinksPanel() {
@@ -59,29 +72,36 @@ export function SiteLinksModal({ open, onClose }: ModalProps) {
 
 function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   const [links, setLinks] = useState<SiteLink[]>([]);
+  const [categories, setCategories] = useState<string[]>([DEFAULT_NEW_CATEGORY]);
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [query, setQuery] = useState("");
+  const [categoryDraft, setCategoryDraft] = useState("");
 
   const [newLabel, setNewLabel] = useState("");
   const [newUrl, setNewUrl] = useState("");
-  const [newCategory, setNewCategory] =
-    useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
+  const [newCategory, setNewCategory] = useState(DEFAULT_NEW_CATEGORY);
   const [submitting, setSubmitting] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editUrl, setEditUrl] = useState("");
-  const [editCategory, setEditCategory] =
-    useState<SiteLinkCategory>(DEFAULT_NEW_CATEGORY);
+  const [editCategory, setEditCategory] = useState(DEFAULT_NEW_CATEGORY);
 
   useEffect(() => {
     if (!active) return;
     let mounted = true;
     setLoading(true);
-    void fetchSiteLinks()
-      .then((items) => {
-        if (mounted) setLinks(items);
+    void Promise.all([fetchSiteLinks(), fetchSiteLinkCategories()])
+      .then(([items, fetchedCategories]) => {
+        if (!mounted) return;
+        setLinks(items);
+        setCategories(
+          mergeCategories(
+            fetchedCategories,
+            items.map((item) => item.category ?? ""),
+          ),
+        );
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -98,6 +118,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     setNewLabel("");
     setNewUrl("");
     setNewCategory(DEFAULT_NEW_CATEGORY);
+    setCategoryDraft("");
     setEditingId(null);
   }, [active]);
 
@@ -114,36 +135,80 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   }, [links, query]);
 
   const grouped = useMemo(() => {
-    const map = new Map<SiteLinkCategory, SiteLink[]>();
-    for (const cat of SITE_LINK_CATEGORIES) {
+    const map = new Map<string, SiteLink[]>();
+    for (const cat of categories) {
       map.set(cat, []);
     }
     for (const link of filtered) {
       const cat = normalizeCategory(link.category);
-      map.get(cat)!.push(link);
+      const list = map.get(cat) ?? [];
+      list.push(link);
+      map.set(cat, list);
     }
     return map;
-  }, [filtered]);
+  }, [categories, filtered]);
+
+  const visibleCategories = useMemo(() => {
+    const hasQuery = query.trim().length > 0;
+    return categories.filter((cat) => {
+      const count = grouped.get(cat)?.length ?? 0;
+      if (count > 0) return true;
+      return editMode && !hasQuery;
+    });
+  }, [categories, editMode, grouped, query]);
 
   async function handleCreate() {
     const label = newLabel.trim();
     const url = newUrl.trim();
     if (!label || !url) return;
     setSubmitting(true);
+    const category = normalizeCategory(newCategory);
     const created = await createSiteLink({
       label,
       url,
-      category: newCategory,
+      category,
     });
     setSubmitting(false);
     if (created) {
       setLinks((prev) => [...prev, created]);
+      setCategories((prev) => mergeCategories(prev, [category]));
       setNewLabel("");
       setNewUrl("");
-      setNewCategory(DEFAULT_NEW_CATEGORY);
+      setNewCategory(category);
     } else {
       window.alert("추가 실패. URL과 이름을 확인하세요.");
     }
+  }
+
+  async function handleCreateCategory() {
+    const category = normalizeCategory(categoryDraft);
+    if (!categoryDraft.trim()) return;
+    const next = await createSiteLinkCategory(category);
+    setCategories((prev) => mergeCategories(next, prev, [category]));
+    setNewCategory(category);
+    setCategoryDraft("");
+  }
+
+  async function handleRenameCategory(category: string) {
+    const nextName = window.prompt("새 분류명을 입력하세요.", category);
+    if (nextName === null) return;
+    const next = normalizeCategory(nextName);
+    if (!next || next === category) return;
+    const nextCategories = await renameSiteLinkCategory(category, next);
+    if (nextCategories.length === 0) {
+      window.alert("분류명 변경에 실패했습니다.");
+      return;
+    }
+    setCategories(mergeCategories(nextCategories));
+    setLinks((prev) =>
+      prev.map((link) =>
+        normalizeCategory(link.category) === category
+          ? { ...link, category: next }
+          : link,
+      ),
+    );
+    if (newCategory === category) setNewCategory(next);
+    if (editCategory === category) setEditCategory(next);
   }
 
   async function handleDelete(id: number) {
@@ -179,10 +244,13 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     const updated = await updateSiteLink(editingId, {
       label,
       url,
-      category: editCategory,
+      category: normalizeCategory(editCategory),
     });
     if (updated) {
       setLinks((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+      setCategories((prev) =>
+        mergeCategories(prev, [normalizeCategory(updated.category)]),
+      );
       cancelEdit();
     } else {
       window.alert("수정 실패");
@@ -238,7 +306,37 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
         ) : null}
       </div>
 
+      <datalist id="site-link-category-options">
+        {categories.map((category) => (
+          <option key={category} value={category} />
+        ))}
+      </datalist>
+
       <div className="site-links-body">
+        {editMode ? (
+          <div className="site-links-category-tools">
+            <input
+              type="text"
+              value={categoryDraft}
+              onChange={(event) => setCategoryDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void handleCreateCategory();
+                }
+              }}
+              placeholder="새 분류명"
+            />
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void handleCreateCategory()}
+              disabled={!categoryDraft.trim()}
+            >
+              분류 추가
+            </button>
+          </div>
+        ) : null}
         {loading ? (
           <p className="empty-note">불러오는 중...</p>
         ) : totalFiltered === 0 ? (
@@ -246,14 +344,22 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
             {query ? `"${query}" 검색 결과가 없습니다.` : "등록된 링크가 없습니다."}
           </p>
         ) : (
-          SITE_LINK_CATEGORIES.map((cat) => {
+          visibleCategories.map((cat) => {
             const items = grouped.get(cat) ?? [];
-            if (items.length === 0) return null;
             return (
               <section key={cat} className="site-links-section">
                 <h4 className="site-links-section-title">
-                  {cat}
+                  <span>{cat}</span>
                   <span className="site-links-section-count">{items.length}</span>
+                  {editMode ? (
+                    <button
+                      type="button"
+                      className="text-button site-links-category-rename"
+                      onClick={() => void handleRenameCategory(cat)}
+                    >
+                      이름 변경
+                    </button>
+                  ) : null}
                 </h4>
                 <ul className="site-links-list">
                   {items.map((link) => {
@@ -274,18 +380,15 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
                               onChange={(event) => setEditUrl(event.target.value)}
                               placeholder="https://..."
                             />
-                            <select
+                            <input
+                              type="text"
+                              list="site-link-category-options"
                               value={editCategory}
                               onChange={(event) =>
-                                setEditCategory(event.target.value as SiteLinkCategory)
+                                setEditCategory(event.target.value)
                               }
-                            >
-                              {SITE_LINK_CATEGORIES.map((c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ))}
-                            </select>
+                              placeholder="분류"
+                            />
                             <div className="site-links-edit-actions">
                               <button
                                 type="button"
@@ -361,19 +464,14 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
               placeholder="https://..."
               disabled={submitting}
             />
-            <select
+            <input
+              type="text"
+              list="site-link-category-options"
               value={newCategory}
-              onChange={(event) =>
-                setNewCategory(event.target.value as SiteLinkCategory)
-              }
+              onChange={(event) => setNewCategory(event.target.value)}
+              placeholder="분류"
               disabled={submitting}
-            >
-              {SITE_LINK_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            />
             <button
               type="button"
               className="primary-button"

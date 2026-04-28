@@ -12,9 +12,12 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@common/auth.guard";
 import {
+  createSiteLinkCategory,
   createSiteLink,
   deleteSiteLink,
+  listSiteLinkCategories,
   listSiteLinks,
+  renameSiteLinkCategory,
   updateSiteLink,
 } from "@libs/site-links-db";
 
@@ -29,6 +32,10 @@ interface UpdatePayload {
   url?: string;
   category?: string | null;
   sortOrder?: number;
+}
+
+interface CategoryPayload {
+  name?: string;
 }
 
 function assertString(value: unknown, field: string): string {
@@ -49,6 +56,11 @@ export class SiteLinksController {
     return { ok: true, items: listSiteLinks() };
   }
 
+  @Get("categories")
+  listCategories() {
+    return { ok: true, items: listSiteLinkCategories() };
+  }
+
   @Post()
   create(@Body() payload: CreatePayload) {
     const label = assertString(payload.label, "label");
@@ -59,6 +71,22 @@ export class SiteLinksController {
         : null;
     const link = createSiteLink({ label, url, category });
     return { ok: true, item: link };
+  }
+
+  @Post("categories")
+  createCategory(@Body() payload: CategoryPayload) {
+    const name = assertString(payload.name, "name");
+    return { ok: true, items: createSiteLinkCategory(name) };
+  }
+
+  @Patch("categories/:name")
+  renameCategory(
+    @Param("name") nameParam: string,
+    @Body() payload: CategoryPayload,
+  ) {
+    const oldName = assertString(nameParam, "name");
+    const newName = assertString(payload.name, "name");
+    return { ok: true, items: renameSiteLinkCategory(oldName, newName) };
   }
 
   @Patch(":id")

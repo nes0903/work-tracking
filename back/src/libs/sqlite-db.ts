@@ -72,11 +72,28 @@ function runColumnMigrations(db: DatabaseSync): void {
   db.exec(
     `CREATE INDEX IF NOT EXISTS idx_site_links_category ON site_links(category)`,
   );
+  ensureSiteLinkCategorySchema(db);
 
   seedSiteLinksIfEmpty(db);
   backfillSiteLinkCategories(db);
+  backfillSiteLinkCategoryRows(db);
   backfillTaskAssignees(db);
   ensureLineWorksLinkPreviewSchema(db);
+}
+
+function ensureSiteLinkCategorySchema(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS site_link_categories (
+      name       TEXT PRIMARY KEY,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    ) STRICT
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_site_link_categories_order
+      ON site_link_categories(sort_order, name)
+  `);
 }
 
 function ensureLineWorksLinkPreviewSchema(db: DatabaseSync): void {
@@ -316,6 +333,43 @@ function backfillSiteLinkCategories(db: DatabaseSync): void {
   const update = db.prepare(`UPDATE site_links SET category = ? WHERE id = ?`);
   for (const row of rows) {
     update.run(inferSiteLinkCategory(row.label, row.url), row.id);
+  }
+}
+
+function backfillSiteLinkCategoryRows(db: DatabaseSync): void {
+  const rows = db
+    .prepare(
+      `SELECT category, MIN(sort_order) AS sort_order
+         FROM site_links
+        WHERE category IS NOT NULL AND TRIM(category) <> ''
+        GROUP BY category`,
+    )
+    .all() as Array<{ category: string; sort_order: number | null }>;
+
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO site_link_categories (name, sort_order)
+     VALUES (?, ?)`,
+  );
+  for (const row of rows) {
+    insert.run(row.category.trim(), row.sort_order ?? 0);
+  }
+
+  const hasDefault =
+    (
+      db
+        .prepare(`SELECT COUNT(*) AS c FROM site_link_categories WHERE name = ?`)
+        .get("기타") as { c: number } | undefined
+    )?.c ?? 0;
+  if (hasDefault === 0) {
+    const maxOrder =
+      (
+        db
+          .prepare(
+            `SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_link_categories`,
+          )
+          .get() as { max: number } | undefined
+      )?.max ?? -1;
+    insert.run("기타", maxOrder + 1);
   }
 }
 

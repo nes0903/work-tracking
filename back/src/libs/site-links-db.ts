@@ -46,12 +46,85 @@ export function listSiteLinks(): SiteLink[] {
   return rows.map(hydrate);
 }
 
+export function listSiteLinkCategories(): string[] {
+  const db = getDatabase();
+  const rows = db
+    .prepare(
+      `SELECT name
+         FROM site_link_categories
+        ORDER BY sort_order ASC, name ASC`,
+    )
+    .all() as Array<{ name: string }>;
+  return rows.map((row) => row.name);
+}
+
+export function createSiteLinkCategory(name: string): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return listSiteLinkCategories();
+  const db = getDatabase();
+  const maxRow = db
+    .prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_link_categories`,
+    )
+    .get() as { max: number } | undefined;
+  db.prepare(
+    `INSERT OR IGNORE INTO site_link_categories (name, sort_order)
+     VALUES (?, ?)`,
+  ).run(trimmed, (maxRow?.max ?? -1) + 1);
+  return listSiteLinkCategories();
+}
+
+export function renameSiteLinkCategory(
+  oldName: string,
+  newName: string,
+): string[] {
+  const oldTrimmed = oldName.trim();
+  const newTrimmed = newName.trim();
+  if (!oldTrimmed || !newTrimmed || oldTrimmed === newTrimmed) {
+    return listSiteLinkCategories();
+  }
+
+  const db = getDatabase();
+  db.exec("BEGIN");
+  try {
+    const existing = db
+      .prepare(`SELECT sort_order FROM site_link_categories WHERE name = ?`)
+      .get(oldTrimmed) as { sort_order: number } | undefined;
+    const sortOrder = existing?.sort_order ?? 0;
+    db.prepare(
+      `INSERT OR IGNORE INTO site_link_categories (name, sort_order)
+       VALUES (?, ?)`,
+    ).run(newTrimmed, sortOrder);
+    db.prepare(`UPDATE site_links SET category = ? WHERE category = ?`).run(
+      newTrimmed,
+      oldTrimmed,
+    );
+    db.prepare(
+      `DELETE FROM site_link_categories
+        WHERE name = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM site_links WHERE category = site_link_categories.name
+          )`,
+    ).run(oldTrimmed);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return listSiteLinkCategories();
+}
+
 export function createSiteLink(input: {
   label: string;
   url: string;
   category?: string | null;
 }): SiteLink {
   const db = getDatabase();
+  const category = input.category?.trim() || null;
+  if (category) {
+    createSiteLinkCategory(category);
+  }
   const maxRow = db
     .prepare(`SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_links`)
     .get() as { max: number };
@@ -66,7 +139,7 @@ export function createSiteLink(input: {
     .get(
       input.label,
       input.url,
-      input.category ?? null,
+      category,
       nextOrder,
     ) as unknown as SiteLinkRow;
   return hydrate(row);
@@ -112,7 +185,11 @@ export function updateSiteLink(
   }
   if (patch.category !== undefined) {
     sets.push("category = ?");
-    args.push(patch.category ?? null);
+    const category = patch.category?.trim() || null;
+    if (category) {
+      createSiteLinkCategory(category);
+    }
+    args.push(category);
   }
   if (patch.sortOrder !== undefined) {
     sets.push("sort_order = ?");
