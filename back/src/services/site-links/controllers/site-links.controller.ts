@@ -18,6 +18,7 @@ import {
   listSiteLinkCategories,
   listSiteLinks,
   renameSiteLinkCategory,
+  reorderSiteLinks,
   updateSiteLink,
 } from "@libs/site-links-db";
 
@@ -36,6 +37,14 @@ interface UpdatePayload {
 
 interface CategoryPayload {
   name?: string;
+}
+
+interface ReorderPayload {
+  items?: Array<{
+    id?: number;
+    category?: string | null;
+    sortOrder?: number;
+  }>;
 }
 
 function assertString(value: unknown, field: string): string {
@@ -87,6 +96,27 @@ export class SiteLinksController {
     const oldName = assertString(nameParam, "name");
     const newName = assertString(payload.name, "name");
     return { ok: true, items: renameSiteLinkCategory(oldName, newName) };
+  }
+
+  @Patch("reorder")
+  reorder(@Body() payload: ReorderPayload) {
+    const items = Array.isArray(payload.items)
+      ? payload.items
+          .filter((item) => Number.isInteger(item.id) && item.id! > 0)
+          .map((item, index) => ({
+            id: item.id!,
+            category:
+              typeof item.category === "string" && item.category.trim()
+                ? item.category.trim()
+                : null,
+            sortOrder:
+              typeof item.sortOrder === "number" &&
+              Number.isFinite(item.sortOrder)
+                ? Math.floor(item.sortOrder)
+                : index,
+          }))
+      : [];
+    return { ok: true, items: reorderSiteLinks(items) };
   }
 
   @Patch(":id")

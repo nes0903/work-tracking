@@ -217,6 +217,48 @@ export function updateSiteLink(
   return row ? hydrate(row) : null;
 }
 
+export interface ReorderSiteLinkInput {
+  id: number;
+  category: string | null;
+  sortOrder: number;
+}
+
+export function reorderSiteLinks(items: ReorderSiteLinkInput[]): SiteLink[] {
+  const db = getDatabase();
+  const cleaned = items
+    .filter((item) => Number.isInteger(item.id) && item.id > 0)
+    .map((item, index) => ({
+      id: item.id,
+      category: item.category?.trim() || null,
+      sortOrder: Number.isFinite(item.sortOrder)
+        ? Math.floor(item.sortOrder)
+        : index,
+    }));
+
+  if (cleaned.length === 0) return listSiteLinks();
+
+  db.exec("BEGIN");
+  try {
+    const update = db.prepare(
+      `UPDATE site_links
+          SET category = ?, sort_order = ?, updated_at = datetime('now')
+        WHERE id = ?`,
+    );
+    for (const item of cleaned) {
+      if (item.category) {
+        createSiteLinkCategory(item.category);
+      }
+      update.run(item.category, item.sortOrder, item.id);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return listSiteLinks();
+}
+
 export function deleteSiteLink(id: number): boolean {
   const db = getDatabase();
   const result = db.prepare(`DELETE FROM site_links WHERE id = ?`).run(id);

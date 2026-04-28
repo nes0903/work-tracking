@@ -134,6 +134,26 @@ export async function updateSiteLink(
   }
 }
 
+export async function saveSiteLinkOrganization(
+  items: Array<{ id: number; category: string | null; sortOrder: number }>,
+): Promise<SiteLink[] | null> {
+  try {
+    const response = await fetch("/api/site-links/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as {
+      ok: boolean;
+      items?: SiteLink[];
+    };
+    return payload.ok ? (payload.items ?? []) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteSiteLink(id: number): Promise<boolean> {
   try {
     const response = await fetch(`/api/site-links/${id}`, { method: "DELETE" });

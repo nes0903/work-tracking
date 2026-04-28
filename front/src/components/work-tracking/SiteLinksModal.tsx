@@ -8,6 +8,7 @@ import {
   fetchSiteLinkCategories,
   fetchSiteLinks,
   renameSiteLinkCategory,
+  saveSiteLinkOrganization,
   updateSiteLink,
   type SiteLink,
 } from "@/lib/site-links-api";
@@ -41,6 +42,37 @@ function mergeCategories(...lists: string[][]): string[] {
   }
   if (!seen.has(DEFAULT_NEW_CATEGORY)) result.push(DEFAULT_NEW_CATEGORY);
   return result;
+}
+
+function moveLinkToCategory(
+  list: SiteLink[],
+  linkId: number,
+  category: string,
+  beforeId?: number,
+): SiteLink[] {
+  const currentIndex = list.findIndex((link) => link.id === linkId);
+  if (currentIndex < 0) return list;
+
+  const moved = { ...list[currentIndex], category };
+  const withoutMoved = list.filter((link) => link.id !== linkId);
+  let insertIndex = withoutMoved.length;
+
+  if (beforeId !== undefined && beforeId !== linkId) {
+    const beforeIndex = withoutMoved.findIndex((link) => link.id === beforeId);
+    if (beforeIndex >= 0) {
+      insertIndex = beforeIndex;
+    }
+  } else {
+    for (let i = 0; i < withoutMoved.length; i += 1) {
+      if (normalizeCategory(withoutMoved[i].category) === category) {
+        insertIndex = i + 1;
+      }
+    }
+  }
+
+  const next = [...withoutMoved];
+  next.splice(insertIndex, 0, moved);
+  return next;
 }
 
 export function SiteLinksPanel() {
@@ -77,6 +109,10 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   const [editMode, setEditMode] = useState(false);
   const [query, setQuery] = useState("");
   const [categoryDraft, setCategoryDraft] = useState("");
+  const [draggingLinkId, setDraggingLinkId] = useState<number | null>(null);
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+  const [organizationDirty, setOrganizationDirty] = useState(false);
+  const [organizationSaving, setOrganizationSaving] = useState(false);
 
   const [newLabel, setNewLabel] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -102,6 +138,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
             items.map((item) => item.category ?? ""),
           ),
         );
+        setOrganizationDirty(false);
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -120,6 +157,9 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     setNewCategory(DEFAULT_NEW_CATEGORY);
     setCategoryDraft("");
     setEditingId(null);
+    setDraggingLinkId(null);
+    setDragOverCategory(null);
+    setOrganizationDirty(false);
   }, [active]);
 
   const filtered = useMemo(() => {
@@ -178,6 +218,53 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     } else {
       window.alert("추가 실패. URL과 이름을 확인하세요.");
     }
+  }
+
+  async function reloadLinksFromServer() {
+    setLoading(true);
+    try {
+      const [items, fetchedCategories] = await Promise.all([
+        fetchSiteLinks(),
+        fetchSiteLinkCategories(),
+      ]);
+      setLinks(items);
+      setCategories(
+        mergeCategories(
+          fetchedCategories,
+          items.map((item) => item.category ?? ""),
+        ),
+      );
+      setOrganizationDirty(false);
+      setDraggingLinkId(null);
+      setDragOverCategory(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveOrganization() {
+    if (!organizationDirty || organizationSaving) return;
+    setOrganizationSaving(true);
+    const saved = await saveSiteLinkOrganization(
+      links.map((link, index) => ({
+        id: link.id,
+        category: normalizeCategory(link.category),
+        sortOrder: index,
+      })),
+    );
+    setOrganizationSaving(false);
+    if (!saved) {
+      window.alert("링크 정리 저장에 실패했습니다.");
+      return;
+    }
+    setLinks(saved);
+    setCategories((prev) =>
+      mergeCategories(
+        prev,
+        saved.map((item) => item.category ?? ""),
+      ),
+    );
+    setOrganizationDirty(false);
   }
 
   async function handleCreateCategory() {
@@ -261,6 +348,59 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     window.open(link.url, "_blank", "noopener");
   }
 
+  function handleDragStart(
+    event: React.DragEvent<HTMLLIElement>,
+    linkId: number,
+  ) {
+    if (!editMode || editingId === linkId) return;
+    setDraggingLinkId(linkId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(linkId));
+  }
+
+  function handleDragOverBody(event: React.DragEvent<HTMLDivElement>) {
+    if (draggingLinkId === null) return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const threshold = 56;
+    if (event.clientY < rect.top + threshold) {
+      target.scrollTop -= 18;
+    } else if (event.clientY > rect.bottom - threshold) {
+      target.scrollTop += 18;
+    }
+  }
+
+  function handleDragOverCategory(
+    event: React.DragEvent<HTMLElement>,
+    category: string,
+  ) {
+    if (draggingLinkId === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCategory(category);
+  }
+
+  function handleDropOnCategory(
+    event: React.DragEvent<HTMLElement>,
+    category: string,
+    beforeId?: number,
+  ) {
+    if (draggingLinkId === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const linkId = draggingLinkId;
+    if (beforeId === linkId) {
+      setDraggingLinkId(null);
+      setDragOverCategory(null);
+      return;
+    }
+    setLinks((prev) => moveLinkToCategory(prev, linkId, category, beforeId));
+    setOrganizationDirty(true);
+    setDraggingLinkId(null);
+    setDragOverCategory(null);
+  }
+
   const totalFiltered = filtered.length;
 
   return (
@@ -271,7 +411,16 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
           <button
             type="button"
             className="text-button"
-            onClick={() => setEditMode((v) => !v)}
+            onClick={() => {
+              if (editMode && organizationDirty) {
+                const ok = window.confirm(
+                  "저장하지 않은 링크 정리 변경을 버릴까요?",
+                );
+                if (!ok) return;
+                void reloadLinksFromServer();
+              }
+              setEditMode((v) => !v);
+            }}
           >
             {editMode ? "완료" : "편집"}
           </button>
@@ -312,7 +461,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
         ))}
       </datalist>
 
-      <div className="site-links-body">
+      <div className="site-links-body" onDragOver={handleDragOverBody}>
         {editMode ? (
           <div className="site-links-category-tools">
             <input
@@ -335,6 +484,24 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
             >
               분류 추가
             </button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void handleSaveOrganization()}
+              disabled={!organizationDirty || organizationSaving}
+            >
+              {organizationSaving ? "저장 중..." : "정리 저장"}
+            </button>
+            {organizationDirty ? (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => void reloadLinksFromServer()}
+                disabled={loading || organizationSaving}
+              >
+                되돌리기
+              </button>
+            ) : null}
           </div>
         ) : null}
         {loading ? (
@@ -347,7 +514,13 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
           visibleCategories.map((cat) => {
             const items = grouped.get(cat) ?? [];
             return (
-              <section key={cat} className="site-links-section">
+              <section
+                key={cat}
+                className={`site-links-section ${dragOverCategory === cat ? "drag-over" : ""}`.trim()}
+                onDragOver={(event) => handleDragOverCategory(event, cat)}
+                onDragLeave={() => setDragOverCategory(null)}
+                onDrop={(event) => handleDropOnCategory(event, cat)}
+              >
                 <h4 className="site-links-section-title">
                   <span>{cat}</span>
                   <span className="site-links-section-count">{items.length}</span>
@@ -365,7 +538,24 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
                   {items.map((link) => {
                     const isEditing = editingId === link.id;
                     return (
-                      <li key={link.id} className="site-links-item">
+                      <li
+                        key={link.id}
+                        className={`site-links-item ${draggingLinkId === link.id ? "dragging" : ""}`.trim()}
+                        draggable={editMode && !isEditing}
+                        onDragStart={(event) =>
+                          handleDragStart(event, link.id)
+                        }
+                        onDragEnd={() => {
+                          setDraggingLinkId(null);
+                          setDragOverCategory(null);
+                        }}
+                        onDragOver={(event) =>
+                          handleDragOverCategory(event, cat)
+                        }
+                        onDrop={(event) =>
+                          handleDropOnCategory(event, cat, link.id)
+                        }
+                      >
                         {editMode && isEditing ? (
                           <div className="site-links-edit">
                             <input
