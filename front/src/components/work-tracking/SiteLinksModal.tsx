@@ -25,6 +25,14 @@ interface WorkspaceProps {
 }
 
 const DEFAULT_NEW_CATEGORY = "기타";
+const MOVE_TARGET_NONE = "";
+
+type MovePlacement = "top" | "bottom";
+
+interface MoveTarget {
+  category: string;
+  placement: MovePlacement;
+}
 
 function normalizeCategory(value: string | null | undefined): string {
   return value?.trim() || DEFAULT_NEW_CATEGORY;
@@ -76,6 +84,35 @@ function moveLinkToCategory(
   return next;
 }
 
+function encodeMoveTarget(category: string, placement: MovePlacement): string {
+  return `${placement}:${category}`;
+}
+
+function parseMoveTarget(value: string): MoveTarget | null {
+  const [placement, ...categoryParts] = value.split(":");
+  const category = normalizeCategory(categoryParts.join(":"));
+  if ((placement !== "top" && placement !== "bottom") || !category) {
+    return null;
+  }
+  return { category, placement };
+}
+
+function moveLinkToPlacement(
+  list: SiteLink[],
+  linkId: number,
+  category: string,
+  placement: MovePlacement,
+): SiteLink[] {
+  const beforeId =
+    placement === "top"
+      ? list.find(
+          (link) =>
+            link.id !== linkId && normalizeCategory(link.category) === category,
+        )?.id
+      : undefined;
+  return moveLinkToCategory(list, linkId, category, beforeId);
+}
+
 export function SiteLinksPanel() {
   return (
     <section className="panel site-links-panel">
@@ -124,6 +161,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   const [editLabel, setEditLabel] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editCategory, setEditCategory] = useState(DEFAULT_NEW_CATEGORY);
+  const [editMoveTarget, setEditMoveTarget] = useState(MOVE_TARGET_NONE);
 
   useEffect(() => {
     if (!active) return;
@@ -161,6 +199,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     setDraggingLinkId(null);
     setDragOverCategory(null);
     setOrganizationDirty(false);
+    setEditMoveTarget(MOVE_TARGET_NONE);
   }, [active]);
 
   const filtered = useMemo(() => {
@@ -315,6 +354,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     setEditLabel(link.label);
     setEditUrl(link.url);
     setEditCategory(normalizeCategory(link.category));
+    setEditMoveTarget(MOVE_TARGET_NONE);
   }
 
   function cancelEdit() {
@@ -322,6 +362,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     setEditLabel("");
     setEditUrl("");
     setEditCategory(DEFAULT_NEW_CATEGORY);
+    setEditMoveTarget(MOVE_TARGET_NONE);
   }
 
   async function saveEdit() {
@@ -329,13 +370,42 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
     const label = editLabel.trim();
     const url = editUrl.trim();
     if (!label || !url) return;
+    const moveTarget = parseMoveTarget(editMoveTarget);
+    const category = moveTarget?.category ?? normalizeCategory(editCategory);
     const updated = await updateSiteLink(editingId, {
       label,
       url,
-      category: normalizeCategory(editCategory),
+      category,
     });
     if (updated) {
-      setLinks((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+      const updatedLinks = links.map((link) =>
+        link.id === updated.id ? updated : link,
+      );
+      if (moveTarget) {
+        const moved = moveLinkToPlacement(
+          updatedLinks,
+          updated.id,
+          moveTarget.category,
+          moveTarget.placement,
+        );
+        const saved = await saveSiteLinkOrganization(
+          moved.map((link, index) => ({
+            id: link.id,
+            category: normalizeCategory(link.category),
+            sortOrder: index,
+          })),
+        );
+        if (saved) {
+          setLinks(saved);
+          setOrganizationDirty(false);
+        } else {
+          setLinks(moved);
+          setOrganizationDirty(true);
+          window.alert("위치 저장에 실패했습니다. 정리 저장을 다시 눌러주세요.");
+        }
+      } else {
+        setLinks(updatedLinks);
+      }
       setCategories((prev) =>
         mergeCategories(prev, [normalizeCategory(updated.category)]),
       );
@@ -580,6 +650,31 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
                               }
                               placeholder="분류"
                             />
+                            <select
+                              value={editMoveTarget}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setEditMoveTarget(value);
+                                const target = parseMoveTarget(value);
+                                if (target) setEditCategory(target.category);
+                              }}
+                            >
+                              <option value={MOVE_TARGET_NONE}>위치 유지</option>
+                              {categories.flatMap((category) => [
+                                <option
+                                  key={`${category}:top`}
+                                  value={encodeMoveTarget(category, "top")}
+                                >
+                                  {category} 맨 위
+                                </option>,
+                                <option
+                                  key={`${category}:bottom`}
+                                  value={encodeMoveTarget(category, "bottom")}
+                                >
+                                  {category} 맨 아래
+                                </option>,
+                              ])}
+                            </select>
                             <div className="site-links-edit-actions">
                               <button
                                 type="button"
@@ -599,16 +694,37 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
                           </div>
                         ) : (
                           <>
-                            <button
-                              type="button"
-                              className="site-links-open"
-                              onClick={() => handleOpen(link)}
-                              disabled={editMode}
-                              title={link.url}
-                            >
-                              <span className="site-links-label">{link.label}</span>
-                              <span className="site-links-url">{link.url}</span>
-                            </button>
+                            {editMode ? (
+                              <span
+                                className="site-links-drag-grip"
+                                aria-hidden="true"
+                              >
+                                ::
+                              </span>
+                            ) : null}
+                            {editMode ? (
+                              <div
+                                className="site-links-open site-links-open-static"
+                                title={link.url}
+                              >
+                                <span className="site-links-label">
+                                  {link.label}
+                                </span>
+                                <span className="site-links-url">{link.url}</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="site-links-open"
+                                onClick={() => handleOpen(link)}
+                                title={link.url}
+                              >
+                                <span className="site-links-label">
+                                  {link.label}
+                                </span>
+                                <span className="site-links-url">{link.url}</span>
+                              </button>
+                            )}
                             {editMode ? (
                               <div className="site-links-item-actions">
                                 <button

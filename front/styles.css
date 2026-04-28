@@ -3738,6 +3738,19 @@ button {
   cursor: grabbing;
 }
 
+.site-links-drag-grip {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  color: var(--on-surface-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.08em;
+  cursor: grab;
+  user-select: none;
+}
+
 .site-links-open {
   flex: 1;
   min-width: 0;
@@ -3754,6 +3767,10 @@ button {
 
 .site-links-open:disabled {
   cursor: default;
+}
+
+.site-links-open-static {
+  cursor: grab;
 }
 
 .site-links-label {
@@ -3787,7 +3804,8 @@ button {
   width: 100%;
 }
 
-.site-links-edit input {
+.site-links-edit input,
+.site-links-edit select {
   width: 100%;
 }
 
