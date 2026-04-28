@@ -1,4 +1,5 @@
 import { getDatabase } from "@libs/sqlite-db";
+import { extractLinksFromText } from "@libs/line-works-bot";
 
 export interface InsertMessageInput {
   messageId: string;
@@ -144,10 +145,17 @@ export function insertLinks(messageId: string, urls: string[]): void {
     return;
   }
   const db = getDatabase();
+  const existingRows = db
+    .prepare(`SELECT url FROM line_works_links WHERE message_id = ?`)
+    .all(messageId) as Array<{ url: string }>;
+  const seen = new Set(existingRows.map((row) => row.url.toLowerCase()));
   const statement = db.prepare(
     `INSERT INTO line_works_links (message_id, url) VALUES (?, ?)`,
   );
   for (const url of urls) {
+    const key = url.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
     statement.run(messageId, url);
   }
 }
@@ -446,6 +454,10 @@ export function listArchive(options?: {
   let links: LinkListRow[] = [];
 
   if (messageIds.length > 0) {
+    for (const message of messages) {
+      insertLinks(message.message_id, extractLinksFromText(message.text));
+    }
+
     const placeholders = messageIds.map(() => "?").join(",");
     attachments = db
       .prepare(

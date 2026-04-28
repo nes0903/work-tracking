@@ -324,16 +324,35 @@ export async function fetchBotScopedUserName(
   }
 }
 
-const URL_REGEX = /\bhttps?:\/\/[^\s<>"']+/gi;
+const LINK_CANDIDATE_REGEX =
+  /\bhttps?:\/\/[^\s<>"']+|(^|[^\w@/.-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d{2,5})?(?:\/[^\s<>"']*)?)/gi;
+const TRAILING_URL_PUNCTUATION = /[),.;!?'"]+$/g;
 
-export function extractLinksFromText(text: string | null | undefined): string[] {
+function cleanExtractedLink(value: string): string {
+  return value.replace(TRAILING_URL_PUNCTUATION, "");
+}
+
+export function extractLinksFromText(
+  text: string | null | undefined,
+): string[] {
   if (!text) {
     return [];
   }
-  const matches = text.match(URL_REGEX);
-  if (!matches) {
-    return [];
+
+  const links: string[] = [];
+  const seen = new Set<string>();
+  const addLink = (value: string) => {
+    const cleaned = cleanExtractedLink(value);
+    if (!cleaned) return;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    links.push(cleaned);
+  };
+
+  for (const match of text.matchAll(LINK_CANDIDATE_REGEX)) {
+    addLink(match[2] ?? match[0]);
   }
-  const trimmed = matches.map((url) => url.replace(/[),.;!?'"]+$/g, ""));
-  return Array.from(new Set(trimmed));
+
+  return links;
 }

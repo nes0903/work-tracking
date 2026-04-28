@@ -10,6 +10,7 @@ import {
   type Task,
 } from "@/lib/work-tracking";
 import { sourceIcon, sourceLabel, type TaskReference } from "@/lib/task-references";
+import { toExternalHref } from "@/lib/url-utils";
 
 export interface TaskAction {
   label: string;
@@ -63,7 +64,7 @@ export function TaskCard({
               {reference.externalUrl ? (
                 <a
                   className="task-reference-title"
-                  href={reference.externalUrl}
+                  href={toExternalHref(reference.externalUrl)}
                   target="_blank"
                   rel="noreferrer"
                   title={reference.excerpt ?? reference.title ?? ""}

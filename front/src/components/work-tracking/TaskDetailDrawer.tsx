@@ -15,6 +15,7 @@ import {
   type TaskListItem,
   type TaskStatus,
 } from "@/lib/tasks-api";
+import { safeHostname } from "@/lib/url-utils";
 
 interface Props {
   task: TaskListItem | null;
@@ -306,12 +307,4 @@ function buildRefDisplay(ref: TaskReference): {
     title: ref.title ?? "제목 없음",
     excerpt: ref.excerpt ?? null,
   };
-}
-
-function safeHostname(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
 }

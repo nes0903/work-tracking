@@ -35,6 +35,7 @@ import {
   markNotionRead,
   parseTimestamp,
 } from "@/lib/last-seen";
+import { isSingleLinkText, safeHostname, toExternalHref } from "@/lib/url-utils";
 import { AttachToTaskModal, type AttachCandidate } from "./AttachToTaskModal";
 import { CalendarView } from "./CalendarView";
 import { DashboardFilters, type FiltersValue } from "./DashboardFilters";
@@ -597,8 +598,9 @@ export function WorkTrackingDashboard() {
       case "url":
       case "figma_node":
       case "notion_page":
+      case "site_link":
         if (ref.externalUrl) {
-          window.open(ref.externalUrl, "_blank", "noopener");
+          window.open(toExternalHref(ref.externalUrl), "_blank", "noopener");
         }
         break;
       case "line_works_attachment": {
@@ -638,9 +640,9 @@ export function WorkTrackingDashboard() {
 
         // 본문이 URL 하나로만 이루어진 경우(앞뒤 공백 허용) → 바로 새 탭으로 열기
         const trimmed = body.trim();
-        const urlOnlyMatch = trimmed.match(/^(https?:\/\/\S+)$/);
-        if (urlOnlyMatch) {
-          window.open(urlOnlyMatch[1], "_blank", "noopener");
+        const linkOnly = isSingleLinkText(trimmed);
+        if (linkOnly) {
+          window.open(linkOnly.href, "_blank", "noopener");
           break;
         }
 
@@ -798,9 +800,9 @@ export function WorkTrackingDashboard() {
   }) {
     const body = message.text ?? "";
     const trimmed = body.trim();
-    const urlOnlyMatch = trimmed.match(/^(https?:\/\/\S+)$/);
-    if (urlOnlyMatch) {
-      window.open(urlOnlyMatch[1], "_blank", "noopener");
+    const linkOnly = isSingleLinkText(trimmed);
+    if (linkOnly) {
+      window.open(linkOnly.href, "_blank", "noopener");
       return;
     }
     setMessagePreview({
@@ -1714,7 +1716,7 @@ export function WorkTrackingDashboard() {
                               return (
                                 <a
                                   className="line-works-link"
-                                  href={open.url}
+                                  href={toExternalHref(open.url)}
                                   target="_blank"
                                   rel="noreferrer"
                                 >
@@ -2167,7 +2169,7 @@ function LineWorksLinkPreviews({
           <article key={link.id} className="line-works-link-preview">
             <a
               className="line-works-link-preview-main"
-              href={link.url}
+              href={toExternalHref(link.url)}
               target="_blank"
               rel="noreferrer"
             >
@@ -2203,14 +2205,6 @@ function LineWorksLinkPreviews({
       })}
     </div>
   );
-}
-
-function safeHostname(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
 }
 
 function isInlinePreviewable(attachment: LineWorksArchiveAttachment): boolean {

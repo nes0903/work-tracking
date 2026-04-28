@@ -92,10 +92,24 @@ export async function getOrFetchLinkPreview(url: string): Promise<LinkPreview> {
   const cached = cachedPreview(url);
   if (cached) return cached;
 
+  let lastError: unknown = null;
   try {
-    await assertFetchableUrl(url);
-    const preview = await fetchPreview(url);
-    return savePreview({ ...preview, status: "success", errorMessage: null });
+    const candidates = previewFetchCandidates(url);
+    for (const candidate of candidates) {
+      try {
+        await assertFetchableUrl(candidate);
+        const preview = await fetchPreview(candidate, url);
+        return savePreview({
+          ...preview,
+          status: "success",
+          errorMessage: null,
+        });
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (lastError instanceof Error) throw lastError;
+    throw new Error("preview fetch failed");
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "preview fetch failed";
@@ -109,6 +123,14 @@ export async function getOrFetchLinkPreview(url: string): Promise<LinkPreview> {
       errorMessage: message,
     });
   }
+}
+
+function previewFetchCandidates(value: string): string[] {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return [trimmed];
+  }
+  return [`https://${trimmed}`, `http://${trimmed}`];
 }
 
 async function assertFetchableUrl(value: string): Promise<void> {
@@ -154,14 +176,17 @@ function isBlockedIp(ip: string): boolean {
   );
 }
 
-async function fetchPreview(url: string): Promise<{
+async function fetchPreview(
+  fetchUrl: string,
+  storedUrl: string,
+): Promise<{
   url: string;
   title: string | null;
   description: string | null;
   imageUrl: string | null;
   siteName: string | null;
 }> {
-  const response = await fetch(url, {
+  const response = await fetch(fetchUrl, {
     redirect: "follow",
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     headers: {
@@ -182,9 +207,9 @@ async function fetchPreview(url: string): Promise<{
   }
 
   const html = (await response.text()).slice(0, MAX_HTML_BYTES);
-  const baseUrl = response.url || url;
+  const baseUrl = response.url || fetchUrl;
   return {
-    url,
+    url: storedUrl,
     title:
       metaContent(html, "property", "og:title") ??
       metaContent(html, "name", "twitter:title") ??

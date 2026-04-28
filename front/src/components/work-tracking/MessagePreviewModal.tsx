@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { findLinksInText } from "@/lib/url-utils";
 
 export interface MessagePreview {
   channelTitle: string | null;
@@ -15,21 +16,25 @@ interface Props {
   onClose: () => void;
 }
 
-const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
-
 export function MessagePreviewModal({ preview, onClose }: Props) {
   const parts = useMemo(() => {
-    if (!preview) return [] as Array<{ kind: "text" | "link"; value: string }>;
-    const items: Array<{ kind: "text" | "link"; value: string }> = [];
+    if (!preview) {
+      return [] as Array<{
+        kind: "text" | "link";
+        value: string;
+        href?: string;
+      }>;
+    }
+    const items: Array<{ kind: "text" | "link"; value: string; href?: string }> =
+      [];
     const text = preview.text;
     let lastIndex = 0;
-    for (const match of text.matchAll(URL_REGEX)) {
-      const start = match.index ?? 0;
-      if (start > lastIndex) {
-        items.push({ kind: "text", value: text.slice(lastIndex, start) });
+    for (const match of findLinksInText(text)) {
+      if (match.start > lastIndex) {
+        items.push({ kind: "text", value: text.slice(lastIndex, match.start) });
       }
-      items.push({ kind: "link", value: match[0] });
-      lastIndex = start + match[0].length;
+      items.push({ kind: "link", value: match.value, href: match.href });
+      lastIndex = match.end;
     }
     if (lastIndex < text.length) {
       items.push({ kind: "text", value: text.slice(lastIndex) });
@@ -81,7 +86,7 @@ export function MessagePreviewModal({ preview, onClose }: Props) {
                     part.kind === "link" ? (
                       <a
                         key={idx}
-                        href={part.value}
+                        href={part.href}
                         target="_blank"
                         rel="noreferrer"
                       >

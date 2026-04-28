@@ -18,6 +18,7 @@ import {
   type PendingReference,
 } from "@/lib/pending-references";
 import type { ChannelLabelMap, StorageItem } from "@/lib/storage";
+import { safeHostname } from "@/lib/url-utils";
 import type { NotionUpdateItem } from "@/lib/work-tracking";
 
 type TabId =
@@ -768,14 +769,6 @@ function SiteLinksTab({
       </ul>
     </div>
   );
-}
-
-function safeHostname(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
 }
 
 /* ============================================================

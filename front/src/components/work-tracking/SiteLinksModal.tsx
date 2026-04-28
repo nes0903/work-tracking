@@ -12,6 +12,7 @@ import {
   updateSiteLink,
   type SiteLink,
 } from "@/lib/site-links-api";
+import { toExternalHref } from "@/lib/url-utils";
 
 interface ModalProps {
   open: boolean;
@@ -345,7 +346,7 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
   }
 
   function handleOpen(link: SiteLink) {
-    window.open(link.url, "_blank", "noopener");
+    window.open(toExternalHref(link.url), "_blank", "noopener");
   }
 
   function handleDragStart(
@@ -565,10 +566,10 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
                               placeholder="이름"
                             />
                             <input
-                              type="url"
+                              type="text"
                               value={editUrl}
                               onChange={(event) => setEditUrl(event.target.value)}
-                              placeholder="https://..."
+                              placeholder="https:// 또는 example.com"
                             />
                             <input
                               type="text"
@@ -648,10 +649,10 @@ function SiteLinksWorkspace({ active, onClose }: WorkspaceProps) {
               disabled={submitting}
             />
             <input
-              type="url"
+              type="text"
               value={newUrl}
               onChange={(event) => setNewUrl(event.target.value)}
-              placeholder="https://..."
+              placeholder="https:// 또는 example.com"
               disabled={submitting}
             />
             <input

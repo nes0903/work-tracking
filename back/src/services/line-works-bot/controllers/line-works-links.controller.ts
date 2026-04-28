@@ -36,7 +36,8 @@ function requireLink(id: number) {
 
 function labelFromUrl(url: string): string {
   try {
-    const parsed = new URL(url);
+    const candidate = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    const parsed = new URL(candidate);
     return parsed.hostname.replace(/^www\./, "") || url;
   } catch {
     return url;
