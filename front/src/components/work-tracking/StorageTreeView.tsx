@@ -26,8 +26,6 @@ function channelDisplay(
   if (info?.title) {
     return info.channelType === "SINGLE_USER" ? `DM · ${info.title}` : info.title;
   }
-  if (channelId.startsWith("dm_")) return `DM · ${channelId.slice(3, 10)}…`;
-  if (channelId.length > 14) return `${channelId.slice(0, 6)}…${channelId.slice(-4)}`;
   return channelId;
 }
 
@@ -185,12 +183,6 @@ function FolderNode({
       return channelInfo.channelType === "SINGLE_USER"
         ? `DM · ${channelInfo.title}`
         : channelInfo.title;
-    }
-    if (isChannelSegment && folder.segment.startsWith("dm_")) {
-      return `DM · ${folder.segment.slice(3, 10)}…`;
-    }
-    if (isChannelSegment && folder.segment.length > 14) {
-      return `${folder.segment.slice(0, 6)}…${folder.segment.slice(-4)}`;
     }
     return folder.segment;
   })();
