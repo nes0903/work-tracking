@@ -17,7 +17,7 @@ description: LINE WORKS / GitHub / Notion 웹훅 콜백이 실패하거나 저�
 
 ## 운영 환경
 
-- EC2: `ssh -i ~/.ssh/id_rsa ec2-user@43.200.89.255`
+- EC2: `ssh "$PRODUCTION_SSH_TARGET"`
 - pm2 프로세스: `wt-back`
 - Nginx access log: `/var/log/nginx/access.log`
 - env 변경 후: `pm2 restart wt-back --update-env`
@@ -27,7 +27,7 @@ description: LINE WORKS / GitHub / Notion 웹훅 콜백이 실패하거나 저�
 ### 1. 콜백이 서버까지 도달하는가
 
 ```bash
-ssh ec2-user@43.200.89.255 'sudo tail -200 /var/log/nginx/access.log | grep {endpoint}'
+ssh "$PRODUCTION_SSH_TARGET" 'sudo tail -200 /var/log/nginx/access.log | grep {endpoint}'
 ```
 
 분기:
@@ -56,7 +56,7 @@ POST /api/line-works-bot/callback HTTP/1.1 200 62 "..."
 코드 경로를 알면 `dist`에 임시 로그 삽입:
 
 ```bash
-ssh ec2-user@43.200.89.255 '
+ssh "$PRODUCTION_SSH_TARGET" '
   cd ~/work-tracking/back/dist/services/line-works-bot/applications
   cp line-works-bot.service.js line-works-bot.service.js.bak
   # JSON.stringify payload 로깅 추가

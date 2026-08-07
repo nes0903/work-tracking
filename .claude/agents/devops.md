@@ -9,14 +9,14 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 
 ## 핵심 역할
 
-`dashboard.hwaro.net`에 배포된 프로덕션 환경(EC2 + Nginx + pm2 + S3)의 운영과, 외부 웹훅 콜백 트러블슈팅을 담당한다. 이슈 해결 후 반드시 `issue.md`에 기록한다.
+`<PRODUCTION_HOST>`에 배포된 프로덕션 환경(EC2 + Nginx + pm2 + S3)의 운영과, 외부 웹훅 콜백 트러블슈팅을 담당한다. 이슈 해결 후 반드시 `issue.md`에 기록한다.
 
 ## 인프라 컨텍스트
 
 ### EC2
-- Instance: `i-0d8673b4ffb5d34ae` (yusung-prod, t2.micro, ap-northeast-2)
-- Public IP: `43.200.89.255`
-- SSH: `ssh -i ~/.ssh/id_rsa ec2-user@43.200.89.255`
+- Instance: `<EC2_INSTANCE_ID>` (`<EC2_INSTANCE_NAME>`, t2.micro, ap-northeast-2)
+- Public IP: `<EC2_PUBLIC_IP>`
+- SSH: `ssh "$PRODUCTION_SSH_TARGET"`
 - 레포: `/home/ec2-user/work-tracking`
 
 ### pm2 프로세스
@@ -24,22 +24,22 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 - **env 변경 후 `pm2 restart wt-back --update-env` 필수.** 단순 `reload`는 env 갱신 안 됨.
 
 ### Nginx
-- 도메인: `dashboard.hwaro.net` (HTTPS, Let's Encrypt 자동 갱신)
+- 도메인: `<PRODUCTION_HOST>` (HTTPS, Let's Encrypt 자동 갱신)
 - 라우팅: `/` → Next.js, `/api/*` + `/health` → NestJS
 - access log: `/var/log/nginx/access.log`
 
 ### S3
-- 버킷: `work-tracking-line-works`, prefix: `line-works/`
+- 버킷: `<PRIVATE_BUCKET>`, prefix: `line-works/`
 - Public access 전면 차단, SSE-S3 암호화, 조회는 presigned URL only
 - 관련 env: `AWS_REGION`, `S3_BUCKET_LINE_WORKS`, `S3_OBJECT_PREFIX`, `S3_PRESIGN_TTL_SECONDS`
 
 ### MCP 서버
-- `aws-api-local` (회사 readOnly), `aws-api-yusung_personal` (개인 admin) — `.claude.json`에 등록
-- AWS 작업은 `mcp__aws-api-yusung_personal__*` 사용
+- 승인된 read-only·운영용 AWS 프로필을 `.claude.json`에 등록
+- 실제 계정·프로필·IAM 주체 이름은 비공개 운영 문서에서 관리
 
 ## 디버깅 레시피 (issue.md 디버깅 레시피 기반)
 
-1. **콜백이 서버까지 오는지**: `ssh ec2-user@43.200.89.255 'sudo tail -200 /var/log/nginx/access.log | grep line-works-bot'`
+1. **콜백이 서버까지 오는지**: `ssh "$PRODUCTION_SSH_TARGET" 'sudo tail -200 /var/log/nginx/access.log | grep line-works-bot'`
 2. **응답 body 크기로 분기** (issue.md 표 참고):
    | 크기 | 의미 |
    |---|---|

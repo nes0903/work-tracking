@@ -8,15 +8,15 @@
 ## 1. 요구사항
 
 1. 기존 하드코딩 링크 이름 개선
-   - "Library Hub 열기" → **보고팡 운영**
+   - "서비스 열기" → **서비스 A 운영**
 2. 신규 링크 추가
-   - 푸딩툰 관리자 개발 · `https://dev-admin.puddingtoon.org/login`
-   - 픽미툰 이용자 개발 · `https://dev.pickmetoon.com`
-   - 픽미툰 관리자 개발 · `https://admindev.pickmetoon.com`
-   - 푸딩툰 이용자 개발 · `https://test.puddingtoon.org/home`
-   - 보고팡 브로셔 · `https://senior.dobedub.org/home`
-   - 보고팡 개발 · `https://dev.vogopang.com/login?reason=auth_required&redirect=%2F`
-   - 덥라이트 개발 · `https://test2.dubright.org`
+   - 서비스 B 관리자 개발 · `https://dev-admin.service-b.example.com`
+   - 서비스 C 이용자 개발 · `https://dev.service-c.example.com`
+   - 서비스 C 관리자 개발 · `https://admin-dev.service-c.example.com`
+   - 서비스 B 이용자 개발 · `https://test.service-b.example.com`
+   - 서비스 A 안내 · `https://info.service-a.example.com`
+   - 서비스 A 개발 · `https://dev.service-a.example.com`
+   - 서비스 D 개발 · `https://dev.service-d.example.com`
 3. 사이드바에 직접 박지 않고, **"사이트 링크" 버튼** → **모달** 띄워 리디렉트
 4. 하드코딩이 아닌 **동적 추가 / 수정 / 삭제** 가능
 

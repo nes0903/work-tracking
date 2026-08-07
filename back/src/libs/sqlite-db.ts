@@ -230,10 +230,10 @@ function backfillTaskAssignees(db: DatabaseSync): void {
 
 function inferSiteLinkCategory(label: string, url: string): string {
   const haystack = `${label} ${url}`.toLowerCase();
-  if (/보고팡|vogopang|dobedub/.test(haystack)) return "보고팡";
-  if (/푸딩툰|puddingtoon/.test(haystack)) return "푸딩툰";
-  if (/픽미툰|pickmetoon/.test(haystack)) return "픽미툰";
-  if (/덥라이트|dubright/.test(haystack)) return "덥라이트";
+  if (/서비스 a|service-a/.test(haystack)) return "서비스 A";
+  if (/서비스 b|service-b/.test(haystack)) return "서비스 B";
+  if (/서비스 c|service-c/.test(haystack)) return "서비스 C";
+  if (/서비스 d|service-d/.test(haystack)) return "서비스 D";
   return "기타";
 }
 
@@ -248,69 +248,69 @@ function seedSiteLinksIfEmpty(db: DatabaseSync): void {
 
   const seeds: Array<{ label: string; url: string; category: string }> = [
     {
-      label: "보고팡 운영",
-      url: "https://dobedub.vogopang.com/library-hub",
-      category: "보고팡",
+      label: "서비스 A 운영",
+      url: "https://service-a.example.com/operations",
+      category: "서비스 A",
     },
     {
-      label: "보고팡 개발",
-      url: "https://dev.vogopang.com/login?reason=auth_required&redirect=%2F",
-      category: "보고팡",
+      label: "서비스 A 개발",
+      url: "https://dev.service-a.example.com",
+      category: "서비스 A",
     },
     {
-      label: "보고팡 브로셔",
-      url: "https://senior.dobedub.org/home",
-      category: "보고팡",
+      label: "서비스 A 안내",
+      url: "https://info.service-a.example.com",
+      category: "서비스 A",
     },
     {
-      label: "푸딩툰 이용자",
-      url: "https://www.puddingtoon.com/home",
-      category: "푸딩툰",
+      label: "서비스 B 이용자",
+      url: "https://service-b.example.com",
+      category: "서비스 B",
     },
     {
-      label: "푸딩툰 이용자 개발",
-      url: "https://test.puddingtoon.org/home",
-      category: "푸딩툰",
+      label: "서비스 B 이용자 개발",
+      url: "https://test.service-b.example.com",
+      category: "서비스 B",
     },
     {
-      label: "푸딩툰 관리자",
-      url: "https://admin2.puddingtoon.org",
-      category: "푸딩툰",
+      label: "서비스 B 관리자",
+      url: "https://admin.service-b.example.com",
+      category: "서비스 B",
     },
     {
-      label: "푸딩툰 관리자 개발",
-      url: "https://dev-admin.puddingtoon.org/login",
-      category: "푸딩툰",
+      label: "서비스 B 관리자 개발",
+      url: "https://dev-admin.service-b.example.com",
+      category: "서비스 B",
     },
     {
-      label: "픽미툰 이용자",
-      url: "https://www.pickmetoon.com",
-      category: "픽미툰",
+      label: "서비스 C 이용자",
+      url: "https://service-c.example.com",
+      category: "서비스 C",
     },
     {
-      label: "픽미툰 이용자 개발",
-      url: "https://dev.pickmetoon.com",
-      category: "픽미툰",
+      label: "서비스 C 이용자 개발",
+      url: "https://dev.service-c.example.com",
+      category: "서비스 C",
     },
     {
-      label: "픽미툰 관리자",
-      url: "https://admin.pickmetoon.com",
-      category: "픽미툰",
+      label: "서비스 C 관리자",
+      url: "https://admin.service-c.example.com",
+      category: "서비스 C",
     },
     {
-      label: "픽미툰 관리자 개발",
-      url: "https://admindev.pickmetoon.com",
-      category: "픽미툰",
+      label: "서비스 C 관리자 개발",
+      url: "https://admin-dev.service-c.example.com",
+      category: "서비스 C",
     },
     {
-      label: "덥라이트 운영",
-      url: "https://staging.dubright.org",
-      category: "덥라이트",
+      label: "서비스 D 운영",
+      url: "https://staging.service-d.example.com",
+      category: "서비스 D",
     },
     {
-      label: "덥라이트 개발",
-      url: "https://test2.dubright.org",
-      category: "덥라이트",
+      label: "서비스 D 개발",
+      url: "https://dev.service-d.example.com",
+      category: "서비스 D",
     },
   ];
 

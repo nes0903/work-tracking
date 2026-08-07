@@ -13,7 +13,7 @@ NOTION_API_VERSION=2022-06-28
 ## 2. 서버 실행
 
 ```bash
-cd /Users/nes0903/Documents/work-tracking/back
+cd back
 export $(grep -v '^#' .env.local | xargs)
 npm run start:dev
 ```

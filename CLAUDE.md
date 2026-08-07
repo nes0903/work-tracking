@@ -16,7 +16,7 @@
 ## 프로젝트 개요 (참고)
 
 - 모노레포(npm workspaces): `front/` (Next.js 16 + React 19 + Tailwind 4), `back/` (NestJS 11 + SQLite raw SQL)
-- 배포: EC2(`43.200.89.255`) + Nginx + pm2(`wt-back`) + Let's Encrypt → `https://dashboard.hwaro.net`
+- 배포: EC2 + Nginx + pm2(`wt-back`) + Let's Encrypt → `<PRODUCTION_URL>`
 - 외부 통합: LINE WORKS Bot, GitHub Webhook, Notion Webhook, AWS S3
 - 기능별 기획 문서: 루트 `*_PLAN.md` (기능 단위 1개)
 - 이슈 기록: `issue.md` (운영 장애 해결 로그), `worklog.md` (배포/인프라 일지)

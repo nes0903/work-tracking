@@ -3,10 +3,10 @@
 ## 2026-04-16 — AWS MCP 셋업 + EC2 배포 + 도메인 연결 (HTTPS)
 
 ### 목표
-`yusung_personal` AWS 계정의 EC2에 `work-tracking` 레포를 배포하고, `dashboard.hwaro.net` 서브도메인에 HTTPS로 연결한다.
+비공개 AWS 계정의 EC2에 `work-tracking` 레포를 배포하고, `<PRODUCTION_HOST>`에 HTTPS로 연결한다.
 
 ### 최종 결과
-- 🔗 **https://dashboard.hwaro.net** — 브라우저 접속 가능
+- 🔗 **https://<PRODUCTION_HOST>** — 브라우저 접속 가능
 - `/` → Next.js 프론트, `/api/*` + `/health` → NestJS 백엔드
 - HTTP → HTTPS 자동 리다이렉트, Let's Encrypt 인증서 자동 갱신 타이머 등록
 
@@ -16,32 +16,32 @@
 
 ### 기존 상태
 - `~/.claude.json`에 `aws-api-local` MCP 서버가 이미 등록되어 있었음
-- 회사 계정 (`471112500555`, IAM 유저: `readOnly`, read-only)
+- 회사 계정 (`<COMPANY_AWS_ACCOUNT_ID>`, IAM 유저: `<READ_ONLY_IAM_USER>`, read-only)
 - `~/.aws/credentials`의 `[default]` 프로필을 사용
 - `run-http.sh`가 `USER_HOME/.aws/credentials`를 명시적으로 지정하는 구조
 
-### 새로 추가한 서버: `aws-api-yusung_personal`
+### 새로 추가한 서버: `aws-api-<PRIVATE_PROFILE>`
 - 스크립트(`run-http.sh`)는 재사용하고 `.claude.json`의 `env` 블록에서 환경변수로 분기
 - 별도 스크립트 복사 없이 stdio 모드라 포트 충돌 걱정 없음
 - `.env` 파일을 만들면 기존 `aws-api-local`까지 영향받기 때문에 반드시 `.claude.json`의 `env` 필드에서 주입
 
 ```json
-"aws-api-yusung_personal": {
+"aws-api-<PRIVATE_PROFILE>": {
   "type": "stdio",
-  "command": "/Users/nes0903/Documents/aws-api-mcp-server/run-http.sh",
+  "command": "/absolute/path/to/aws-api-mcp-server/run-http.sh",
   "args": [],
   "env": {
-    "AWS_API_MCP_PROFILE_NAME": "yusung_personal",
+    "AWS_API_MCP_PROFILE_NAME": "<PRIVATE_PROFILE>",
     "AWS_REGION": "ap-northeast-2",
     "READ_OPERATIONS_ONLY": "false"
   }
 }
 ```
 
-- `~/.aws/credentials`에 `[yusung_personal]` 프로필 추가
+- `~/.aws/credentials`에 `[<PRIVATE_PROFILE>]` 프로필 추가
 - 검증: `aws sts get-caller-identity` 두 서버 동시 호출
-  - `aws-api-local` → `arn:aws:iam::471112500555:user/readOnly`
-  - `aws-api-yusung_personal` → `arn:aws:iam::247387312534:user/yusung-admin`
+  - `aws-api-local` → `arn:aws:iam::<COMPANY_AWS_ACCOUNT_ID>:user/<READ_ONLY_IAM_USER>`
+  - `aws-api-<PRIVATE_PROFILE>` → `arn:aws:iam::<PRIVATE_AWS_ACCOUNT_ID>:user/<PRIVATE_IAM_USER>`
 - 최초엔 `READ_OPERATIONS_ONLY=true`로 시작, 도메인 연결 단계에서 `false`로 전환 (쓰기 작업 필요)
 
 ---
@@ -49,13 +49,13 @@
 ## 2. EC2 현황 파악
 
 ### 기존 인스턴스
-- Instance ID: `i-0d8673b4ffb5d34ae`
-- Name: `yusung-prod`
+- Instance ID: `<EC2_INSTANCE_ID>`
+- Name: `<EC2_INSTANCE_NAME>`
 - Type: `t2.micro`
-- AMI: `ami-0c003e98ceffee43e` (Amazon Linux 2023, kernel 6.1.166)
+- AMI: `<AMI_ID>` (Amazon Linux 2023, kernel 6.1.166)
 - Region: `ap-northeast-2`
-- Private IP: `172.31.11.231`
-- Security Group: `sg-01acc2594baa7428a`
+- Private IP: `<EC2_PRIVATE_IP>`
+- Security Group: `<SECURITY_GROUP_ID>`
 - **KeyName: null** (생성 시 키페어 미지정)
 - **IamInstanceProfile: null**
 - SSM 등록 안 됨
@@ -63,7 +63,7 @@
 ### 초기 오판과 정정
 - `KeyName=null` + SSM 미등록 상태만 보고 “원격 접속 수단이 없다”고 판단 → **오판**
 - 사용자가 지적: `~/.ssh/id_rsa`에 기존 프라이빗 키가 있고 EC2의 `authorized_keys`에 공개키가 이미 들어 있는 상태
-- `ssh -i ~/.ssh/id_rsa ec2-user@52.79.217.249` 접속 성공
+- `ssh -i "$SSH_KEY_PATH" "$PRODUCTION_SSH_TARGET"` 접속 성공
 - 교훈: AWS 메타데이터가 null이어도 인스턴스 내부에서 수동으로 키를 주입했을 수 있다. 외부 확인만으로 결론짓지 말 것
 
 ### 초기 리소스 상태
@@ -87,7 +87,7 @@
 
 ### 최종 선택: `gh auth login` (디바이스 플로우)
 - Amazon Linux 2023에 NodeSource gh-cli 리포를 추가하고 `gh` 설치
-- `gh auth login -h github.com -p https -w` 백그라운드 실행 → 원타임 코드(`8988-976C`) 출력
+- `gh auth login -h github.com -p https -w` 백그라운드 실행 → 원타임 코드(`<ONE_TIME_CODE>`) 출력
 - 브라우저에서 https://github.com/login/device 로 인증 → `nes0903` 계정으로 로그인 완료
 - 토큰 스코프: `gist`, `read:org`, `repo`
 
@@ -168,7 +168,7 @@
 ## 6. 도메인 연결 (AWS 쓰기 작업)
 
 ### 사전 작업
-- `~/.claude.json`의 `aws-api-yusung_personal.env.READ_OPERATIONS_ONLY`를 `"true"` → `"false"`로 변경
+- `~/.claude.json`의 비공개 AWS 프로필 `READ_OPERATIONS_ONLY`를 `"true"` → `"false"`로 변경
 - Claude Code 재시작
 
 ### EIP 비용 안내 (사용자 질문에 답변)
@@ -178,19 +178,19 @@
 - 이득: 재부팅 시 IP 고정 → Route53 레코드 안 깨짐
 
 ### 서브도메인 선택
-- `apex (hwaro.net)` vs `www.hwaro.net` vs 서브도메인 → **`dashboard.hwaro.net`** 선택
+- `apex (<ROOT_DOMAIN>)` vs `www.<ROOT_DOMAIN>` vs 서브도메인 → **`<PRODUCTION_HOST>`** 선택
 
 ### AWS 리소스 생성 (MCP로 직접 처리)
 | 작업 | 결과 |
 |---|---|
-| EIP 할당 | `43.200.89.255` (`eipalloc-07229fdc838ce652f`), 태그 `Name=yusung-prod-eip`, `Purpose=work-tracking` |
-| EIP → EC2 연결 | `eipassoc-0878885d2bb9e604a` |
-| SG 80/tcp 인바운드 | `sgr-017f1bb4441b6813a` (0.0.0.0/0, Description=http) |
-| SG 443/tcp 인바운드 | `sgr-08a5517ecced07abf` (0.0.0.0/0, Description=https) |
-| Route53 A 레코드 | `dashboard.hwaro.net. → 43.200.89.255`, TTL 300, Hosted Zone `Z01478773DNCC8GAHKMKL`, ChangeId `C08882723FUT6ZNZGC100` |
+| EIP 할당 | `<EC2_PUBLIC_IP>` (`<EIP_ALLOCATION_ID>`), 태그 `Name=<EC2_INSTANCE_NAME>-eip`, `Purpose=work-tracking` |
+| EIP → EC2 연결 | `<EIP_ASSOCIATION_ID>` |
+| SG 80/tcp 인바운드 | `<HTTP_SECURITY_GROUP_RULE_ID>` (0.0.0.0/0, Description=http) |
+| SG 443/tcp 인바운드 | `<HTTPS_SECURITY_GROUP_RULE_ID>` (0.0.0.0/0, Description=https) |
+| Route53 A 레코드 | `<PRODUCTION_HOST> → <EC2_PUBLIC_IP>`, TTL 300, Hosted Zone `<HOSTED_ZONE_ID>`, ChangeId `<ROUTE53_CHANGE_ID>` |
 
 ### 퍼블릭 IP 전환
-- 기존: `52.79.217.249` (dynamic) → 새: **`43.200.89.255`** (EIP)
+- 기존: `<OLD_PUBLIC_IP>` (dynamic) → 새: **`<EC2_PUBLIC_IP>`** (EIP)
 - 기존 SSH 세션은 끊어지지 않고 유지됨 (PM2 프로세스 21분째 정상)
 - 신 IP로 `ssh accept-new` 후 재연결 성공
 
@@ -202,12 +202,12 @@
 - `sudo dnf install -y nginx certbot python3-certbot-nginx`
 - Nginx 1.28.3, certbot 2.6.0
 
-### 설정 파일 `/etc/nginx/conf.d/dashboard.hwaro.net.conf`
+### 설정 파일 `/etc/nginx/conf.d/<PRODUCTION_HOST>.conf`
 ```nginx
 server {
     listen 80;
     listen [::]:80;
-    server_name dashboard.hwaro.net;
+    server_name <PRODUCTION_HOST>;
 
     location /api/ {
         proxy_pass http://127.0.0.1:3001;
@@ -237,7 +237,7 @@ server {
 ```
 
 - `nginx -t` 검증 후 `systemctl enable --now nginx`
-- 첫 HTTP 검증: `curl http://dashboard.hwaro.net/health` → 200 (DNS 전파 완료, 프록시 정상)
+- 첫 HTTP 검증: `curl http://<PRODUCTION_HOST>/health` → 200 (DNS 전파 완료, 프록시 정상)
 
 ---
 
@@ -251,15 +251,15 @@ server {
 
 ### 발급
 ```bash
-sudo certbot --nginx -d dashboard.hwaro.net \
+sudo certbot --nginx -d <PRODUCTION_HOST> \
   --non-interactive --agree-tos \
   --register-unsafely-without-email \
   --redirect
 ```
 
 - 결과:
-  - Cert: `/etc/letsencrypt/live/dashboard.hwaro.net/fullchain.pem`
-  - Key: `/etc/letsencrypt/live/dashboard.hwaro.net/privkey.pem`
+  - Cert: `/etc/letsencrypt/live/<PRODUCTION_HOST>/fullchain.pem`
+  - Key: `/etc/letsencrypt/live/<PRODUCTION_HOST>/privkey.pem`
   - Type: ECDSA
   - 만료: **2026-07-14** (89일)
 - certbot이 Nginx 설정에 443 리스너 + 301 리다이렉트를 자동 추가
@@ -276,10 +276,10 @@ sudo certbot --nginx -d dashboard.hwaro.net \
 ## 9. CORS 수정 + 백엔드 재배포
 
 ### 문제
-- `back/src/main.ts`의 `enableCors`에 `origin: ["http://localhost:3000", "http://127.0.0.1:3000"]`만 있어서 `https://dashboard.hwaro.net`에서 브라우저 JS가 API 호출 시 CORS 차단됨
+- `back/src/main.ts`의 `enableCors`에 `origin: ["http://localhost:3000", "http://127.0.0.1:3000"]`만 있어서 `https://<PRODUCTION_HOST>`에서 브라우저 JS가 API 호출 시 CORS 차단됨
 
 ### 수정
-- EC2의 `back/src/main.ts`를 sed로 in-place 수정 → `"https://dashboard.hwaro.net"` 추가
+- EC2의 `back/src/main.ts`를 sed로 in-place 수정 → `"https://<PRODUCTION_HOST>"` 추가
 - `npm run build:back`
 - `pm2 restart wt-back`
 - ⚠️ **이 수정은 EC2 로컬에서만 적용됨.** 원격 레포(main 브랜치)는 아직 수정 전. `git pull` 하면 덮어씀. PR로 올리는 게 맞음
@@ -290,11 +290,11 @@ sudo certbot --nginx -d dashboard.hwaro.net \
 
 | URL | 결과 |
 |---|---|
-| `https://dashboard.hwaro.net/` | 200, `<title>Work Tracking Dashboard</title>`, Next cache HIT |
-| `https://dashboard.hwaro.net/health` | 200, `{"ok":true,"service":"work-tracking-back"}` |
-| `https://dashboard.hwaro.net/api/notion-updates` | 200 |
-| `http://dashboard.hwaro.net/` | 301 → `https://` |
-| TLS | Let's Encrypt `CN=dashboard.hwaro.net`, subject matches, verify OK |
+| `https://<PRODUCTION_HOST>/` | 200, `<title>Work Tracking Dashboard</title>`, Next cache HIT |
+| `https://<PRODUCTION_HOST>/health` | 200, `{"ok":true,"service":"work-tracking-back"}` |
+| `https://<PRODUCTION_HOST>/api/notion-updates` | 200 |
+| `http://<PRODUCTION_HOST>/` | 301 → `https://` |
+| TLS | Let's Encrypt `CN=<PRODUCTION_HOST>`, subject matches, verify OK |
 
 ---
 
@@ -309,17 +309,17 @@ Nginx 1.28.3  (EC2 443, 80→301)
   └── /                →  127.0.0.1:3000  (Next.js, PM2: wt-front)
   │
   ▼
-EC2 t2.micro  i-0d8673b4ffb5d34ae
+EC2 t2.micro  <EC2_INSTANCE_ID>
   OS: Amazon Linux 2023, kernel 6.1.166
   Node: 22.22.2 (node:sqlite 지원)
   PM2: 6.0.14 (pm2-ec2-user.service enabled)
   Swap: 2GB (/swapfile, swappiness=10)
-  Public IP: 43.200.89.255 (EIP)
-  Private IP: 172.31.11.231
-  SG: sg-01acc2594baa7428a (22, 80, 443)
+  Public IP: <EC2_PUBLIC_IP> (EIP)
+  Private IP: <EC2_PRIVATE_IP>
+  SG: <SECURITY_GROUP_ID> (22, 80, 443)
 
-DNS: Route53  hwaro.net  (Z01478773DNCC8GAHKMKL)
-  A  dashboard.hwaro.net → 43.200.89.255
+DNS: Route53  <ROOT_DOMAIN>  (<HOSTED_ZONE_ID>)
+  A  <PRODUCTION_HOST> → <EC2_PUBLIC_IP>
 ```
 
 ---

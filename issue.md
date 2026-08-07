@@ -26,7 +26,7 @@ WARN [LineWorksBotService] S3 is not configured; skipping attachment download
 EC2 `~/work-tracking/back/.env` 에 아래 추가:
 ```bash
 AWS_REGION=ap-northeast-2
-S3_BUCKET_LINE_WORKS=work-tracking-line-works
+S3_BUCKET_LINE_WORKS=<PRIVATE_BUCKET>
 S3_OBJECT_PREFIX=line-works/
 S3_PRESIGN_TTL_SECONDS=600
 ```
@@ -86,17 +86,17 @@ for (let hops = 0; hops < 5; hops += 1) {
 **재현 확인 방법**
 특정 채팅방에 이미지 올린 뒤:
 ```bash
-ssh ec2-user@43.200.89.255 'node -e "…SELECT … FROM line_works_attachments ORDER BY id DESC LIMIT 3…"'
+ssh "$PRODUCTION_SSH_TARGET" 'node -e "…SELECT … FROM line_works_attachments ORDER BY id DESC LIMIT 3…"'
 ```
-+ S3 콘솔에서 `work-tracking-line-works/line-works/<fileId>/...` 객체 확인.
++ S3 콘솔에서 `<PRIVATE_BUCKET>/line-works/<fileId>/...` 객체 확인.
 
 ---
 
 ### #3 — 1:1 (Direct) 채팅방 메시지가 "ignored" 로 버려짐
 
 **증상**
-- 그룹 채팅방(`ef6c55a0-...`)은 정상 수집
-- `.env` 의 `LINE_WORKS_TARGET_CHANNEL_IDS` 에 1:1 채널 ID(`c9c94326-...`)를 추가했는데 DB에 한 건도 안 들어옴
+- 그룹 채팅방(`<GROUP_CHANNEL_ID>`)은 정상 수집
+- `.env` 의 `LINE_WORKS_TARGET_CHANNEL_IDS` 에 1:1 채널 ID(`<DM_CHANNEL_ID>`)를 추가했는데 DB에 한 건도 안 들어옴
 - Nginx access log 상으로 POST 요청은 분명히 오고 있고 응답은 `200 62 bytes`
 
 **진단 과정**
@@ -104,15 +104,15 @@ ssh ec2-user@43.200.89.255 'node -e "…SELECT … FROM line_works_attachments O
 2. 응답 body 크기 62바이트 → `{"ok":true,"ignored":true,"reason":"channel not in allowlist"}` 와 정확히 일치
 3. Bot API 로 두 채널 타입 조회:
    ```
-   ef6c55a0-... → channelType: "GROUP"       (제목 "플랫폼본부")
-   c9c94326-... → channelType: "SINGLE_USER" (title 빈 값)
+   <GROUP_CHANNEL_ID> → channelType: "GROUP"       (제목 "<GROUP_NAME>")
+   <DM_CHANNEL_ID>    → channelType: "SINGLE_USER" (title 빈 값)
    ```
 4. `LINE_WORKS_TARGET_CHANNEL_IDS=*` 로 전체 허용 후에도 여전히 ignored → allowlist 값 문제가 아니라 **다른 필터에서 막힘**
 5. dist 에 임시 로깅 삽입 후 실제 payload 확인:
    ```json
    {
      "type": "message",
-     "source": { "userId": "...", "domainId": 300042832 },
+     "source": { "userId": "...", "domainId": "<DOMAIN_ID>" },
      "issuedTime": "...",
      "content": { "type": "text", "text": "테스트테스트" }
    }
@@ -150,7 +150,7 @@ function resolveChannelId(event: LineWorksCallbackEvent): string | undefined {
 **재현 확인 방법**
 1:1 DM 에 텍스트 보낸 뒤:
 ```bash
-ssh ec2-user@43.200.89.255 'node -e "…SELECT channel_id, text FROM line_works_messages ORDER BY received_at DESC LIMIT 3…"'
+ssh "$PRODUCTION_SSH_TARGET" 'node -e "…SELECT channel_id, text FROM line_works_messages ORDER BY received_at DESC LIMIT 3…"'
 ```
 → `channel_id` 가 `dm:<userId>` 로 들어오면 OK.
 
@@ -162,7 +162,7 @@ ssh ec2-user@43.200.89.255 'node -e "…SELECT channel_id, text FROM line_works_
 
 ### 1. 콜백이 우리 서버까지 오는지
 ```bash
-ssh ec2-user@43.200.89.255 'sudo tail -200 /var/log/nginx/access.log | grep line-works-bot'
+ssh "$PRODUCTION_SSH_TARGET" 'sudo tail -200 /var/log/nginx/access.log | grep line-works-bot'
 ```
 - 요청 자체가 없음 → Developer Console 의 Callback URL / HTTPS / 방화벽 확인
 - 요청은 오는데 `404` → Nginx 라우팅 또는 백엔드 미기동
@@ -180,7 +180,7 @@ ssh ec2-user@43.200.89.255 'sudo tail -200 /var/log/nginx/access.log | grep line
 ### 3. 실제 payload 구조 한 번 보기 (일회성)
 `dist` 에 로그 주입 → `pm2 restart --update-env` → DM 1건 송신 → 로그 확인 후 복구:
 ```bash
-ssh ec2-user@43.200.89.255 '
+ssh "$PRODUCTION_SSH_TARGET" '
   cd ~/work-tracking/back/dist/services/line-works-bot/applications
   cp line-works-bot.service.js line-works-bot.service.js.bak
   # ... 패치 ...
@@ -201,7 +201,7 @@ JWT → access_token 발급 → 문제 엔드포인트 직접 호출. 응답 상
 - **`.env` 수정 후 반드시 `pm2 restart --update-env`**. 그냥 `reload` 하면 env 갱신 안 됨.
 - **private key 는 `./secrets/line-works-bot.pem` 에 600 권한**. `back/secrets/` 전체를 `.gitignore` 했음.
 - **S3 버킷 public access 전부 차단** + SSE-S3 암호화 켜짐. 조회는 presigned URL only.
-- **AWS 자격증명** 은 현재 admin access key 로 `.env` 에 저장. 운영 안정화되면 S3 scoped IAM user 로 분리 권장.
+- **AWS 자격증명** 은 저장소에 기록하지 않고, S3 prefix 범위로 제한한 IAM Role 또는 단기 자격 증명을 사용.
 - **DM 저장을 원하지 않으면** `LINE_WORKS_TARGET_CHANNEL_IDS` 에 `dm:*` 같은 값은 **명시하지 않고** 그룹 ID 만 나열하면 자동 제외됨 (allowlist 방식).
 - **`LINE_WORKS_TARGET_CHANNEL_IDS=*`** 는 모든 채널 + 모든 DM 을 수집하므로 테스트 후엔 **구체적 ID 목록으로 바꾸는 것을 권장**.
 

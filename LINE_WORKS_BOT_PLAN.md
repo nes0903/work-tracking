@@ -200,7 +200,7 @@ LINE_WORKS_TARGET_CHANNEL_IDS=
 
 # ---- S3 ----
 AWS_REGION=ap-northeast-2
-S3_BUCKET_LINE_WORKS=work-tracking-line-works        # 전용 버킷 권장
+S3_BUCKET_LINE_WORKS=                         # 전용 private 버킷 이름
 S3_OBJECT_PREFIX=line-works/                          # 버킷 내부 네임스페이스
 S3_PRESIGN_TTL_SECONDS=600                            # 10분
 
@@ -215,7 +215,7 @@ AWS_SECRET_ACCESS_KEY=                                # 선택 (로컬/개발용
 
 1. **봇 등록**: Developer Console → 봇 생성 → Callback URL 등록 → 조직 승인 → 대상 채팅방에 초대
 2. **S3 버킷 + IAM 셋업**
-   - 버킷 생성 (`work-tracking-line-works`, `ap-northeast-2`, Public Access **전부 차단**, 기본 암호화 SSE-S3 또는 SSE-KMS)
+   - 전용 버킷 생성 (`ap-northeast-2`, Public Access **전부 차단**, 기본 암호화 SSE-S3 또는 SSE-KMS)
    - IAM 정책: `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` on `arn:aws:s3:::<bucket>/line-works/*`
    - **EC2 Instance Profile(Role)에 이 정책을 붙이는 방식 권장** (access key를 서버에 두지 않음)
    - 로컬 개발 시에만 `AWS_ACCESS_KEY_ID/SECRET` 사용
@@ -268,7 +268,7 @@ AWS_SECRET_ACCESS_KEY=                                # 선택 (로컬/개발용
 
 - [ ] Developer Console에서 봇 등록 + 키 발급
 - [ ] 대상 채팅방 channelId 확보 (봇이 입장한 뒤 첫 메시지 콜백에서 획득 가능)
-- [ ] S3 버킷 생성 (`work-tracking-line-works`, public 전면 차단, SSE 기본 암호화)
+- [ ] 전용 S3 버킷 생성 (public 전면 차단, SSE 기본 암호화)
 - [ ] EC2 Instance Profile에 `s3:PutObject/GetObject/DeleteObject` 권한 부여 (prefix 제한)
 - [ ] `.env` 채움 (LINE WORKS + S3 둘 다)
 - [ ] 위 구현 순서 1~10번 착수

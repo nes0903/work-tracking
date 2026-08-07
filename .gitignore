@@ -17,3 +17,5 @@ back/data/notion-webhook-status.json
 back/secrets/
 back/data/line-works/
 .env
+data/
+back/data/
