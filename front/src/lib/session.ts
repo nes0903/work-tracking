@@ -25,9 +25,8 @@ export async function logout(): Promise<void> {
   try {
     await fetch("/api/auth/logout", { method: "POST", cache: "no-store" });
   } catch {
-    // ignore network errors; client will redirect anyway
+    // Ignore network errors; the caller still returns the user to login.
   }
-  window.location.href = "/login";
 }
 
 export function loginHref(redirectTo?: string): string {

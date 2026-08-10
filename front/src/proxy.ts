@@ -4,15 +4,19 @@ const SESSION_COOKIE_NAME = "wt_session";
 
 const PUBLIC_PATHS = ["/login"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+  if (
+    PUBLIC_PATHS.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`),
+    )
+  ) {
     return NextResponse.next();
   }
 
   const session = request.cookies.get(SESSION_COOKIE_NAME);
-  if (!session || !session.value) {
+  if (!session?.value) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     if (pathname !== "/") {

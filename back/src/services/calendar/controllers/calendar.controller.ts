@@ -10,14 +10,14 @@ function isDateKey(value: unknown): value is string {
 @UseGuards(AuthGuard)
 export class CalendarController {
   @Get()
-  list(
+  async list(
     @Query("from") from: string | undefined,
     @Query("to") to: string | undefined,
   ) {
     if (!isDateKey(from) || !isDateKey(to)) {
       return { ok: false, error: "from/to must be YYYY-MM-DD" };
     }
-    const result = queryCalendar(from, to);
+    const result = await queryCalendar(from, to);
     return { ok: true, ...result };
   }
 }

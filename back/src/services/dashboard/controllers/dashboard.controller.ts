@@ -19,7 +19,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get()
-  getDashboard(@Query("date") date?: string) {
+  async getDashboard(@Query("date") date?: string) {
     if (!date) {
       throw new HttpException(
         { ok: false, error: "date query is required" },
@@ -29,16 +29,19 @@ export class DashboardController {
 
     return {
       ok: true,
-      ...this.dashboardService.getDashboardState(date),
+      ...(await this.dashboardService.getDashboardState(date)),
     };
   }
 
   @Post()
-  handleDashboardAction(@Body() payload: any, @Req() req: Request) {
+  async handleDashboardAction(@Body() payload: any, @Req() req: Request) {
     try {
       return {
         ok: true,
-        ...this.dashboardService.handleAction(payload, req.auth?.userId ?? null),
+        ...(await this.dashboardService.handleAction(
+          payload,
+          req.auth?.userId ?? null,
+        )),
       };
     } catch (error) {
       const message =

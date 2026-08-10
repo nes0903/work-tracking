@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   buildMessageClipboardText,
   copyToClipboard,
@@ -87,6 +88,7 @@ import {
 } from "@/lib/work-tracking";
 
 export function WorkTrackingDashboard() {
+  const router = useRouter();
   const initialDate = todayKey();
   const [days, setDays] = useState<WorkDayMap>({});
   const [activeDate, setActiveDate] = useState(initialDate);
@@ -662,7 +664,7 @@ export function WorkTrackingDashboard() {
 
   async function handleStorageDelete(id: number) {
     const confirmed = window.confirm(
-      "이 파일을 S3와 DB에서 영구 삭제합니다. 진행할까요?",
+      "이 파일을 Supabase Storage와 DB에서 영구 삭제합니다. 진행할까요?",
     );
     if (!confirmed) return;
     const ok = await deleteStorageItem(id);
@@ -1331,7 +1333,10 @@ export function WorkTrackingDashboard() {
                 type="button"
                 className="sidebar-user-logout"
                 onClick={() => {
-                  void logout();
+                  void logout().then(() => {
+                    router.replace("/login");
+                    router.refresh();
+                  });
                 }}
               >
                 로그아웃
@@ -1392,7 +1397,7 @@ export function WorkTrackingDashboard() {
               <>
                 <h2>File Storage</h2>
                 <p>
-                  S3 에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이
+                  Supabase Storage에 아카이브된 모든 첨부 파일입니다. 클릭하면 다운로드 URL이
                   발급됩니다.
                 </p>
               </>
@@ -2022,7 +2027,7 @@ function LineWorksAttachmentPreviews({
                   이미지 불러오는 중...
                 </span>
               ) : url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs are short-lived and not configured for next/image optimization.
+                // eslint-disable-next-line @next/next/no-img-element -- signed Storage URLs are short-lived and not configured for next/image optimization.
                 <img src={url} alt={fileName} loading="lazy" />
               ) : (
                 <span className="line-works-preview-loading">

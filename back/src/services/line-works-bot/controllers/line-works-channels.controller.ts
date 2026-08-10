@@ -1,6 +1,12 @@
-import { Controller, HttpException, HttpStatus, Post, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  HttpException,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { AuthGuard } from "@common/auth.guard";
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 import {
   fetchBotScopedUserName,
   fetchChannelInfo,
@@ -22,7 +28,7 @@ export class LineWorksChannelsController {
     }
 
     const db = getDatabase();
-    const rows = db
+    const rows = await db
       .prepare(
         `
           SELECT DISTINCT m.channel_id
@@ -31,7 +37,7 @@ export class LineWorksChannelsController {
            WHERE c.channel_id IS NULL OR c.title IS NULL OR c.title = ''
         `,
       )
-      .all() as unknown as Array<{ channel_id: string }>;
+      .all();
 
     let resolved = 0;
     let failed = 0;
@@ -41,7 +47,7 @@ export class LineWorksChannelsController {
         if (channelId.startsWith("dm:")) {
           const userId = channelId.slice(3);
           const name = await fetchBotScopedUserName(botConfig, userId);
-          upsertChannelMeta({
+          await upsertChannelMeta({
             channelId,
             title: name,
             channelType: "SINGLE_USER",
@@ -51,7 +57,7 @@ export class LineWorksChannelsController {
           else failed += 1;
         } else {
           const info = await fetchChannelInfo(botConfig, channelId);
-          upsertChannelMeta({
+          await upsertChannelMeta({
             channelId,
             title: info?.title ?? null,
             channelType: info?.channelType ?? null,

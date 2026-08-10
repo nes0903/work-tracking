@@ -6,14 +6,14 @@ import { listArchive } from "@libs/line-works-bot-db";
 @UseGuards(AuthGuard)
 export class LineWorksArchiveController {
   @Get()
-  list(
+  async list(
     @Query("channelId") channelId?: string,
     @Query("page") pageStr?: string,
     @Query("perPage") perPageStr?: string,
   ) {
     const page = pageStr ? Number(pageStr) : undefined;
     const perPage = perPageStr ? Number(perPageStr) : undefined;
-    const result = listArchive({
+    const result = await listArchive({
       channelId: channelId && channelId.trim() ? channelId.trim() : undefined,
       page: Number.isFinite(page) ? (page as number) : undefined,
       perPage: Number.isFinite(perPage) ? (perPage as number) : undefined,

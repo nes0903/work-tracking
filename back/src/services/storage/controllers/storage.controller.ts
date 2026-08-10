@@ -14,7 +14,10 @@ import {
   listAllAttachments,
   listChannelMeta,
 } from "@libs/line-works-bot-db";
-import { deleteObject, sanitizeChannelSegment } from "@libs/s3";
+import {
+  deleteStorageObject,
+  sanitizeChannelSegment,
+} from "@libs/supabase-storage";
 
 interface ChannelLabel {
   channelId: string;
@@ -27,10 +30,10 @@ interface ChannelLabel {
 export class StorageController {
   @Get("files")
   async list() {
-    const rows = listAllAttachments();
+    const rows = await listAllAttachments();
 
     const channelLabels: Record<string, ChannelLabel> = {};
-    for (const meta of listChannelMeta()) {
+    for (const meta of await listChannelMeta()) {
       const key = sanitizeChannelSegment(meta.channelId);
       channelLabels[key] = {
         channelId: meta.channelId,
@@ -48,8 +51,8 @@ export class StorageController {
         fileName: row.fileName,
         fileSize: row.fileSize,
         mimeType: row.mimeType,
-        s3Bucket: row.s3Bucket,
-        s3Key: row.s3Key,
+        storageBucket: row.storageBucket,
+        storagePath: row.storagePath,
         uploadedAt: row.uploadedAt,
       })),
       channelLabels,
@@ -65,7 +68,7 @@ export class StorageController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const row = getAttachmentById(id);
+    const row = await getAttachmentById(id);
     if (!row) {
       throw new HttpException(
         { ok: false, error: "Attachment not found" },
@@ -73,15 +76,15 @@ export class StorageController {
       );
     }
     try {
-      await deleteObject(row.s3Bucket, row.s3Key);
+      await deleteStorageObject(row.storageBucket, row.storagePath);
     } catch (err) {
-      console.error("[storage] S3 delete failed", err);
+      console.error("[storage] Supabase Storage delete failed", err);
       throw new HttpException(
-        { ok: false, error: "S3 delete failed" },
+        { ok: false, error: "Storage delete failed" },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    deleteAttachmentRow(id);
+    await deleteAttachmentRow(id);
     return { ok: true };
   }
 }

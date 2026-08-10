@@ -22,19 +22,22 @@ const ALLOWED_SOURCES = new Set(["notion", "line-works", "github"]);
 @UseGuards(AuthGuard)
 export class LastSeenController {
   @Get()
-  read(@Req() req: Request) {
+  async read(@Req() req: Request) {
     if (!req.auth) {
       throw new HttpException(
         { ok: false, error: "Unauthorized" },
         HttpStatus.UNAUTHORIZED,
       );
     }
-    const map = getLastSeenMap(req.auth.userId);
+    const map = await getLastSeenMap(req.auth.userId);
     return { ok: true, items: map };
   }
 
   @Post()
-  write(@Req() req: Request, @Body() body: { source?: string; at?: string }) {
+  async write(
+    @Req() req: Request,
+    @Body() body: { source?: string; at?: string },
+  ) {
     if (!req.auth) {
       throw new HttpException(
         { ok: false, error: "Unauthorized" },
@@ -49,13 +52,13 @@ export class LastSeenController {
       );
     }
     const at = body.at ?? new Date().toISOString();
-    setLastSeen(req.auth.userId, source, at);
+    await setLastSeen(req.auth.userId, source, at);
     return { ok: true, source, at };
   }
 
   /** Notion 이벤트 1건 이상을 읽음 처리 */
   @Post("notion/read")
-  markRead(@Req() req: Request, @Body() body: { eventIds?: unknown }) {
+  async markRead(@Req() req: Request, @Body() body: { eventIds?: unknown }) {
     if (!req.auth) {
       throw new HttpException(
         { ok: false, error: "Unauthorized" },
@@ -72,7 +75,7 @@ export class LastSeenController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const inserted = markNotionRead(req.auth.userId, ids);
+    const inserted = await markNotionRead(req.auth.userId, ids);
     return { ok: true, inserted, count: ids.length };
   }
 }

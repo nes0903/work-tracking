@@ -1,6 +1,6 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 
 export interface LinkPreview {
   url: string;
@@ -41,15 +41,15 @@ function hydrate(row: LinkPreviewRow): LinkPreview {
   };
 }
 
-function cachedPreview(url: string): LinkPreview | null {
-  const row = getDatabase()
+async function cachedPreview(url: string): Promise<LinkPreview | null> {
+  const row = await getDatabase()
     .prepare(
       `SELECT url, title, description, image_url, site_name, status,
               error_message, fetched_at
          FROM line_works_link_previews
         WHERE url = ?`,
     )
-    .get(url) as LinkPreviewRow | undefined;
+    .get(url);
   if (!row) return null;
   const fetchedAt = new Date(row.fetched_at).getTime();
   if (Number.isFinite(fetchedAt) && Date.now() - fetchedAt < CACHE_TTL_MS) {
@@ -58,8 +58,10 @@ function cachedPreview(url: string): LinkPreview | null {
   return null;
 }
 
-function savePreview(preview: Omit<LinkPreview, "fetchedAt">): LinkPreview {
-  const row = getDatabase()
+async function savePreview(
+  preview: Omit<LinkPreview, "fetchedAt">,
+): Promise<LinkPreview> {
+  const row = (await getDatabase()
     .prepare(
       `INSERT INTO line_works_link_previews (
          url, title, description, image_url, site_name, status, error_message, fetched_at
@@ -84,12 +86,12 @@ function savePreview(preview: Omit<LinkPreview, "fetchedAt">): LinkPreview {
       preview.siteName,
       preview.status,
       preview.errorMessage,
-    ) as unknown as LinkPreviewRow;
+    )) as LinkPreviewRow;
   return hydrate(row);
 }
 
 export async function getOrFetchLinkPreview(url: string): Promise<LinkPreview> {
-  const cached = cachedPreview(url);
+  const cached = await cachedPreview(url);
   if (cached) return cached;
 
   let lastError: unknown = null;
@@ -99,7 +101,7 @@ export async function getOrFetchLinkPreview(url: string): Promise<LinkPreview> {
       try {
         await assertFetchableUrl(candidate);
         const preview = await fetchPreview(candidate, url);
-        return savePreview({
+        return await savePreview({
           ...preview,
           status: "success",
           errorMessage: null,
@@ -113,7 +115,7 @@ export async function getOrFetchLinkPreview(url: string): Promise<LinkPreview> {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "preview fetch failed";
-    return savePreview({
+    return await savePreview({
       url,
       title: null,
       description: null,

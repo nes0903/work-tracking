@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
 
 export interface UserRow {
   userId: string;
@@ -29,15 +29,16 @@ function hydrate(row: UserDbRow): UserRow {
   };
 }
 
-export function upsertUser(input: {
+export async function upsertUser(input: {
   userId: string;
   userName: string | null;
   email: string | null;
   domainId: string | null;
-}): void {
+}): Promise<void> {
   const db = getDatabase();
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO users (user_id, user_name, email, domain_id, last_login_at)
       VALUES (?, ?, ?, ?, datetime('now'))
       ON CONFLICT(user_id) DO UPDATE SET
@@ -46,7 +47,8 @@ export function upsertUser(input: {
         domain_id = COALESCE(excluded.domain_id, users.domain_id),
         last_login_at = excluded.last_login_at
     `,
-  ).run(input.userId, input.userName, input.email, input.domainId);
+    )
+    .run(input.userId, input.userName, input.email, input.domainId);
 }
 
 /**
@@ -54,38 +56,44 @@ export function upsertUser(input: {
  * - last_login_at 은 건드리지 않음 (로그인 활동과 혼동 방지)
  * - 이미 이름이 있는 사용자는 새 값이 있을 때만 덮어씀(COALESCE)
  */
-export function upsertUserName(userId: string, userName: string | null): void {
+export async function upsertUserName(
+  userId: string,
+  userName: string | null,
+): Promise<void> {
   if (!userId) return;
   const db = getDatabase();
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO users (user_id, user_name)
       VALUES (?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         user_name = COALESCE(excluded.user_name, users.user_name)
     `,
-  ).run(userId, userName);
+    )
+    .run(userId, userName);
 }
 
-export function listUsers(): UserRow[] {
-  const db = getDatabase();
-  const rows = db
+export async function listUsers(
+  db: DatabaseClient = getDatabase(),
+): Promise<UserRow[]> {
+  const rows = await db
     .prepare(
       `SELECT user_id, user_name, email, domain_id, last_login_at, created_at
          FROM users
         ORDER BY user_name ASC`,
     )
-    .all() as unknown as UserDbRow[];
+    .all();
   return rows.map(hydrate);
 }
 
-export function getUser(userId: string): UserRow | null {
+export async function getUser(userId: string): Promise<UserRow | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `SELECT user_id, user_name, email, domain_id, last_login_at, created_at
          FROM users WHERE user_id = ?`,
     )
-    .get(userId) as UserDbRow | undefined;
+    .get(userId);
   return row ? hydrate(row) : null;
 }

@@ -11,7 +11,7 @@ import type { Request } from "express";
 import { Observable } from "rxjs";
 import { AuthGuard } from "@common/auth.guard";
 import { FeedsService } from "../applications/feeds.service";
-import { onFeedUpdate, type FeedUpdateEvent } from "@libs/feed-events";
+import { getLatestFeedEventId, listFeedEventsAfter } from "@libs/feed-events";
 
 @Controller("api")
 export class FeedsController {
@@ -46,19 +46,56 @@ export class FeedsController {
 
   @Sse("events")
   @UseGuards(AuthGuard)
-  streamFeedEvents(): Observable<MessageEvent> {
+  streamFeedEvents(@Req() request: Request): Observable<MessageEvent> {
+    const rawLastEventId = request.headers["last-event-id"];
+    const parsedLastEventId = Number(
+      Array.isArray(rawLastEventId) ? rawLastEventId[0] : rawLastEventId,
+    );
+    const resumeFrom =
+      Number.isInteger(parsedLastEventId) && parsedLastEventId >= 0
+        ? parsedLastEventId
+        : null;
+
     return new Observable<MessageEvent>((subscriber) => {
+      let closed = false;
+      let polling = false;
+      let lastEventId = 0;
+
       subscriber.next({
         type: "ready",
         data: { at: new Date().toISOString() },
       });
 
-      const unsubscribe = onFeedUpdate((event: FeedUpdateEvent) => {
-        subscriber.next({
-          type: "feed-update",
-          data: event,
+      const initialize = async () => {
+        lastEventId = resumeFrom ?? (await getLatestFeedEventId());
+      };
+
+      const poll = async () => {
+        if (closed || polling) return;
+        polling = true;
+        try {
+          for (const event of await listFeedEventsAfter(lastEventId)) {
+            lastEventId = event.id;
+            subscriber.next({
+              id: String(event.id),
+              type: "feed-update",
+              data: { source: event.source, at: event.at },
+            });
+          }
+        } catch (error) {
+          console.error("[feeds] event polling failed", error);
+        } finally {
+          polling = false;
+        }
+      };
+
+      void initialize()
+        .then(poll)
+        .catch((error) => {
+          console.error("[feeds] event stream initialization failed", error);
         });
-      });
+
+      const poller = setInterval(() => void poll(), 2_000);
 
       const heartbeat = setInterval(() => {
         subscriber.next({
@@ -68,7 +105,8 @@ export class FeedsController {
       }, 25_000);
 
       return () => {
-        unsubscribe();
+        closed = true;
+        clearInterval(poller);
         clearInterval(heartbeat);
       };
     });

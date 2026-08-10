@@ -52,7 +52,7 @@ export class DashboardService {
     return this.dashboardRepository.getDashboardState(date);
   }
 
-  handleAction(payload: any, sessionUserId?: string | null) {
+  async handleAction(payload: any, sessionUserId?: string | null) {
     const action = payload?.action as string | undefined;
     const date = payload?.date as string | undefined;
 

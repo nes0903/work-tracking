@@ -1,12 +1,14 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 
-export function getLastSeenMap(userId: string): Record<string, string> {
+export async function getLastSeenMap(
+  userId: string,
+): Promise<Record<string, string>> {
   const db = getDatabase();
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT source, last_seen_at FROM user_last_seen WHERE user_id = ?`,
     )
-    .all(userId) as unknown as Array<{ source: string; last_seen_at: string }>;
+    .all(userId);
   const result: Record<string, string> = {};
   for (const row of rows) {
     result[row.source] = row.last_seen_at;
@@ -14,33 +16,43 @@ export function getLastSeenMap(userId: string): Record<string, string> {
   return result;
 }
 
-export function setLastSeen(userId: string, source: string, atISO: string): void {
+export async function setLastSeen(
+  userId: string,
+  source: string,
+  atISO: string,
+): Promise<void> {
   const db = getDatabase();
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO user_last_seen (user_id, source, last_seen_at)
       VALUES (?, ?, ?)
       ON CONFLICT(user_id, source) DO UPDATE SET
         last_seen_at = excluded.last_seen_at
     `,
-  ).run(userId, source, atISO);
+    )
+    .run(userId, source, atISO);
 }
 
 /**
  * Notion 이벤트 개별 read 기록. 중복은 PK 충돌로 무시.
  */
-export function markNotionRead(userId: string, eventIds: string[]): number {
+export async function markNotionRead(
+  userId: string,
+  eventIds: string[],
+): Promise<number> {
   if (eventIds.length === 0) return 0;
   const db = getDatabase();
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO user_notion_read (user_id, event_id)
-     VALUES (?, ?)`,
+    `INSERT INTO user_notion_read (user_id, event_id)
+     VALUES (?, ?)
+     ON CONFLICT (user_id, event_id) DO NOTHING`,
   );
   let inserted = 0;
   for (const id of eventIds) {
     const trimmed = typeof id === "string" ? id.trim() : "";
     if (!trimmed) continue;
-    const result = stmt.run(userId, trimmed);
+    const result = await stmt.run(userId, trimmed);
     if (result.changes > 0) inserted++;
   }
   return inserted;
@@ -52,17 +64,19 @@ export function markNotionRead(userId: string, eventIds: string[]): number {
 export function getNotionReadSet(
   userId: string,
   eventIds: string[],
-): Set<string> {
+): Promise<Set<string>> {
   const result = new Set<string>();
-  if (eventIds.length === 0) return result;
+  if (eventIds.length === 0) return Promise.resolve(result);
   const db = getDatabase();
   const placeholders = eventIds.map(() => "?").join(",");
-  const rows = db
+  return db
     .prepare(
       `SELECT event_id FROM user_notion_read
         WHERE user_id = ? AND event_id IN (${placeholders})`,
     )
-    .all(userId, ...eventIds) as Array<{ event_id: string }>;
-  for (const row of rows) result.add(row.event_id);
-  return result;
+    .all<{ event_id: string }>(userId, ...eventIds)
+    .then((rows) => {
+      for (const row of rows) result.add(row.event_id);
+      return result;
+    });
 }

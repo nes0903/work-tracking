@@ -29,13 +29,12 @@ export function CalendarView({ onOpenAttachment, onOpenMessage }: Props) {
   });
   const [selected, setSelected] = useState<string>(() => fmtDateKey(new Date()));
   const [days, setDays] = useState<Record<string, CalendarDayBucket>>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const grid = useMemo(() => buildMonthGrid(anchor), [anchor]);
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     void fetchCalendar(grid.gridFrom, grid.gridTo)
       .then((resp) => {
         if (mounted) setDays(resp.days);
@@ -56,11 +55,13 @@ export function CalendarView({ onOpenAttachment, onOpenMessage }: Props) {
   const todayKey = fmtDateKey(new Date());
 
   function shiftMonth(delta: number) {
+    setLoading(true);
     setAnchor((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
   }
 
   function goToday() {
     const now = new Date();
+    setLoading(true);
     setAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
     setSelected(fmtDateKey(now));
   }

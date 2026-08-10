@@ -6,10 +6,10 @@ import { listUsers } from "@libs/users-db";
 @UseGuards(AuthGuard)
 export class UsersController {
   @Get()
-  list() {
+  async list() {
     return {
       ok: true,
-      items: listUsers().map((u) => ({
+      items: (await listUsers()).map((u) => ({
         userId: u.userId,
         userName: u.userName,
         email: u.email,

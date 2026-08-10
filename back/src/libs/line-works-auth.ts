@@ -94,7 +94,9 @@ export interface LineWorksUser {
   userName?: { firstName?: string; lastName?: string };
 }
 
-export async function fetchUserInfo(accessToken: string): Promise<LineWorksUser> {
+export async function fetchUserInfo(
+  accessToken: string,
+): Promise<LineWorksUser> {
   const response = await fetch(USERINFO_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });

@@ -46,15 +46,18 @@ https://<public-host>/api/notion/webhook
 
 구독 생성 직후 Notion이 verification token을 POST로 보냅니다.
 
-서버는 이 값을 아래 파일에 기록합니다.
+서버는 이 값을 Supabase `app_settings` 테이블의
+`notion_webhook_verification` 키에 기록합니다. Supabase SQL Editor에서 아래처럼 확인합니다.
 
-- `data/notion-webhook-status.json`
+```sql
+select value_json
+from public.app_settings
+where key = 'notion_webhook_verification';
+```
 
 그 값을 복사해서 Notion UI의 Verify modal에 붙여넣고, 동시에 `.env.local`의 `NOTION_WEBHOOK_VERIFICATION_TOKEN`으로 설정합니다.
 
-## 6. 결과 파일
+## 6. 저장 위치
 
-Webhook가 정상 수신되면 아래 파일이 갱신됩니다.
-
-- `data/notion-updates.json`
-- `data/notion-snapshot.json`
+Webhook 이벤트와 피드 상태는 Supabase Postgres의 `notion_update_events`,
+`notion_pages_snapshot`, `app_settings`에 저장됩니다.

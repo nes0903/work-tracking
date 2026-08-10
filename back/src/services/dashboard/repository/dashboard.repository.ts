@@ -18,15 +18,15 @@ import { type TaskStatus, type WorkDayMap } from "@libs/work-tracking";
 
 @Injectable()
 export class DashboardRepository {
-  getDashboardState(date: string): DashboardState {
+  getDashboardState(date: string): Promise<DashboardState> {
     return getDashboardState(date);
   }
 
-  importLegacyDays(days: WorkDayMap, date: string): DashboardState {
+  importLegacyDays(days: WorkDayMap, date: string): Promise<DashboardState> {
     return importLegacyDays(days, date);
   }
 
-  createTask(date: string, task: CreateTaskInput): DashboardState {
+  createTask(date: string, task: CreateTaskInput): Promise<DashboardState> {
     return createTaskForDate(date, task);
   }
 
@@ -34,7 +34,7 @@ export class DashboardRepository {
     date: string,
     taskId: string,
     status: TaskStatus,
-  ): DashboardState {
+  ): Promise<DashboardState> {
     return updateTaskStatusForDate(date, taskId, status);
   }
 
@@ -42,27 +42,33 @@ export class DashboardRepository {
     date: string,
     taskId: string,
     patch: UpdateTaskInput,
-  ): DashboardState {
+  ): Promise<DashboardState> {
     return updateTaskForDate(date, taskId, patch);
   }
 
-  deleteTask(date: string, taskId: string): DashboardState {
+  deleteTask(date: string, taskId: string): Promise<DashboardState> {
     return deleteTaskForDate(date, taskId);
   }
 
-  clearCompleted(date: string): DashboardState {
+  clearCompleted(date: string): Promise<DashboardState> {
     return clearCompletedForDate(date);
   }
 
-  updateNotes(date: string, notes: string): DashboardState {
+  updateNotes(date: string, notes: string): Promise<DashboardState> {
     return updateNotesForDate(date, notes);
   }
 
-  updateTimerDuration(date: string, timerDuration: number): DashboardState {
+  updateTimerDuration(
+    date: string,
+    timerDuration: number,
+  ): Promise<DashboardState> {
     return updateTimerDurationForDate(date, timerDuration);
   }
 
-  recordFocusSession(date: string, durationMinutes: number): DashboardState {
+  recordFocusSession(
+    date: string,
+    durationMinutes: number,
+  ): Promise<DashboardState> {
     return recordFocusSessionForDate(date, durationMinutes);
   }
 }

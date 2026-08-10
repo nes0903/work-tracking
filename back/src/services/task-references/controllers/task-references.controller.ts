@@ -31,9 +31,12 @@ const ALLOWED_SOURCES: ReferenceSource[] = [
 ];
 
 function assertSource(value: unknown): ReferenceSource {
-  if (typeof value !== "string" || !ALLOWED_SOURCES.includes(value as ReferenceSource)) {
+  if (
+    typeof value !== "string" ||
+    !ALLOWED_SOURCES.includes(value as ReferenceSource)
+  ) {
     throw new HttpException(
-      { ok: false, error: `Invalid source: ${value}` },
+      { ok: false, error: `Invalid source: ${String(value)}` },
       HttpStatus.BAD_REQUEST,
     );
   }
@@ -54,7 +57,7 @@ interface CreatePayload {
 @UseGuards(AuthGuard)
 export class TaskReferencesController {
   @Post()
-  create(@Body() payload: CreatePayload, @Req() req: Request) {
+  async create(@Body() payload: CreatePayload, @Req() req: Request) {
     const taskId = payload.taskId?.trim();
     const externalId = payload.externalId?.trim();
     if (!taskId) {
@@ -71,7 +74,7 @@ export class TaskReferencesController {
     }
     const source = assertSource(payload.source);
 
-    const reference = createReference({
+    const reference = await createReference({
       taskId,
       source,
       externalId,
@@ -86,7 +89,7 @@ export class TaskReferencesController {
   }
 
   @Delete(":id")
-  remove(@Param("id") idParam: string) {
+  async remove(@Param("id") idParam: string) {
     const id = Number(idParam);
     if (!Number.isInteger(id) || id <= 0) {
       throw new HttpException(
@@ -94,7 +97,7 @@ export class TaskReferencesController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const ok = deleteReference(id);
+    const ok = await deleteReference(id);
     if (!ok) {
       throw new HttpException(
         { ok: false, error: "Reference not found" },
@@ -105,7 +108,7 @@ export class TaskReferencesController {
   }
 
   @Get()
-  list(@Query("taskIds") taskIdsParam?: string) {
+  async list(@Query("taskIds") taskIdsParam?: string) {
     if (!taskIdsParam) {
       return { ok: true, references: {} };
     }
@@ -113,7 +116,7 @@ export class TaskReferencesController {
       .split(",")
       .map((id) => id.trim())
       .filter(Boolean);
-    const grouped = listReferencesByTaskIds(taskIds);
+    const grouped = await listReferencesByTaskIds(taskIds);
     const references: Record<string, unknown[]> = {};
     for (const [taskId, list] of grouped.entries()) {
       references[taskId] = list;
@@ -122,7 +125,7 @@ export class TaskReferencesController {
   }
 
   @Get("task/:taskId")
-  listForTask(@Param("taskId") taskId: string) {
-    return { ok: true, references: listReferencesForTask(taskId) };
+  async listForTask(@Param("taskId") taskId: string) {
+    return { ok: true, references: await listReferencesForTask(taskId) };
   }
 }

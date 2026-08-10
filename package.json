@@ -15,5 +15,8 @@
     "lint:back": "npm --workspace back run lint",
     "build": "npm run build:front && npm run build:back",
     "lint": "npm run lint:front && npm run lint:back"
+  },
+  "devDependencies": {
+    "supabase": "2.113.0"
   }
 }

@@ -5,8 +5,8 @@ export interface StorageItem {
   fileName: string | null;
   fileSize: number | null;
   mimeType: string | null;
-  s3Bucket: string;
-  s3Key: string;
+  storageBucket: string;
+  storagePath: string;
   uploadedAt: string | null;
 }
 
@@ -67,7 +67,7 @@ export function buildStorageTree(items: StorageItem[]): StorageTreeFolder {
   };
 
   for (const item of items) {
-    const parts = item.s3Key.split("/").filter(Boolean);
+    const parts = item.storagePath.split("/").filter(Boolean);
     if (parts.length === 0) {
       root.files.push(item);
       continue;

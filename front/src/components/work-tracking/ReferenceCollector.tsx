@@ -589,7 +589,7 @@ function StorageTab({
     const q = query.trim().toLowerCase();
     const list = q
       ? items.filter((file) =>
-          ((file.fileName ?? "") + file.s3Key).toLowerCase().includes(q),
+          ((file.fileName ?? "") + file.storagePath).toLowerCase().includes(q),
         )
       : items;
     return list.slice(0, 100);
@@ -610,7 +610,7 @@ function StorageTab({
       />
       <ul className="ref-picker-list">
         {filtered.map((file) => {
-          const parts = file.s3Key.split("/");
+          const parts = file.storagePath.split("/");
           const channelSeg = parts[1] ?? "";
           const info = channelLabels[channelSeg];
           const channelName = info?.title
@@ -643,7 +643,7 @@ function StorageTab({
                 type="button"
                 className={`ref-picker-item ${selected ? "selected" : ""}`.trim()}
                 onClick={() => onToggle(ref)}
-                title={file.s3Key}
+                title={file.storagePath}
               >
                 <div className="ref-picker-main">
                   <span className="ref-picker-title">
@@ -674,12 +674,11 @@ function SiteLinksTab({
   onToggle: (ref: PendingReference) => void;
 }) {
   const [links, setLinks] = useState<SiteLink[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     void fetchSiteLinks()
       .then((items) => {
         if (mounted) setLinks(items);

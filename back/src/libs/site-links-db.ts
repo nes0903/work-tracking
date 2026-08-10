@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 
 export interface SiteLink {
   id: number;
@@ -24,7 +24,7 @@ const SELECT_COLS = `id, label, url, category, sort_order, created_at, updated_a
 
 function hydrate(row: SiteLinkRow): SiteLink {
   return {
-    id: row.id,
+    id: Number(row.id),
     label: row.label,
     url: row.url,
     category: row.category,
@@ -34,50 +34,53 @@ function hydrate(row: SiteLinkRow): SiteLink {
   };
 }
 
-export function listSiteLinks(): SiteLink[] {
+export async function listSiteLinks(): Promise<SiteLink[]> {
   const db = getDatabase();
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT ${SELECT_COLS}
          FROM site_links
          ORDER BY sort_order ASC, id ASC`,
     )
-    .all() as unknown as SiteLinkRow[];
+    .all();
   return rows.map(hydrate);
 }
 
-export function listSiteLinkCategories(): string[] {
+export async function listSiteLinkCategories(): Promise<string[]> {
   const db = getDatabase();
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT name
          FROM site_link_categories
         ORDER BY sort_order ASC, name ASC`,
     )
-    .all() as Array<{ name: string }>;
+    .all();
   return rows.map((row) => row.name);
 }
 
-export function createSiteLinkCategory(name: string): string[] {
+export async function createSiteLinkCategory(name: string): Promise<string[]> {
   const trimmed = name.trim();
   if (!trimmed) return listSiteLinkCategories();
   const db = getDatabase();
-  const maxRow = db
+  const maxRow = await db
     .prepare(
       `SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_link_categories`,
     )
-    .get() as { max: number } | undefined;
-  db.prepare(
-    `INSERT OR IGNORE INTO site_link_categories (name, sort_order)
-     VALUES (?, ?)`,
-  ).run(trimmed, (maxRow?.max ?? -1) + 1);
+    .get();
+  await db
+    .prepare(
+      `INSERT INTO site_link_categories (name, sort_order)
+     VALUES (?, ?)
+     ON CONFLICT (name) DO NOTHING`,
+    )
+    .run(trimmed, Number(maxRow?.max ?? -1) + 1);
   return listSiteLinkCategories();
 }
 
-export function renameSiteLinkCategory(
+export async function renameSiteLinkCategory(
   oldName: string,
   newName: string,
-): string[] {
+): Promise<string[]> {
   const oldTrimmed = oldName.trim();
   const newTrimmed = newName.trim();
   if (!oldTrimmed || !newTrimmed || oldTrimmed === newTrimmed) {
@@ -85,69 +88,63 @@ export function renameSiteLinkCategory(
   }
 
   const db = getDatabase();
-  db.exec("BEGIN");
-  try {
-    const existing = db
+  await db.transaction(async (transaction) => {
+    const existing = await transaction
       .prepare(`SELECT sort_order FROM site_link_categories WHERE name = ?`)
-      .get(oldTrimmed) as { sort_order: number } | undefined;
+      .get(oldTrimmed);
     const sortOrder = existing?.sort_order ?? 0;
-    db.prepare(
-      `INSERT OR IGNORE INTO site_link_categories (name, sort_order)
-       VALUES (?, ?)`,
-    ).run(newTrimmed, sortOrder);
-    db.prepare(`UPDATE site_links SET category = ? WHERE category = ?`).run(
-      newTrimmed,
-      oldTrimmed,
-    );
-    db.prepare(
-      `DELETE FROM site_link_categories
+    await transaction
+      .prepare(
+        `INSERT INTO site_link_categories (name, sort_order)
+       VALUES (?, ?)
+       ON CONFLICT (name) DO NOTHING`,
+      )
+      .run(newTrimmed, sortOrder);
+    await transaction
+      .prepare(`UPDATE site_links SET category = ? WHERE category = ?`)
+      .run(newTrimmed, oldTrimmed);
+    await transaction
+      .prepare(
+        `DELETE FROM site_link_categories
         WHERE name = ?
           AND NOT EXISTS (
             SELECT 1 FROM site_links WHERE category = site_link_categories.name
           )`,
-    ).run(oldTrimmed);
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+      )
+      .run(oldTrimmed);
+  });
 
   return listSiteLinkCategories();
 }
 
-export function createSiteLink(input: {
+export async function createSiteLink(input: {
   label: string;
   url: string;
   category?: string | null;
-}): SiteLink {
+}): Promise<SiteLink> {
   const db = getDatabase();
   const category = input.category?.trim() || null;
   if (category) {
-    createSiteLinkCategory(category);
+    await createSiteLinkCategory(category);
   }
-  const maxRow = db
+  const maxRow = (await db
     .prepare(`SELECT COALESCE(MAX(sort_order), -1) AS max FROM site_links`)
-    .get() as { max: number };
+    .get()) as { max: number | string };
   const nextOrder = Number(maxRow.max) + 1;
 
-  const row = db
+  const row = (await db
     .prepare(
       `INSERT INTO site_links (label, url, category, sort_order)
          VALUES (?, ?, ?, ?)
          RETURNING ${SELECT_COLS}`,
     )
-    .get(
-      input.label,
-      input.url,
-      category,
-      nextOrder,
-    ) as unknown as SiteLinkRow;
+    .get(input.label, input.url, category, nextOrder)) as SiteLinkRow;
   return hydrate(row);
 }
 
-export function findSiteLinkByUrl(url: string): SiteLink | null {
+export async function findSiteLinkByUrl(url: string): Promise<SiteLink | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `SELECT ${SELECT_COLS}
          FROM site_links
@@ -155,7 +152,7 @@ export function findSiteLinkByUrl(url: string): SiteLink | null {
         ORDER BY id ASC
         LIMIT 1`,
     )
-    .get(url) as unknown as SiteLinkRow | undefined;
+    .get(url);
   return row ? hydrate(row) : null;
 }
 
@@ -166,10 +163,10 @@ export interface UpdateSiteLinkInput {
   sortOrder?: number;
 }
 
-export function updateSiteLink(
+export async function updateSiteLink(
   id: number,
   patch: UpdateSiteLinkInput,
-): SiteLink | null {
+): Promise<SiteLink | null> {
   const db = getDatabase();
 
   const sets: string[] = [];
@@ -187,7 +184,7 @@ export function updateSiteLink(
     sets.push("category = ?");
     const category = patch.category?.trim() || null;
     if (category) {
-      createSiteLinkCategory(category);
+      await createSiteLinkCategory(category);
     }
     args.push(category);
   }
@@ -197,23 +194,23 @@ export function updateSiteLink(
   }
 
   if (sets.length === 0) {
-    const row = db
+    const row = await db
       .prepare(
         `SELECT ${SELECT_COLS}
            FROM site_links WHERE id = ?`,
       )
-      .get(id) as unknown as SiteLinkRow | undefined;
+      .get(id);
     return row ? hydrate(row) : null;
   }
 
   sets.push("updated_at = datetime('now')");
 
-  const row = db
+  const row = await db
     .prepare(
       `UPDATE site_links SET ${sets.join(", ")} WHERE id = ?
          RETURNING ${SELECT_COLS}`,
     )
-    .get(...args, id) as unknown as SiteLinkRow | undefined;
+    .get(...args, id);
   return row ? hydrate(row) : null;
 }
 
@@ -223,7 +220,9 @@ export interface ReorderSiteLinkInput {
   sortOrder: number;
 }
 
-export function reorderSiteLinks(items: ReorderSiteLinkInput[]): SiteLink[] {
+export async function reorderSiteLinks(
+  items: ReorderSiteLinkInput[],
+): Promise<SiteLink[]> {
   const db = getDatabase();
   const cleaned = items
     .filter((item) => Number.isInteger(item.id) && item.id > 0)
@@ -237,30 +236,33 @@ export function reorderSiteLinks(items: ReorderSiteLinkInput[]): SiteLink[] {
 
   if (cleaned.length === 0) return listSiteLinks();
 
-  db.exec("BEGIN");
-  try {
-    const update = db.prepare(
+  await db.transaction(async (transaction) => {
+    const update = transaction.prepare(
       `UPDATE site_links
           SET category = ?, sort_order = ?, updated_at = datetime('now')
         WHERE id = ?`,
     );
     for (const item of cleaned) {
       if (item.category) {
-        createSiteLinkCategory(item.category);
+        await transaction
+          .prepare(
+            `INSERT INTO site_link_categories (name, sort_order)
+           VALUES (?, ?)
+           ON CONFLICT (name) DO NOTHING`,
+          )
+          .run(item.category, item.sortOrder);
       }
-      update.run(item.category, item.sortOrder, item.id);
+      await update.run(item.category, item.sortOrder, item.id);
     }
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 
   return listSiteLinks();
 }
 
-export function deleteSiteLink(id: number): boolean {
+export async function deleteSiteLink(id: number): Promise<boolean> {
   const db = getDatabase();
-  const result = db.prepare(`DELETE FROM site_links WHERE id = ?`).run(id);
+  const result = await db
+    .prepare(`DELETE FROM site_links WHERE id = ?`)
+    .run(id);
   return result.changes > 0;
 }

@@ -6,11 +6,11 @@ import { getSession } from "@libs/auth-db";
 
 @Injectable()
 export class SessionMiddleware implements NestMiddleware {
-  use(req: Request, _res: Response, next: NextFunction) {
+  async use(req: Request, _res: Response, next: NextFunction) {
     const cookies = parseCookies(req.headers.cookie);
     const token = cookies[SESSION_COOKIE_NAME];
     if (token) {
-      const row = getSession(token);
+      const row = await getSession(token);
       if (row) {
         req.auth = {
           sessionId: row.id,

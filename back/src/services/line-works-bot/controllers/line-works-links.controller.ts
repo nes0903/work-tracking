@@ -23,8 +23,8 @@ function parseId(idParam: string): number {
   return id;
 }
 
-function requireLink(id: number) {
-  const link = getLineWorksLinkById(id);
+async function requireLink(id: number) {
+  const link = await getLineWorksLinkById(id);
   if (!link) {
     throw new HttpException(
       { ok: false, error: "Link not found" },
@@ -49,15 +49,15 @@ function labelFromUrl(url: string): string {
 export class LineWorksLinksController {
   @Get(":id/preview")
   async preview(@Param("id") idParam: string) {
-    const link = requireLink(parseId(idParam));
+    const link = await requireLink(parseId(idParam));
     const preview = await getOrFetchLinkPreview(link.url);
     return { ok: true, preview };
   }
 
   @Post(":id/save")
   async save(@Param("id") idParam: string) {
-    const link = requireLink(parseId(idParam));
-    const existing = findSiteLinkByUrl(link.url);
+    const link = await requireLink(parseId(idParam));
+    const existing = await findSiteLinkByUrl(link.url);
     if (existing) {
       return { ok: true, item: existing, alreadySaved: true };
     }
@@ -67,7 +67,7 @@ export class LineWorksLinksController {
       (preview.status === "success" && preview.title?.trim()) ||
       preview.siteName ||
       labelFromUrl(link.url);
-    const item = createSiteLink({
+    const item = await createSiteLink({
       label,
       url: link.url,
       category: "Works",

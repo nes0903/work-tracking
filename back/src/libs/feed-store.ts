@@ -23,7 +23,7 @@ export async function getNotionFeed(
 ): Promise<NotionFeedResult> {
   const page = Number.isFinite(query.page) ? Number(query.page) : 1;
   const perPage = Number.isFinite(query.perPage) ? Number(query.perPage) : 20;
-  const feed = listNotionUpdateEvents(page, perPage);
+  const feed = await listNotionUpdateEvents(page, perPage);
 
   let readEventIds: string[] = [];
   let newCount = 0;
@@ -31,9 +31,9 @@ export async function getNotionFeed(
     const ids = feed.items
       .map((it) => it.eventId)
       .filter((v): v is string => typeof v === "string" && v.length > 0);
-    const readSet = getNotionReadSet(userId, ids);
+    const readSet = await getNotionReadSet(userId, ids);
     readEventIds = ids.filter((id) => readSet.has(id));
-    newCount = countNewNotionUpdateEvents(userId);
+    newCount = await countNewNotionUpdateEvents(userId);
   }
 
   return { ...feed, readEventIds, newCount };

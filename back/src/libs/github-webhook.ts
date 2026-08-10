@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { DatabaseSync } from "node:sqlite";
 import {
   getGithubFeedFromStore,
   setGithubFeedInStore,
@@ -10,7 +9,7 @@ import {
   type GithubFeed,
   type GithubRepo,
 } from "@libs/work-tracking";
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
 import { emitFeedUpdate } from "@libs/feed-events";
 
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "";
@@ -191,7 +190,9 @@ function safeJsonParse(raw: string) {
   }
 }
 
-function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
+async function handlePushEvent(
+  payload: GithubPushPayload,
+): Promise<GithubWebhookResult> {
   const repo = payload.repository;
   if (!repo?.name || !repo.owner?.login) {
     return {
@@ -209,7 +210,7 @@ function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
   const commits = payload.commits ?? [];
 
   const db = getDatabase();
-  const syncRunId = insertSyncRun(db, {
+  const syncRunId = await insertSyncRun(db, {
     ownerName,
     reposScanned: 1,
     reposChanged: commits.length > 0 ? 1 : 0,
@@ -231,7 +232,7 @@ function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
       null;
     const occurredAt = commit.timestamp ?? null;
 
-    upsertCommitEvent(db, {
+    await upsertCommitEvent(db, {
       ownerName,
       repoName,
       commitSha: commit.id,
@@ -254,7 +255,7 @@ function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
 
   const latestCommit = payload.head_commit ?? commits[commits.length - 1];
 
-  upsertRepoSnapshot(db, {
+  await upsertRepoSnapshot(db, {
     ownerName,
     repoName,
     repoUrl,
@@ -265,7 +266,7 @@ function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
     syncRunId,
   });
 
-  applyPushToFeed({
+  await applyPushToFeed({
     ownerName,
     repoName,
     repoUrl,
@@ -288,10 +289,10 @@ function handlePushEvent(payload: GithubPushPayload): GithubWebhookResult {
   };
 }
 
-function handlePullRequestEvent(
+async function handlePullRequestEvent(
   payload: GithubPullRequestPayload,
   deliveryId: string | null,
-): GithubWebhookResult {
+): Promise<GithubWebhookResult> {
   const repo = payload.repository;
   const pr = payload.pull_request;
   if (!repo?.name || !repo.owner?.login || !pr?.number) {
@@ -314,7 +315,7 @@ function handlePullRequestEvent(
   const updatedAt = pr.updated_at ?? null;
 
   const db = getDatabase();
-  const syncRunId = insertSyncRun(db, {
+  const syncRunId = await insertSyncRun(db, {
     ownerName,
     reposScanned: 1,
     reposChanged: 1,
@@ -322,7 +323,7 @@ function handlePullRequestEvent(
     prEventsDetected: 1,
   });
 
-  upsertRepoSnapshot(db, {
+  await upsertRepoSnapshot(db, {
     ownerName,
     repoName,
     repoUrl,
@@ -334,7 +335,7 @@ function handlePullRequestEvent(
     preserveCommitFields: true,
   });
 
-  upsertPullRequestSnapshot(db, {
+  await upsertPullRequestSnapshot(db, {
     ownerName,
     repoName,
     prNumber: pr.number,
@@ -353,7 +354,7 @@ function handlePullRequestEvent(
   const eventUid =
     deliveryId ||
     `${ownerName}/${repoName}#${pr.number}:${action}:${updatedAt ?? ""}`;
-  upsertPullRequestEvent(db, {
+  await upsertPullRequestEvent(db, {
     eventUid,
     ownerName,
     repoName,
@@ -368,7 +369,7 @@ function handlePullRequestEvent(
     syncRunId,
   });
 
-  applyPrEventToFeed({
+  await applyPrEventToFeed({
     ownerName,
     repoName,
     repoUrl,
@@ -414,8 +415,11 @@ interface SyncRunInput {
   prEventsDetected: number;
 }
 
-function insertSyncRun(db: DatabaseSync, input: SyncRunInput): number {
-  const result = db
+async function insertSyncRun(
+  db: DatabaseClient,
+  input: SyncRunInput,
+): Promise<number> {
+  const row = await db
     .prepare(
       `
         INSERT INTO github_sync_runs (
@@ -423,9 +427,10 @@ function insertSyncRun(db: DatabaseSync, input: SyncRunInput): number {
           commit_events_detected, pr_events_detected, status
         )
         VALUES (?, ?, ?, ?, ?, ?, 'success')
+        RETURNING id
       `,
     )
-    .run(
+    .get(
       new Date().toISOString(),
       input.ownerName,
       input.reposScanned,
@@ -433,7 +438,8 @@ function insertSyncRun(db: DatabaseSync, input: SyncRunInput): number {
       input.commitEventsDetected,
       input.prEventsDetected,
     );
-  return Number(result.lastInsertRowid);
+  if (!row) throw new Error("Failed to create GitHub sync run");
+  return Number(row.id);
 }
 
 interface CommitEventInput {
@@ -447,9 +453,10 @@ interface CommitEventInput {
   syncRunId: number;
 }
 
-function upsertCommitEvent(db: DatabaseSync, input: CommitEventInput) {
-  db.prepare(
-    `
+async function upsertCommitEvent(db: DatabaseClient, input: CommitEventInput) {
+  await db
+    .prepare(
+      `
       INSERT INTO github_commit_events (
         owner_name, repo_name, commit_sha, title, commit_url,
         occurred_at, author_name, status, summary, sync_run_id
@@ -462,16 +469,17 @@ function upsertCommitEvent(db: DatabaseSync, input: CommitEventInput) {
         author_name = excluded.author_name,
         sync_run_id = excluded.sync_run_id
     `,
-  ).run(
-    input.ownerName,
-    input.repoName,
-    input.commitSha,
-    input.title,
-    input.commitUrl,
-    input.occurredAt,
-    input.authorName,
-    input.syncRunId,
-  );
+    )
+    .run(
+      input.ownerName,
+      input.repoName,
+      input.commitSha,
+      input.title,
+      input.commitUrl,
+      input.occurredAt,
+      input.authorName,
+      input.syncRunId,
+    );
 }
 
 interface RepoSnapshotInput {
@@ -486,15 +494,19 @@ interface RepoSnapshotInput {
   preserveCommitFields?: boolean;
 }
 
-function upsertRepoSnapshot(db: DatabaseSync, input: RepoSnapshotInput) {
+async function upsertRepoSnapshot(
+  db: DatabaseClient,
+  input: RepoSnapshotInput,
+) {
   const updateCommitClause = input.preserveCommitFields
     ? ""
     : `
         latest_commit_sha = excluded.latest_commit_sha,
         latest_commit_at = excluded.latest_commit_at,`;
 
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO github_repo_snapshots (
         owner_name, repo_name, repo_url, default_branch,
         latest_commit_sha, latest_commit_at, open_pr_count,
@@ -508,17 +520,18 @@ function upsertRepoSnapshot(db: DatabaseSync, input: RepoSnapshotInput) {
         last_scanned_at = excluded.last_scanned_at,
         sync_run_id = excluded.sync_run_id
     `,
-  ).run(
-    input.ownerName,
-    input.repoName,
-    input.repoUrl,
-    input.defaultBranch,
-    input.latestCommitSha,
-    input.latestCommitAt,
-    input.openPrCount,
-    new Date().toISOString(),
-    input.syncRunId,
-  );
+    )
+    .run(
+      input.ownerName,
+      input.repoName,
+      input.repoUrl,
+      input.defaultBranch,
+      input.latestCommitSha,
+      input.latestCommitAt,
+      input.openPrCount,
+      new Date().toISOString(),
+      input.syncRunId,
+    );
 }
 
 interface PullRequestSnapshotInput {
@@ -537,12 +550,13 @@ interface PullRequestSnapshotInput {
   syncRunId: number;
 }
 
-function upsertPullRequestSnapshot(
-  db: DatabaseSync,
+async function upsertPullRequestSnapshot(
+  db: DatabaseClient,
   input: PullRequestSnapshotInput,
 ) {
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO github_pull_request_snapshots (
         owner_name, repo_name, pr_number, title, state, is_draft,
         updated_at, pr_url, base_branch, head_branch, head_sha,
@@ -561,21 +575,22 @@ function upsertPullRequestSnapshot(
         author_name = excluded.author_name,
         sync_run_id = excluded.sync_run_id
     `,
-  ).run(
-    input.ownerName,
-    input.repoName,
-    input.prNumber,
-    input.title,
-    input.state,
-    input.isDraft,
-    input.updatedAt,
-    input.prUrl,
-    input.baseBranch,
-    input.headBranch,
-    input.headSha,
-    input.authorName,
-    input.syncRunId,
-  );
+    )
+    .run(
+      input.ownerName,
+      input.repoName,
+      input.prNumber,
+      input.title,
+      input.state,
+      input.isDraft,
+      input.updatedAt,
+      input.prUrl,
+      input.baseBranch,
+      input.headBranch,
+      input.headSha,
+      input.authorName,
+      input.syncRunId,
+    );
 }
 
 interface PullRequestEventInput {
@@ -593,12 +608,13 @@ interface PullRequestEventInput {
   syncRunId: number;
 }
 
-function upsertPullRequestEvent(
-  db: DatabaseSync,
+async function upsertPullRequestEvent(
+  db: DatabaseClient,
   input: PullRequestEventInput,
 ) {
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO github_pr_events (
         event_uid, owner_name, repo_name, pr_number, event_kind,
         title, pr_url, occurred_at, author_name, status, summary, sync_run_id
@@ -614,20 +630,21 @@ function upsertPullRequestEvent(
         summary = excluded.summary,
         sync_run_id = excluded.sync_run_id
     `,
-  ).run(
-    input.eventUid,
-    input.ownerName,
-    input.repoName,
-    input.prNumber,
-    input.eventKind,
-    input.title,
-    input.prUrl,
-    input.occurredAt,
-    input.authorName,
-    input.status,
-    input.summary,
-    input.syncRunId,
-  );
+    )
+    .run(
+      input.eventUid,
+      input.ownerName,
+      input.repoName,
+      input.prNumber,
+      input.eventKind,
+      input.title,
+      input.prUrl,
+      input.occurredAt,
+      input.authorName,
+      input.status,
+      input.summary,
+      input.syncRunId,
+    );
 }
 
 interface ApplyPushInput {
@@ -639,8 +656,8 @@ interface ApplyPushInput {
   commitEvents: GithubEvent[];
 }
 
-function applyPushToFeed(input: ApplyPushInput) {
-  const current = getGithubFeedFromStore() ?? emptyGithubFeed();
+async function applyPushToFeed(input: ApplyPushInput) {
+  const current = (await getGithubFeedFromStore()) ?? emptyGithubFeed();
   const next = updateFeedRepoAndItems(current, {
     ownerName: input.ownerName,
     repoName: input.repoName,
@@ -662,8 +679,8 @@ function applyPushToFeed(input: ApplyPushInput) {
     newCommitEvents: input.commitEvents,
     newPrEvents: [],
   });
-  setGithubFeedInStore(next);
-  emitFeedUpdate("github");
+  await setGithubFeedInStore(next);
+  await emitFeedUpdate("github");
 }
 
 interface ApplyPrInput {
@@ -674,8 +691,8 @@ interface ApplyPrInput {
   prEvent: GithubEvent;
 }
 
-function applyPrEventToFeed(input: ApplyPrInput) {
-  const current = getGithubFeedFromStore() ?? emptyGithubFeed();
+async function applyPrEventToFeed(input: ApplyPrInput) {
+  const current = (await getGithubFeedFromStore()) ?? emptyGithubFeed();
   const next = updateFeedRepoAndItems(current, {
     ownerName: input.ownerName,
     repoName: input.repoName,
@@ -685,8 +702,8 @@ function applyPrEventToFeed(input: ApplyPrInput) {
     newCommitEvents: [],
     newPrEvents: [input.prEvent],
   });
-  setGithubFeedInStore(next);
-  emitFeedUpdate("github");
+  await setGithubFeedInStore(next);
+  await emitFeedUpdate("github");
 }
 
 interface UpdateFeedInput {

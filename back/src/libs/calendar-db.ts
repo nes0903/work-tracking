@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
 
 export interface CalendarTaskSummary {
   id: string;
@@ -85,12 +85,24 @@ function localDatePart(value: string | null | undefined): string | null {
   return match ? match[1] : null;
 }
 
-export function queryCalendar(from: string, to: string): CalendarResult {
-  const db = getDatabase();
+export async function queryCalendar(
+  from: string,
+  to: string,
+): Promise<CalendarResult> {
+  return getDatabase().transaction((db) =>
+    queryCalendarWithDatabase(db, from, to),
+  );
+}
+
+async function queryCalendarWithDatabase(
+  db: DatabaseClient,
+  from: string,
+  to: string,
+): Promise<CalendarResult> {
   const days: Record<string, CalendarDayBucket> = {};
 
   // Tasks — work_date
-  const taskRows = db
+  const taskRows = await db
     .prepare(
       `
         SELECT
@@ -101,10 +113,10 @@ export function queryCalendar(from: string, to: string): CalendarResult {
         FROM tasks t
    LEFT JOIN users uc ON uc.user_id = t.created_by_user_id
        WHERE t.work_date >= ? AND t.work_date <= ?
-    ORDER BY t.work_date ASC, datetime(t.created_at) ASC
+    ORDER BY t.work_date ASC, t.created_at ASC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       id: string;
       title: string;
       category: string;
@@ -115,14 +127,14 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       due_time: string | null;
       created_by_user_id: string | null;
       created_by_name: string | null;
-    }>;
+    }>(from, to);
 
   // 다중 담당자 로드
   const taskIds = taskRows.map((r) => r.id);
   const assigneeNamesByTask = new Map<string, string[]>();
   if (taskIds.length > 0) {
     const placeholders = taskIds.map(() => "?").join(",");
-    const assigneeRows = db
+    const assigneeRows = await db
       .prepare(
         `
           SELECT ta.task_id, COALESCE(u.user_name, ta.user_id) AS name
@@ -132,7 +144,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
         ORDER BY ta.task_id, ta.sort_order, ta.user_id
         `,
       )
-      .all(...taskIds) as Array<{ task_id: string; name: string }>;
+      .all<{ task_id: string; name: string }>(...taskIds);
     for (const row of assigneeRows) {
       const list = assigneeNamesByTask.get(row.task_id) ?? [];
       list.push(row.name);
@@ -157,17 +169,17 @@ export function queryCalendar(from: string, to: string): CalendarResult {
   }
 
   // Notion — edited_at 우선
-  const notionRows = db
+  const notionRows = await db
     .prepare(
       `
         SELECT event_id, title, page_url, section_title, parent_title,
                editor_name, edited_at, received_at
           FROM notion_update_events
-         WHERE COALESCE(substr(edited_at,1,10), substr(received_at,1,10)) BETWEEN ? AND ?
+         WHERE COALESCE(edited_at::date, received_at::date) BETWEEN ? AND ?
       ORDER BY COALESCE(edited_at, received_at) DESC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       event_id: string;
       title: string;
       page_url: string;
@@ -176,10 +188,11 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       editor_name: string | null;
       edited_at: string | null;
       received_at: string;
-    }>;
+    }>(from, to);
 
   for (const row of notionRows) {
-    const dateKey = localDatePart(row.edited_at) ?? localDatePart(row.received_at);
+    const dateKey =
+      localDatePart(row.edited_at) ?? localDatePart(row.received_at);
     if (!dateKey) continue;
     const bucket = ensureBucket(days, dateKey);
     bucket.notion.push({
@@ -194,24 +207,24 @@ export function queryCalendar(from: string, to: string): CalendarResult {
   }
 
   // GitHub commit events
-  const commitRows = db
+  const commitRows = await db
     .prepare(
       `
         SELECT owner_name, repo_name, title, commit_url, occurred_at, author_name, status
           FROM github_commit_events
-         WHERE substr(occurred_at, 1, 10) BETWEEN ? AND ?
+         WHERE occurred_at::date BETWEEN ? AND ?
       ORDER BY occurred_at DESC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       owner_name: string;
       repo_name: string;
       title: string;
       commit_url: string;
       occurred_at: string | null;
       author_name: string | null;
-      status: string;
-    }>;
+      status: string | null;
+    }>(from, to);
 
   for (const row of commitRows) {
     const dateKey = localDatePart(row.occurred_at);
@@ -229,16 +242,16 @@ export function queryCalendar(from: string, to: string): CalendarResult {
   }
 
   // GitHub PR events
-  const prRows = db
+  const prRows = await db
     .prepare(
       `
         SELECT owner_name, repo_name, title, pr_url, occurred_at, author_name, status
           FROM github_pr_events
-         WHERE substr(occurred_at, 1, 10) BETWEEN ? AND ?
+         WHERE occurred_at::date BETWEEN ? AND ?
       ORDER BY occurred_at DESC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       owner_name: string;
       repo_name: string;
       title: string;
@@ -246,7 +259,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       occurred_at: string | null;
       author_name: string | null;
       status: string | null;
-    }>;
+    }>(from, to);
 
   for (const row of prRows) {
     const dateKey = localDatePart(row.occurred_at);
@@ -264,7 +277,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
   }
 
   // LINE WORKS messages
-  const lwRows = db
+  const lwRows = await db
     .prepare(
       `
         SELECT m.message_id, m.channel_id, m.user_id, m.content_type,
@@ -272,11 +285,11 @@ export function queryCalendar(from: string, to: string): CalendarResult {
                c.title AS channel_title
           FROM line_works_messages m
      LEFT JOIN line_works_channels c ON c.channel_id = m.channel_id
-         WHERE COALESCE(substr(m.issued_at,1,10), substr(m.received_at,1,10)) BETWEEN ? AND ?
+         WHERE COALESCE(m.issued_at::date, m.received_at::date) BETWEEN ? AND ?
       ORDER BY COALESCE(m.issued_at, m.received_at) DESC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       message_id: string;
       channel_id: string;
       user_id: string | null;
@@ -285,7 +298,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       issued_at: string | null;
       received_at: string;
       channel_title: string | null;
-    }>;
+    }>(from, to);
 
   for (const row of lwRows) {
     const dateKey =
@@ -304,7 +317,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
   }
 
   // Storage attachments
-  const storageRows = db
+  const storageRows = await db
     .prepare(
       `
         SELECT a.id, a.file_name, a.mime_type, a.file_size, a.uploaded_at,
@@ -312,11 +325,11 @@ export function queryCalendar(from: string, to: string): CalendarResult {
           FROM line_works_attachments a
      LEFT JOIN line_works_messages m ON m.message_id = a.message_id
      LEFT JOIN line_works_channels c ON c.channel_id = m.channel_id
-         WHERE substr(a.uploaded_at, 1, 10) BETWEEN ? AND ?
+         WHERE a.uploaded_at::date BETWEEN ? AND ?
       ORDER BY a.uploaded_at DESC
       `,
     )
-    .all(from, to) as Array<{
+    .all<{
       id: number;
       file_name: string | null;
       mime_type: string | null;
@@ -325,7 +338,7 @@ export function queryCalendar(from: string, to: string): CalendarResult {
       message_id: string;
       channel_id: string | null;
       channel_title: string | null;
-    }>;
+    }>(from, to);
 
   for (const row of storageRows) {
     const dateKey = localDatePart(row.uploaded_at);

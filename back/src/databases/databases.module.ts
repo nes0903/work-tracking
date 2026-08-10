@@ -1,14 +1,14 @@
 import { Module, OnModuleInit } from "@nestjs/common";
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 
-class SqliteBootstrapService implements OnModuleInit {
-  onModuleInit() {
-    getDatabase();
+class PostgresBootstrapService implements OnModuleInit {
+  async onModuleInit() {
+    await getDatabase().exec("SELECT 1");
   }
 }
 
 @Module({
-  providers: [SqliteBootstrapService],
-  exports: [SqliteBootstrapService],
+  providers: [PostgresBootstrapService],
+  exports: [PostgresBootstrapService],
 })
 export class DatabasesModule {}

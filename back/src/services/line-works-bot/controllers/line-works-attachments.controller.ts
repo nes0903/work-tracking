@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@common/auth.guard";
 import { getAttachmentById } from "@libs/line-works-bot-db";
-import { presignGetUrl } from "@libs/s3";
+import { createSignedDownloadUrl } from "@libs/supabase-storage";
 
 @Controller("api/line-works-attachments")
 @UseGuards(AuthGuard)
@@ -23,7 +23,7 @@ export class LineWorksAttachmentsController {
       );
     }
 
-    const row = getAttachmentById(id);
+    const row = await getAttachmentById(id);
     if (!row) {
       throw new HttpException(
         { ok: false, error: "Attachment not found" },
@@ -31,7 +31,10 @@ export class LineWorksAttachmentsController {
       );
     }
 
-    const url = await presignGetUrl(row.s3Bucket, row.s3Key);
+    const url = await createSignedDownloadUrl(
+      row.storageBucket,
+      row.storagePath,
+    );
     return {
       ok: true,
       attachment: {

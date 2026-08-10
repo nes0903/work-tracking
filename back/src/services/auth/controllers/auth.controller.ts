@@ -48,7 +48,7 @@ function loginErrorRedirect(error: string) {
 @Controller("api/auth")
 export class AuthController {
   @Get("line-works/login")
-  login(
+  async login(
     @Query("redirect") redirect: string | undefined,
     @Query("prompt") prompt: string | undefined,
     @Query("_rsc") rsc: string | undefined,
@@ -78,8 +78,10 @@ export class AuthController {
       );
     }
 
-    const state = createOAuthState(safeRedirect(redirect));
-    const url = buildAuthorizeUrl(config, state, { forcePrompt: prompt !== "none" });
+    const state = await createOAuthState(safeRedirect(redirect));
+    const url = buildAuthorizeUrl(config, state, {
+      forcePrompt: prompt !== "none",
+    });
     res.redirect(url);
   }
 
@@ -106,7 +108,7 @@ export class AuthController {
       return res.redirect(loginErrorRedirect("invalid_request"));
     }
 
-    const stateRecord = consumeOAuthState(state);
+    const stateRecord = await consumeOAuthState(state);
     if (!stateRecord) {
       return res.redirect(loginErrorRedirect("invalid_state"));
     }
@@ -115,7 +117,8 @@ export class AuthController {
       const token = await exchangeCodeForToken(config, code);
       const user = await fetchUserInfo(token.access_token);
 
-      const userDomainId = user.domainId !== undefined ? String(user.domainId) : "";
+      const userDomainId =
+        user.domainId !== undefined ? String(user.domainId) : "";
       if (!userDomainId || userDomainId !== config.domainId) {
         return res.redirect(loginErrorRedirect("forbidden_domain"));
       }
@@ -129,14 +132,14 @@ export class AuthController {
       const resolvedEmail = user.email ?? null;
 
       // users 테이블에도 upsert (태스크 할당자/담당자 드롭다운용 마스터)
-      upsertUser({
+      await upsertUser({
         userId: resolvedUserId,
         userName: resolvedUserName,
         email: resolvedEmail,
         domainId: userDomainId,
       });
 
-      const session = createSession({
+      const session = await createSession({
         userId: resolvedUserId,
         userName: resolvedUserName,
         email: resolvedEmail,
@@ -162,9 +165,9 @@ export class AuthController {
   }
 
   @Post("logout")
-  logout(@Req() req: Request, @Res() res: Response) {
+  async logout(@Req() req: Request, @Res() res: Response) {
     if (req.auth) {
-      deleteSession(req.auth.sessionId);
+      await deleteSession(req.auth.sessionId);
     }
     res.setHeader(
       "Set-Cookie",

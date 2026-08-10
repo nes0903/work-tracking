@@ -28,23 +28,38 @@ export function loadBotConfig(): BotConfig | null {
   const clientId = process.env.LINE_WORKS_CLIENT_ID;
   const clientSecret = process.env.LINE_WORKS_CLIENT_SECRET;
   const serviceAccount = process.env.LINE_WORKS_SERVICE_ACCOUNT;
+  const inlinePrivateKey = process.env.LINE_WORKS_PRIVATE_KEY;
   const privateKeyPath = process.env.LINE_WORKS_PRIVATE_KEY_PATH;
 
-  if (!botId || !botSecret || !clientId || !clientSecret || !serviceAccount || !privateKeyPath) {
+  if (
+    !botId ||
+    !botSecret ||
+    !clientId ||
+    !clientSecret ||
+    !serviceAccount ||
+    (!inlinePrivateKey && !privateKeyPath)
+  ) {
     return null;
   }
 
   let privateKeyPem: string;
-  try {
-    privateKeyPem = readFileSync(privateKeyPath, "utf8");
-  } catch (err) {
-    console.error("[line-works-bot] failed to read private key", err);
-    return null;
+  if (inlinePrivateKey) {
+    privateKeyPem = inlinePrivateKey.replace(/\\n/g, "\n");
+  } else {
+    try {
+      privateKeyPem = readFileSync(privateKeyPath!, "utf8");
+    } catch (err) {
+      console.error("[line-works-bot] failed to read private key", err);
+      return null;
+    }
   }
 
   const rawTargets = (process.env.LINE_WORKS_TARGET_CHANNEL_IDS ?? "").trim();
   const targetChannelIds = rawTargets
-    ? rawTargets.split(",").map((entry) => entry.trim()).filter(Boolean)
+    ? rawTargets
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
     : [];
   const allowAllChannels = rawTargets === "*";
 
@@ -60,7 +75,10 @@ export function loadBotConfig(): BotConfig | null {
   };
 }
 
-export function isChannelAllowed(config: BotConfig, channelId: string | undefined): boolean {
+export function isChannelAllowed(
+  config: BotConfig,
+  channelId: string | undefined,
+): boolean {
   if (!channelId) {
     return false;
   }
@@ -78,7 +96,9 @@ export function verifyCallbackSignature(
   if (!signatureHeader) {
     return false;
   }
-  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
+  const expected = createHmac("sha256", secret)
+    .update(rawBody, "utf8")
+    .digest("base64");
   const received = signatureHeader.trim();
   const left = Buffer.from(expected);
   const right = Buffer.from(received);
@@ -97,7 +117,11 @@ let cachedAccessToken: CachedAccessToken | null = null;
 
 function base64UrlEncode(input: Buffer | string): string {
   const buf = typeof input === "string" ? Buffer.from(input) : input;
-  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return buf
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function buildJwtAssertion(config: BotConfig): string {
@@ -126,7 +150,9 @@ interface TokenResponse {
   scope?: string;
 }
 
-async function requestAccessToken(config: BotConfig): Promise<CachedAccessToken> {
+async function requestAccessToken(
+  config: BotConfig,
+): Promise<CachedAccessToken> {
   const assertion = buildJwtAssertion(config);
   const body = new URLSearchParams({
     assertion,
@@ -145,14 +171,17 @@ async function requestAccessToken(config: BotConfig): Promise<CachedAccessToken>
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`LINE WORKS token issuance failed (${response.status}): ${text}`);
+    throw new Error(
+      `LINE WORKS token issuance failed (${response.status}): ${text}`,
+    );
   }
 
   const payload = (await response.json()) as TokenResponse;
   const expiresInSeconds = payload.expires_in ?? 60 * 60 * 24;
   return {
     token: payload.access_token,
-    expiresAt: Date.now() + expiresInSeconds * 1000 - ACCESS_TOKEN_SAFETY_WINDOW_MS,
+    expiresAt:
+      Date.now() + expiresInSeconds * 1000 - ACCESS_TOKEN_SAFETY_WINDOW_MS,
   };
 }
 

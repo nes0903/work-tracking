@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
 import { listUsers } from "@libs/users-db";
 
 export type TaskStatus = "todo" | "doing" | "done";
@@ -83,9 +83,16 @@ interface TaskQueryRow {
   child_count: number;
 }
 
-export function queryTasks(params: TaskQueryParams): TaskQueryResult {
-  const db = getDatabase();
+export async function queryTasks(
+  params: TaskQueryParams,
+): Promise<TaskQueryResult> {
+  return getDatabase().transaction((db) => queryTasksWithDatabase(db, params));
+}
 
+async function queryTasksWithDatabase(
+  db: DatabaseClient,
+  params: TaskQueryParams,
+): Promise<TaskQueryResult> {
   const page = Math.max(1, params.page ?? 1);
   const perPage = PER_PAGE_OPTIONS.includes(
     (params.perPage ?? DEFAULT_PER_PAGE) as (typeof PER_PAGE_OPTIONS)[number],
@@ -162,7 +169,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
     : baseWhereSql;
 
   // Counts (by status, status 필터 제외)
-  const countRows = db
+  const countRows = await db
     .prepare(
       `
         SELECT t.status, COUNT(*) AS c
@@ -171,25 +178,25 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
          GROUP BY t.status
       `,
     )
-    .all(...baseArgs) as Array<{ status: TaskStatus; c: number }>;
+    .all(...baseArgs);
   const counts = { todo: 0, doing: 0, done: 0, total: 0 };
   for (const row of countRows) {
-    if (row.status === "todo") counts.todo = row.c;
-    else if (row.status === "doing") counts.doing = row.c;
-    else if (row.status === "done") counts.done = row.c;
-    counts.total += row.c;
+    const count = Number(row.c);
+    if (row.status === "todo") counts.todo = count;
+    else if (row.status === "doing") counts.doing = count;
+    else if (row.status === "done") counts.done = count;
+    counts.total += count;
   }
 
-  // Total (페이지네이션용 — status 필터 포함)
-  const totalRow = db
-    .prepare(`SELECT COUNT(*) AS c FROM tasks t WHERE ${fullWhereSql}`)
-    .get(...baseArgs, ...statusArgs) as { c: number };
-  const total = totalRow?.c ?? 0;
+  // status별 count를 이미 조회했으므로 pagination total도 같은 결과로 계산한다.
+  const total = statusClause
+    ? statusArgs.reduce((sum, status) => sum + counts[status], 0)
+    : counts.total;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-  const hierarchyRows = db
+  const hierarchyRows = await db
     .prepare(`SELECT id, parent_task_id FROM tasks`)
-    .all() as Array<{ id: string; parent_task_id: string | null }>;
+    .all();
   const parentById = new Map(
     hierarchyRows.map((row) => [row.id, row.parent_task_id ?? null]),
   );
@@ -213,19 +220,19 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
   const orderSql = ((): string => {
     switch (sort) {
       case "priority":
-        return `${priorityRank} ${dir}, date(t.due_date) ASC, datetime(t.created_at) DESC`;
+        return `${priorityRank} ${dir}, t.due_date ASC, t.created_at DESC`;
       case "due":
-        return `date(t.due_date) ${dir}, ${priorityRank} DESC, datetime(t.created_at) DESC`;
+        return `t.due_date ${dir}, ${priorityRank} DESC, t.created_at DESC`;
       case "created":
-        return `datetime(t.created_at) ${dir}`;
+        return `t.created_at ${dir}`;
       default:
-        return `datetime(t.created_at) DESC`;
+        return `t.created_at DESC`;
     }
   })();
 
   const offset = (page - 1) * perPage;
 
-  const rows = db
+  const rows = await db
     .prepare(
       `
         SELECT
@@ -256,12 +263,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
        LIMIT ? OFFSET ?
       `,
     )
-    .all(
-      ...baseArgs,
-      ...statusArgs,
-      perPage,
-      offset,
-    ) as unknown as TaskQueryRow[];
+    .all(...baseArgs, ...statusArgs, perPage, offset);
 
   // 다중 담당자 로드: 현재 페이지의 task id 들에 대해서만 한 번의 쿼리로 가져온다
   const taskIds = rows.map((r) => r.id);
@@ -271,7 +273,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
   >();
   if (taskIds.length > 0) {
     const placeholders = taskIds.map(() => "?").join(",");
-    const assigneeRows = db
+    const assigneeRows = await db
       .prepare(
         `
           SELECT ta.task_id, ta.user_id, u.user_name, ta.sort_order
@@ -281,12 +283,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
         ORDER BY ta.task_id ASC, ta.sort_order ASC, ta.user_id ASC
         `,
       )
-      .all(...taskIds) as Array<{
-      task_id: string;
-      user_id: string;
-      user_name: string | null;
-      sort_order: number;
-    }>;
+      .all(...taskIds);
     for (const r of assigneeRows) {
       const list = assigneesByTask.get(r.task_id) ?? [];
       list.push({ userId: r.user_id, userName: r.user_name });
@@ -299,7 +296,7 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
     parentTaskId: row.parent_task_id,
     parentTitle: row.parent_title,
     depth: getDepth(row.id),
-    childCount: row.child_count ?? 0,
+    childCount: Number(row.child_count ?? 0),
     title: row.title,
     category: row.category,
     priority: row.priority,
@@ -316,10 +313,10 @@ export function queryTasks(params: TaskQueryParams): TaskQueryResult {
       ? { userId: row.created_by_user_id, userName: row.created_by_name }
       : null,
     assignees: assigneesByTask.get(row.id) ?? [],
-    referenceCount: row.ref_count ?? 0,
+    referenceCount: Number(row.ref_count ?? 0),
   }));
 
-  const users = listUsers().map((u) => ({
+  const users = (await listUsers(db)).map((u) => ({
     userId: u.userId,
     userName: u.userName,
   }));

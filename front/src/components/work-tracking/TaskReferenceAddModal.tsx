@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type {
   LineWorksArchiveChannelSummary,
   LineWorksArchiveMessage,
@@ -37,14 +37,14 @@ export function TaskReferenceAddModal({
   const [pending, setPending] = useState<PendingReference[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setPending([]);
-      setSubmitting(false);
-    }
-  }, [open]);
-
   if (!open) return null;
+
+  function handleClose() {
+    if (submitting) return;
+    setPending([]);
+    setSubmitting(false);
+    onClose();
+  }
 
   async function handleAdd() {
     if (!taskId || pending.length === 0 || submitting) return;
@@ -61,6 +61,8 @@ export function TaskReferenceAddModal({
           metadata: ref.metadata ?? null,
         });
       }
+      setPending([]);
+      setSubmitting(false);
       onAttached?.();
       onClose();
     } catch (error) {
@@ -75,7 +77,7 @@ export function TaskReferenceAddModal({
       role="dialog"
       aria-modal="true"
       onClick={(event) => {
-        if (event.target === event.currentTarget && !submitting) onClose();
+        if (event.target === event.currentTarget) handleClose();
       }}
     >
       <div className="task-create-modal">
@@ -85,7 +87,7 @@ export function TaskReferenceAddModal({
             type="button"
             className="modal-close"
             aria-label="닫기"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={submitting}
           >
             ×

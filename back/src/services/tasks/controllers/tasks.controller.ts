@@ -26,7 +26,7 @@ function toPositiveInt(value: string | undefined, fallback: number): number {
 @UseGuards(AuthGuard)
 export class TasksController {
   @Get()
-  list(
+  async list(
     @Query("from") from: string | undefined,
     @Query("to") to: string | undefined,
     @Query("assignee") assignee: string | undefined,
@@ -41,7 +41,7 @@ export class TasksController {
     @Query("perPage") perPage: string | undefined,
     @Req() req: Request,
   ) {
-    const result = queryTasks({
+    const result = await queryTasks({
       from: from || null,
       to: to || null,
       assignee: assignee || null,
@@ -50,9 +50,9 @@ export class TasksController {
       priorities: parseList(priority) as TaskPriority[],
       category: category || null,
       q: q || null,
-      sort: (["priority", "due", "created"].includes(sort ?? "")
+      sort: ["priority", "due", "created"].includes(sort ?? "")
         ? (sort as SortKey)
-        : "priority"),
+        : "priority",
       order: order === "asc" ? "asc" : "desc",
       page: toPositiveInt(page, 1),
       perPage: toPositiveInt(perPage, 20),

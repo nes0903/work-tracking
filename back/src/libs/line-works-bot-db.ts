@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 import { extractLinksFromText } from "@libs/line-works-bot";
 
 export interface InsertMessageInput {
@@ -12,10 +12,11 @@ export interface InsertMessageInput {
   rawJson: string;
 }
 
-export function upsertMessage(input: InsertMessageInput): void {
+export async function upsertMessage(input: InsertMessageInput): Promise<void> {
   const db = getDatabase();
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO line_works_messages (
         message_id, channel_id, user_id, domain_id, content_type, text, issued_at, raw_json
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -28,16 +29,17 @@ export function upsertMessage(input: InsertMessageInput): void {
         issued_at = excluded.issued_at,
         raw_json = excluded.raw_json
     `,
-  ).run(
-    input.messageId,
-    input.channelId,
-    input.userId,
-    input.domainId,
-    input.contentType,
-    input.text,
-    input.issuedAt,
-    input.rawJson,
-  );
+    )
+    .run(
+      input.messageId,
+      input.channelId,
+      input.userId,
+      input.domainId,
+      input.contentType,
+      input.text,
+      input.issuedAt,
+      input.rawJson,
+    );
 }
 
 export interface InsertAttachmentInput {
@@ -46,8 +48,8 @@ export interface InsertAttachmentInput {
   fileName: string | null;
   fileSize: number | null;
   mimeType: string | null;
-  s3Bucket: string;
-  s3Key: string;
+  storageBucket: string;
+  storagePath: string;
 }
 
 export interface AttachmentRow {
@@ -57,25 +59,25 @@ export interface AttachmentRow {
   fileName: string | null;
   fileSize: number | null;
   mimeType: string | null;
-  s3Bucket: string;
-  s3Key: string;
+  storageBucket: string;
+  storagePath: string;
   uploadedAt: string | null;
 }
 
-export function findAttachmentByFileId(
+export async function findAttachmentByFileId(
   fileId: string,
   messageId: string,
-): AttachmentRow | null {
+): Promise<AttachmentRow | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `SELECT id, message_id, file_id, file_name, file_size, mime_type,
-              s3_bucket, s3_key, uploaded_at
+              storage_bucket, storage_path, uploaded_at
          FROM line_works_attachments
         WHERE file_id = ? AND message_id = ?
         LIMIT 1`,
     )
-    .get(fileId, messageId) as unknown as AttachmentDbRow | undefined;
+    .get(fileId, messageId);
   if (!row) return null;
   return {
     id: row.id,
@@ -84,34 +86,39 @@ export function findAttachmentByFileId(
     fileName: row.file_name,
     fileSize: row.file_size,
     mimeType: row.mime_type,
-    s3Bucket: row.s3_bucket,
-    s3Key: row.s3_key,
+    storageBucket: row.storage_bucket,
+    storagePath: row.storage_path,
     uploadedAt: row.uploaded_at,
   };
 }
 
-export function attachmentS3KeyExists(bucket: string, key: string): boolean {
+export async function attachmentStoragePathExists(
+  bucket: string,
+  path: string,
+): Promise<boolean> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `SELECT 1 AS found FROM line_works_attachments
-        WHERE s3_bucket = ? AND s3_key = ?
+        WHERE storage_bucket = ? AND storage_path = ?
         LIMIT 1`,
     )
-    .get(bucket, key) as { found: number } | undefined;
+    .get(bucket, path);
   return !!row;
 }
 
-export function insertAttachment(input: InsertAttachmentInput): AttachmentRow {
+export async function insertAttachment(
+  input: InsertAttachmentInput,
+): Promise<AttachmentRow> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `
         INSERT INTO line_works_attachments (
           message_id, file_id, file_name, file_size, mime_type,
-          s3_bucket, s3_key, uploaded_at
+          storage_bucket, storage_path, uploaded_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(s3_bucket, s3_key) DO UPDATE SET
+        ON CONFLICT(storage_bucket, storage_path) DO UPDATE SET
           message_id = excluded.message_id,
           file_id = excluded.file_id,
           file_name = excluded.file_name,
@@ -120,7 +127,7 @@ export function insertAttachment(input: InsertAttachmentInput): AttachmentRow {
           uploaded_at = datetime('now')
         RETURNING
           id, message_id, file_id, file_name, file_size, mime_type,
-          s3_bucket, s3_key, uploaded_at
+          storage_bucket, storage_path, uploaded_at
       `,
     )
     .get(
@@ -129,9 +136,9 @@ export function insertAttachment(input: InsertAttachmentInput): AttachmentRow {
       input.fileName,
       input.fileSize,
       input.mimeType,
-      input.s3Bucket,
-      input.s3Key,
-    ) as unknown as AttachmentDbRow | undefined;
+      input.storageBucket,
+      input.storagePath,
+    );
 
   if (!row) {
     throw new Error("Failed to insert attachment row");
@@ -140,14 +147,17 @@ export function insertAttachment(input: InsertAttachmentInput): AttachmentRow {
   return hydrateAttachment(row);
 }
 
-export function insertLinks(messageId: string, urls: string[]): void {
+export async function insertLinks(
+  messageId: string,
+  urls: string[],
+): Promise<void> {
   if (urls.length === 0) {
     return;
   }
   const db = getDatabase();
-  const existingRows = db
+  const existingRows = await db
     .prepare(`SELECT url FROM line_works_links WHERE message_id = ?`)
-    .all(messageId) as Array<{ url: string }>;
+    .all(messageId);
   const seen = new Set(existingRows.map((row) => row.url.toLowerCase()));
   const statement = db.prepare(
     `INSERT INTO line_works_links (message_id, url) VALUES (?, ?)`,
@@ -156,56 +166,58 @@ export function insertLinks(messageId: string, urls: string[]): void {
     const key = url.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    statement.run(messageId, url);
+    await statement.run(messageId, url);
   }
 }
 
-export function getLineWorksLinkById(
+export async function getLineWorksLinkById(
   id: number,
-): { id: number; messageId: string; url: string } | null {
+): Promise<{ id: number; messageId: string; url: string } | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(`SELECT id, message_id, url FROM line_works_links WHERE id = ?`)
-    .get(id) as { id: number; message_id: string; url: string } | undefined;
+    .get(id);
   return row ? { id: row.id, messageId: row.message_id, url: row.url } : null;
 }
 
-export function getAttachmentById(id: number): AttachmentRow | null {
+export async function getAttachmentById(
+  id: number,
+): Promise<AttachmentRow | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `
         SELECT id, message_id, file_id, file_name, file_size, mime_type,
-               s3_bucket, s3_key, uploaded_at
+               storage_bucket, storage_path, uploaded_at
         FROM line_works_attachments
         WHERE id = ?
       `,
     )
-    .get(id) as AttachmentDbRow | undefined;
+    .get(id);
   if (!row) {
     return null;
   }
   return hydrateAttachment(row);
 }
 
-export function listAllAttachments(): AttachmentRow[] {
+export async function listAllAttachments(): Promise<AttachmentRow[]> {
   const db = getDatabase();
-  const rows = db
+  const rows = await db
     .prepare(
       `
         SELECT id, message_id, file_id, file_name, file_size, mime_type,
-               s3_bucket, s3_key, uploaded_at
+               storage_bucket, storage_path, uploaded_at
         FROM line_works_attachments
         ORDER BY uploaded_at DESC
       `,
     )
-    .all() as unknown as AttachmentDbRow[];
+    .all();
   return rows.map(hydrateAttachment);
 }
 
-export function deleteAttachmentRow(id: number): boolean {
+export async function deleteAttachmentRow(id: number): Promise<boolean> {
   const db = getDatabase();
-  const result = db
+  const result = await db
     .prepare(`DELETE FROM line_works_attachments WHERE id = ?`)
     .run(id);
   return result.changes > 0;
@@ -237,47 +249,52 @@ function hydrateChannelMeta(row: ChannelMetaDbRow): ChannelMetaRow {
   };
 }
 
-export function getChannelMeta(channelId: string): ChannelMetaRow | null {
+export async function getChannelMeta(
+  channelId: string,
+): Promise<ChannelMetaRow | null> {
   const db = getDatabase();
-  const row = db
+  const row = await db
     .prepare(
       `SELECT channel_id, title, channel_type, user_id, last_fetched_at
          FROM line_works_channels WHERE channel_id = ?`,
     )
-    .get(channelId) as ChannelMetaDbRow | undefined;
+    .get(channelId);
   return row ? hydrateChannelMeta(row) : null;
 }
 
-export function listChannelMeta(channelIds?: string[]): ChannelMetaRow[] {
+export async function listChannelMeta(
+  channelIds?: string[],
+): Promise<ChannelMetaRow[]> {
   const db = getDatabase();
   if (channelIds && channelIds.length > 0) {
     const placeholders = channelIds.map(() => "?").join(",");
-    const rows = db
+    const rows = await db
       .prepare(
         `SELECT channel_id, title, channel_type, user_id, last_fetched_at
            FROM line_works_channels WHERE channel_id IN (${placeholders})`,
       )
-      .all(...channelIds) as unknown as ChannelMetaDbRow[];
+      .all(...channelIds);
     return rows.map(hydrateChannelMeta);
   }
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT channel_id, title, channel_type, user_id, last_fetched_at
          FROM line_works_channels`,
     )
-    .all() as unknown as ChannelMetaDbRow[];
+    .all();
   return rows.map(hydrateChannelMeta);
 }
 
-export function upsertChannelMeta(input: {
+export async function upsertChannelMeta(input: {
   channelId: string;
   title: string | null;
   channelType: string | null;
   userId: string | null;
-}): void {
+}): Promise<void> {
   const db = getDatabase();
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO line_works_channels (channel_id, title, channel_type, user_id, last_fetched_at)
       VALUES (?, ?, ?, ?, datetime('now'))
       ON CONFLICT(channel_id) DO UPDATE SET
@@ -286,7 +303,8 @@ export function upsertChannelMeta(input: {
         user_id = excluded.user_id,
         last_fetched_at = excluded.last_fetched_at
     `,
-  ).run(input.channelId, input.title, input.channelType, input.userId);
+    )
+    .run(input.channelId, input.title, input.channelType, input.userId);
 }
 
 interface AttachmentDbRow {
@@ -296,8 +314,8 @@ interface AttachmentDbRow {
   file_name: string | null;
   file_size: number | null;
   mime_type: string | null;
-  s3_bucket: string;
-  s3_key: string;
+  storage_bucket: string;
+  storage_path: string;
   uploaded_at: string | null;
 }
 
@@ -309,8 +327,8 @@ function hydrateAttachment(row: AttachmentDbRow): AttachmentRow {
     fileName: row.file_name,
     fileSize: row.file_size,
     mimeType: row.mime_type,
-    s3Bucket: row.s3_bucket,
-    s3Key: row.s3_key,
+    storageBucket: row.storage_bucket,
+    storagePath: row.storage_path,
     uploadedAt: row.uploaded_at,
   };
 }
@@ -401,11 +419,11 @@ interface ChannelSummaryRowWithMeta {
   count: number;
 }
 
-export function listArchive(options?: {
+export async function listArchive(options?: {
   channelId?: string;
   page?: number;
   perPage?: number;
-}): ArchiveResult {
+}): Promise<ArchiveResult> {
   const db = getDatabase();
   const rawPage = options?.page ?? 1;
   const rawPerPage = options?.perPage ?? 50;
@@ -419,7 +437,7 @@ export function listArchive(options?: {
   const useChannelFilter = Boolean(options?.channelId);
   const channelParams = useChannelFilter ? [options!.channelId!] : [];
 
-  const totalRow = db
+  const totalRow = await db
     .prepare(
       `
         SELECT COUNT(*) AS c
@@ -427,11 +445,11 @@ export function listArchive(options?: {
         ${useChannelFilter ? "WHERE m.channel_id = ?" : ""}
       `,
     )
-    .get(...channelParams) as { c: number } | undefined;
-  const total = totalRow?.c ?? 0;
+    .get(...channelParams);
+  const total = Number(totalRow?.c ?? 0);
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-  const messages = db
+  const messages = await db
     .prepare(
       `
         SELECT m.message_id, m.channel_id, m.user_id, m.content_type,
@@ -444,9 +462,7 @@ export function listArchive(options?: {
         LIMIT ? OFFSET ?
       `,
     )
-    .all(...channelParams, perPage, offset) as unknown as (MessageDbRow & {
-    user_name: string | null;
-  })[];
+    .all(...channelParams, perPage, offset);
 
   const messageIds = messages.map((row) => row.message_id);
 
@@ -455,11 +471,11 @@ export function listArchive(options?: {
 
   if (messageIds.length > 0) {
     for (const message of messages) {
-      insertLinks(message.message_id, extractLinksFromText(message.text));
+      await insertLinks(message.message_id, extractLinksFromText(message.text));
     }
 
     const placeholders = messageIds.map(() => "?").join(",");
-    attachments = db
+    attachments = await db
       .prepare(
         `
           SELECT id, message_id, file_name, file_size, mime_type
@@ -468,9 +484,9 @@ export function listArchive(options?: {
           ORDER BY id ASC
         `,
       )
-      .all(...messageIds) as unknown as AttachmentListRow[];
+      .all(...messageIds);
 
-    links = db
+    links = await db
       .prepare(
         `
           SELECT id, message_id, url
@@ -479,13 +495,13 @@ export function listArchive(options?: {
           ORDER BY id ASC
         `,
       )
-      .all(...messageIds) as unknown as LinkListRow[];
+      .all(...messageIds);
   }
 
   if (links.length > 0) {
     const linkUrls = Array.from(new Set(links.map((row) => row.url)));
     const placeholders = linkUrls.map(() => "?").join(",");
-    const savedRows = db
+    const savedRows = await db
       .prepare(
         `
           SELECT url, MIN(id) AS id
@@ -494,8 +510,10 @@ export function listArchive(options?: {
         GROUP BY url
         `,
       )
-      .all(...linkUrls) as Array<{ url: string; id: number }>;
-    const savedByUrl = new Map(savedRows.map((row) => [row.url, row.id]));
+      .all(...linkUrls);
+    const savedByUrl = new Map(
+      savedRows.map((row) => [row.url, Number(row.id)]),
+    );
     links = links.map((row) => ({
       ...row,
       saved_site_link_id: savedByUrl.get(row.url) ?? null,
@@ -530,7 +548,7 @@ export function listArchive(options?: {
     new Set(messages.map((row) => row.channel_id)),
   );
   const metaMap = new Map<string, ChannelMetaRow>();
-  for (const meta of listChannelMeta(channelIdsToResolve)) {
+  for (const meta of await listChannelMeta(channelIdsToResolve)) {
     metaMap.set(meta.channelId, meta);
   }
 
@@ -552,7 +570,7 @@ export function listArchive(options?: {
     };
   });
 
-  const channelsRaw = db
+  const channelsRaw = await db
     .prepare(
       `
         SELECT m.channel_id, COUNT(*) AS count,
@@ -563,18 +581,18 @@ export function listArchive(options?: {
         ORDER BY count DESC
       `,
     )
-    .all() as unknown as ChannelSummaryRowWithMeta[];
+    .all();
 
   const channels: ArchiveChannelSummary[] = channelsRaw.map((row) => ({
     channelId: row.channel_id,
     title: row.title,
     channelType: row.channel_type,
-    count: row.count,
+    count: Number(row.count),
   }));
 
-  const lastRow = db
+  const lastRow = await db
     .prepare(`SELECT MAX(received_at) AS last FROM line_works_messages`)
-    .get() as { last: string | null } | undefined;
+    .get();
 
   return {
     items,

@@ -1,4 +1,3 @@
-import type { DatabaseSync } from "node:sqlite";
 import {
   createEmptyDay,
   createId,
@@ -14,12 +13,7 @@ import {
   type TaskStatus,
   type WorkDayMap,
 } from "@libs/work-tracking";
-import {
-  getDatabase,
-  getJsonSetting,
-  setJsonSetting,
-  withTransaction,
-} from "@libs/sqlite-db";
+import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
 
 interface NotionEventRow {
   event_id: string;
@@ -52,10 +46,10 @@ const NOTION_PER_PAGE_OPTIONS = [20, 50, 70, 100] as const;
 const NOTION_DEFAULT_PER_PAGE = 20;
 const NOTION_NEW_TTL_MS = 24 * 60 * 60 * 1000;
 
-export function listNotionUpdateEvents(
+export async function listNotionUpdateEvents(
   page: number,
   perPage: number,
-): NotionFeedPage {
+): Promise<NotionFeedPage> {
   const db = getDatabase();
   const safePerPage = (NOTION_PER_PAGE_OPTIONS as readonly number[]).includes(
     perPage,
@@ -65,13 +59,13 @@ export function listNotionUpdateEvents(
   const safePage = Math.max(1, Math.floor(page) || 1);
   const offset = (safePage - 1) * safePerPage;
 
-  const totalRow = db
+  const totalRow = await db
     .prepare(`SELECT COUNT(*) AS c FROM notion_update_events`)
-    .get() as { c: number } | undefined;
-  const total = totalRow?.c ?? 0;
+    .get();
+  const total = Number(totalRow?.c ?? 0);
   const totalPages = Math.max(1, Math.ceil(total / safePerPage));
 
-  const rows = db
+  const rows = await db
     .prepare(
       `
         SELECT event_id, event_type, page_url, page_link, title, edited_at,
@@ -81,15 +75,15 @@ export function listNotionUpdateEvents(
         LIMIT ? OFFSET ?
       `,
     )
-    .all(safePerPage, offset) as unknown as NotionEventRow[];
+    .all(safePerPage, offset);
 
   const items = rows.map(mapNotionEventRow);
 
-  const lastSyncedRow = db
+  const lastSyncedRow = await db
     .prepare(
       "SELECT MAX(received_at) AS last_synced_at FROM notion_update_events",
     )
-    .get() as { last_synced_at: string | null } | undefined;
+    .get();
 
   return {
     items,
@@ -120,10 +114,12 @@ function mapNotionEventRow(row: NotionEventRow): NotionUpdateItem {
   };
 }
 
-export function countNewNotionUpdateEvents(userId: string): number {
+export async function countNewNotionUpdateEvents(
+  userId: string,
+): Promise<number> {
   const db = getDatabase();
   const cutoff = new Date(Date.now() - NOTION_NEW_TTL_MS).toISOString();
-  const row = db
+  const row = await db
     .prepare(
       `
         SELECT COUNT(*) AS c
@@ -133,17 +129,17 @@ export function countNewNotionUpdateEvents(userId: string): number {
         LEFT JOIN user_last_seen s
           ON s.user_id = ? AND s.source = 'notion'
         WHERE e.edited_at IS NOT NULL
-          AND datetime(e.edited_at) >= datetime(?)
+          AND e.edited_at >= ?
           AND r.event_id IS NULL
           AND (
             s.last_seen_at IS NULL
-            OR datetime(e.edited_at) > datetime(s.last_seen_at)
+            OR e.edited_at > s.last_seen_at
           )
       `,
     )
-    .get(userId, userId, cutoff) as { c: number } | undefined;
+    .get(userId, userId, cutoff);
 
-  return row?.c ?? 0;
+  return Number(row?.c ?? 0);
 }
 
 interface TaskRow {
@@ -190,29 +186,31 @@ export interface CreateTaskInput {
   assigneeUserIds?: string[];
 }
 
-export function getDashboardState(dateKey: string): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+export async function getDashboardState(
+  dateKey: string,
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function importLegacyDays(
+export async function importLegacyDays(
   days: WorkDayMap,
   dateKey: string,
-): DashboardState {
-  return withTransaction((db) => {
-    const existingCount = db
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    const existingCount = (await db
       .prepare("SELECT COUNT(*) AS count FROM work_days")
-      .get() as { count: number };
+      .get()) as { count: number | string };
 
-    if (existingCount.count === 0) {
+    if (Number(existingCount.count) === 0) {
       const normalized = normalizeState(days);
 
       for (const [workDate, day] of Object.entries(normalized)) {
-        upsertWorkDay(
+        await upsertWorkDay(
           db,
           workDate,
           day.notes,
@@ -221,14 +219,14 @@ export function importLegacyDays(
         );
 
         for (const task of day.tasks) {
-          upsertTask(db, workDate, task);
+          await upsertTask(db, workDate, task);
         }
       }
     }
 
-    prepareWorkDay(db, dateKey);
+    await prepareWorkDay(db, dateKey);
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
@@ -238,16 +236,15 @@ interface TaskHierarchyNode {
   parentTaskId: string | null;
 }
 
-function listTaskHierarchyNodes(db: DatabaseSync): TaskHierarchyNode[] {
-  return (
-    db.prepare(`SELECT id, parent_task_id FROM tasks`).all() as Array<{
-      id: string;
-      parent_task_id: string | null;
-    }>
-  ).map((row) => ({
-    id: row.id,
-    parentTaskId: row.parent_task_id ?? null,
-  }));
+async function listTaskHierarchyNodes(
+  db: DatabaseClient,
+): Promise<TaskHierarchyNode[]> {
+  return (await db.prepare(`SELECT id, parent_task_id FROM tasks`).all()).map(
+    (row) => ({
+      id: row.id,
+      parentTaskId: row.parent_task_id ?? null,
+    }),
+  );
 }
 
 function buildParentMap(
@@ -318,14 +315,14 @@ function normalizeParentTaskId(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-function validateParentTaskAssignment(
-  db: DatabaseSync,
+async function validateParentTaskAssignment(
+  db: DatabaseClient,
   targetTaskId: string | null,
   requestedParentTaskId: string | null,
-): string | null {
+): Promise<string | null> {
   if (!requestedParentTaskId) return null;
 
-  const nodes = listTaskHierarchyNodes(db);
+  const nodes = await listTaskHierarchyNodes(db);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const parentById = buildParentMap(nodes);
   const childrenById = buildChildrenMap(nodes);
@@ -362,16 +359,16 @@ function validateParentTaskAssignment(
   return requestedParentTaskId;
 }
 
-export function createTaskForDate(
+export async function createTaskForDate(
   dateKey: string,
   input: CreateTaskInput,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
 
     const timestamp = new Date().toISOString();
     const taskId = createId();
-    const parentTaskId = validateParentTaskAssignment(
+    const parentTaskId = await validateParentTaskAssignment(
       db,
       null,
       normalizeParentTaskId(input.parentTaskId),
@@ -382,8 +379,9 @@ export function createTaskForDate(
     // 하위호환: 레거시 컬럼에 첫 번째 담당자 기록 (차후 제거 예정)
     const primaryAssignee = assigneeIds[0] ?? createdBy;
 
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
         INSERT INTO tasks (
           id, work_date, parent_task_id, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, sort_order,
@@ -392,28 +390,29 @@ export function createTaskForDate(
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'todo', 0, ?, ?, NULL, ?, ?)
       `,
-    ).run(
-      taskId,
-      dateKey,
-      parentTaskId,
-      input.title.trim(),
-      input.category.trim(),
-      input.priority,
-      input.dueDate || dateKey,
-      normalizeDueTime(input.dueTime),
-      Math.max(0, Number(input.estimate) || 0),
-      input.note.trim(),
-      timestamp,
-      timestamp,
-      createdBy,
-      primaryAssignee,
-    );
+      )
+      .run(
+        taskId,
+        dateKey,
+        parentTaskId,
+        input.title.trim(),
+        input.category.trim(),
+        input.priority,
+        input.dueDate || dateKey,
+        normalizeDueTime(input.dueTime),
+        Math.max(0, Number(input.estimate) || 0),
+        input.note.trim(),
+        timestamp,
+        timestamp,
+        createdBy,
+        primaryAssignee,
+      );
 
-    replaceTaskAssignees(db, taskId, assigneeIds);
+    await replaceTaskAssignees(db, taskId, assigneeIds);
 
-    touchWorkDay(db, dateKey);
+    await touchWorkDay(db, dateKey);
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
@@ -430,13 +429,13 @@ export interface UpdateTaskInput {
   assigneeUserIds?: string[];
 }
 
-export function updateTaskForDate(
+export async function updateTaskForDate(
   dateKey: string,
   taskId: string,
   patch: UpdateTaskInput,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
 
     const sets: string[] = [];
     const args: (string | number | null)[] = [];
@@ -446,7 +445,7 @@ export function updateTaskForDate(
       args.push(String(patch.title).trim());
     }
     if (patch.parentTaskId !== undefined) {
-      const parentTaskId = validateParentTaskAssignment(
+      const parentTaskId = await validateParentTaskAssignment(
         db,
         taskId,
         normalizeParentTaskId(patch.parentTaskId),
@@ -486,15 +485,17 @@ export function updateTaskForDate(
       sets.push("updated_at = ?");
       args.push(new Date().toISOString());
 
-      db.prepare(
-        `UPDATE tasks SET ${sets.join(", ")} WHERE id = ? AND work_date = ?`,
-      ).run(...args, taskId, dateKey);
+      await db
+        .prepare(
+          `UPDATE tasks SET ${sets.join(", ")} WHERE id = ? AND work_date = ?`,
+        )
+        .run(...args, taskId, dateKey);
 
-      touchWorkDay(db, dateKey);
+      await touchWorkDay(db, dateKey);
     }
 
     if (patch.assigneeUserIds !== undefined) {
-      replaceTaskAssignees(
+      await replaceTaskAssignees(
         db,
         taskId,
         resolveAssigneeIds(patch.assigneeUserIds, null),
@@ -502,73 +503,77 @@ export function updateTaskForDate(
     }
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function updateTaskStatusForDate(
+export async function updateTaskStatusForDate(
   dateKey: string,
   taskId: string,
   status: TaskStatus,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
     const timestamp = new Date().toISOString();
 
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
         UPDATE tasks
         SET status = ?, updated_at = ?, completed_at = ?
         WHERE id = ? AND work_date = ?
       `,
-    ).run(
-      status,
-      timestamp,
-      status === "done" ? timestamp : null,
-      taskId,
-      dateKey,
-    );
+      )
+      .run(
+        status,
+        timestamp,
+        status === "done" ? timestamp : null,
+        taskId,
+        dateKey,
+      );
 
-    touchWorkDay(db, dateKey);
+    await touchWorkDay(db, dateKey);
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function deleteTaskForDate(
+export async function deleteTaskForDate(
   dateKey: string,
   taskId: string,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
     const childCount =
       (
-        db
+        await db
           .prepare(`SELECT COUNT(*) AS c FROM tasks WHERE parent_task_id = ?`)
-          .get(taskId) as { c: number } | undefined
+          .get(taskId)
       )?.c ?? 0;
-    if (childCount > 0) {
+    if (Number(childCount) > 0) {
       throw new Error("하위 태스크가 있어 삭제할 수 없습니다.");
     }
-    db.prepare("DELETE FROM tasks WHERE id = ? AND work_date = ?").run(
-      taskId,
-      dateKey,
-    );
-    touchWorkDay(db, dateKey);
+    await db
+      .prepare("DELETE FROM tasks WHERE id = ? AND work_date = ?")
+      .run(taskId, dateKey);
+    await touchWorkDay(db, dateKey);
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function clearCompletedForDate(dateKey: string): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
-    db.prepare(
-      `
+export async function clearCompletedForDate(
+  dateKey: string,
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
+    await db
+      .prepare(
+        `
         DELETE FROM tasks
         WHERE work_date = ?
           AND status = 'done'
@@ -576,106 +581,139 @@ export function clearCompletedForDate(dateKey: string): DashboardState {
             SELECT 1 FROM tasks child WHERE child.parent_task_id = tasks.id
           )
       `,
-    ).run(dateKey);
-    touchWorkDay(db, dateKey);
+      )
+      .run(dateKey);
+    await touchWorkDay(db, dateKey);
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function updateNotesForDate(
+export async function updateNotesForDate(
   dateKey: string,
   notes: string,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
-    db.prepare(
-      `
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
+    await db
+      .prepare(
+        `
         UPDATE work_days
         SET notes = ?, updated_at = datetime('now')
         WHERE work_date = ?
       `,
-    ).run(notes, dateKey);
+      )
+      .run(notes, dateKey);
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function updateTimerDurationForDate(
+export async function updateTimerDurationForDate(
   dateKey: string,
   timerDuration: number,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
-    db.prepare(
-      `
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
+    await db
+      .prepare(
+        `
         UPDATE work_days
         SET timer_duration_minutes = ?, updated_at = datetime('now')
         WHERE work_date = ?
       `,
-    ).run(timerDuration, dateKey);
+      )
+      .run(timerDuration, dateKey);
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function recordFocusSessionForDate(
+export async function recordFocusSessionForDate(
   dateKey: string,
   durationMinutes: number,
-): DashboardState {
-  return withTransaction((db) => {
-    prepareWorkDay(db, dateKey);
+): Promise<DashboardState> {
+  return getDatabase().transaction(async (db) => {
+    await prepareWorkDay(db, dateKey);
     const timestamp = new Date().toISOString();
 
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
         INSERT INTO focus_sessions (
           id, work_date, duration_minutes, started_at, ended_at, source, created_at
         )
         VALUES (?, ?, ?, NULL, ?, 'timer', datetime('now'))
       `,
-    ).run(createId(), dateKey, durationMinutes, timestamp);
+      )
+      .run(createId(), dateKey, durationMinutes, timestamp);
 
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
         UPDATE work_days
         SET focus_minutes = focus_minutes + ?, updated_at = datetime('now')
         WHERE work_date = ?
       `,
-    ).run(durationMinutes, dateKey);
+      )
+      .run(durationMinutes, dateKey);
 
     return {
-      days: selectDays(db),
+      days: await selectDays(db),
     };
   });
 }
 
-export function getNotionFeedFromStore() {
-  const payload = getJsonSetting<NotionFeed>("notion_feed_payload");
+export async function getNotionFeedFromStore() {
+  const payload = await getJsonSetting<NotionFeed>("notion_feed_payload");
   return payload ?? emptyNotionFeed();
 }
 
-export function setNotionFeedInStore(feed: NotionFeed) {
-  setJsonSetting("notion_feed_payload", feed);
+export async function setNotionFeedInStore(feed: NotionFeed) {
+  await setJsonSetting("notion_feed_payload", feed);
 }
 
-export function getGithubFeedFromStore() {
-  const payload = getJsonSetting<GithubFeed>("github_feed_payload");
+export async function getGithubFeedFromStore() {
+  const payload = await getJsonSetting<GithubFeed>("github_feed_payload");
   return payload ?? emptyGithubFeed();
 }
 
-export function setGithubFeedInStore(feed: GithubFeed) {
-  setJsonSetting("github_feed_payload", feed);
+export async function setGithubFeedInStore(feed: GithubFeed) {
+  await setJsonSetting("github_feed_payload", feed);
 }
 
-function selectDays(db: DatabaseSync): WorkDayMap {
-  const workDays = db
+async function getJsonSetting<T>(key: string): Promise<T | null> {
+  const row = await getDatabase()
+    .prepare(`SELECT value_json FROM app_settings WHERE key = ?`)
+    .get(key);
+  if (!row) return null;
+  try {
+    return JSON.parse(row.value_json) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function setJsonSetting(key: string, value: unknown): Promise<void> {
+  await getDatabase()
+    .prepare(
+      `INSERT INTO app_settings (key, value_json, updated_at)
+       VALUES (?, ?, datetime('now'))
+       ON CONFLICT (key) DO UPDATE SET
+         value_json = excluded.value_json,
+         updated_at = excluded.updated_at`,
+    )
+    .run(key, JSON.stringify(value));
+}
+
+async function selectDays(db: DatabaseClient): Promise<WorkDayMap> {
+  const workDays = await db
     .prepare(
       `
         SELECT work_date, notes, focus_minutes, timer_duration_minutes
@@ -683,19 +721,19 @@ function selectDays(db: DatabaseSync): WorkDayMap {
         ORDER BY work_date ASC
       `,
     )
-    .all() as unknown as WorkDayRow[];
+    .all();
 
-  const tasks = db
+  const tasks = await db
     .prepare(
       `
         SELECT
           id, work_date, parent_task_id, title, category, priority, due_date, due_time,
           estimate_minutes, note, status, created_at, updated_at, completed_at
         FROM tasks
-        ORDER BY work_date ASC, datetime(created_at) ASC, id ASC
+        ORDER BY work_date ASC, created_at ASC, id ASC
       `,
     )
-    .all() as unknown as TaskRow[];
+    .all();
 
   const days = Object.fromEntries(
     workDays.map((row) => [
@@ -709,7 +747,7 @@ function selectDays(db: DatabaseSync): WorkDayMap {
     ]),
   ) as WorkDayMap;
 
-  const assigneeMap = listAssigneesForTasks(
+  const assigneeMap = await listAssigneesForTasks(
     db,
     tasks.map((row) => row.id),
   );
@@ -726,41 +764,46 @@ function selectDays(db: DatabaseSync): WorkDayMap {
   return days;
 }
 
-function prepareWorkDay(db: DatabaseSync, dateKey: string) {
+async function prepareWorkDay(db: DatabaseClient, dateKey: string) {
   // 조회/수정 요청이 task row 자체를 이동시키면 참조와 이력이 깨진다.
   // work_day row 만 보장하고 task 는 그대로 둔다.
-  ensureWorkDay(db, dateKey);
+  await ensureWorkDay(db, dateKey);
 }
 
-function ensureWorkDay(db: DatabaseSync, dateKey: string) {
-  db.prepare(
-    `
+async function ensureWorkDay(db: DatabaseClient, dateKey: string) {
+  await db
+    .prepare(
+      `
       INSERT INTO work_days (work_date, notes, focus_minutes, timer_duration_minutes)
       VALUES (?, '', 0, 25)
       ON CONFLICT(work_date) DO NOTHING
     `,
-  ).run(dateKey);
+    )
+    .run(dateKey);
 }
 
-function touchWorkDay(db: DatabaseSync, dateKey: string) {
-  db.prepare(
-    `
+async function touchWorkDay(db: DatabaseClient, dateKey: string) {
+  await db
+    .prepare(
+      `
       UPDATE work_days
       SET updated_at = datetime('now')
       WHERE work_date = ?
     `,
-  ).run(dateKey);
+    )
+    .run(dateKey);
 }
 
-function upsertWorkDay(
-  db: DatabaseSync,
+async function upsertWorkDay(
+  db: DatabaseClient,
   dateKey: string,
   notes: string,
   focusMinutes: number,
   timerDuration: number,
 ) {
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO work_days (
         work_date, notes, focus_minutes, timer_duration_minutes, created_at, updated_at
       )
@@ -771,12 +814,14 @@ function upsertWorkDay(
         timer_duration_minutes = excluded.timer_duration_minutes,
         updated_at = excluded.updated_at
     `,
-  ).run(dateKey, notes, focusMinutes, timerDuration);
+    )
+    .run(dateKey, notes, focusMinutes, timerDuration);
 }
 
-function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
-  db.prepare(
-    `
+async function upsertTask(db: DatabaseClient, dateKey: string, task: Task) {
+  await db
+    .prepare(
+      `
       INSERT INTO tasks (
         id, work_date, parent_task_id, title, category, priority, due_date, due_time,
         estimate_minutes, note, status, sort_order,
@@ -798,26 +843,27 @@ function upsertTask(db: DatabaseSync, dateKey: string, task: Task) {
         updated_at = excluded.updated_at,
         completed_at = excluded.completed_at
     `,
-  ).run(
-    task.id,
-    dateKey,
-    task.parentTaskId,
-    task.title,
-    task.category,
-    task.priority,
-    task.dueDate,
-    task.dueTime ?? null,
-    task.estimate,
-    task.note,
-    task.status,
-    task.createdAt,
-    task.updatedAt,
-    task.completedAt,
-  );
+    )
+    .run(
+      task.id,
+      dateKey,
+      task.parentTaskId,
+      task.title,
+      task.category,
+      task.priority,
+      task.dueDate,
+      task.dueTime ?? null,
+      task.estimate,
+      task.note,
+      task.status,
+      task.createdAt,
+      task.updatedAt,
+      task.completedAt,
+    );
 
   // assignees 가 제공된 경우에만 교체. (import 경로 호환)
   if (Array.isArray(task.assignees) && task.assignees.length > 0) {
-    replaceTaskAssignees(
+    await replaceTaskAssignees(
       db,
       task.id,
       task.assignees.map((a) => a.userId),
@@ -875,32 +921,32 @@ function resolveAssigneeIds(
  * task_assignees 를 주어진 userIds 로 교체한다.
  * 호출자는 트랜잭션 안에서 호출할 것.
  */
-function replaceTaskAssignees(
-  db: DatabaseSync,
+async function replaceTaskAssignees(
+  db: DatabaseClient,
   taskId: string,
   userIds: string[],
-): void {
-  db.prepare(`DELETE FROM task_assignees WHERE task_id = ?`).run(taskId);
+): Promise<void> {
+  await db.prepare(`DELETE FROM task_assignees WHERE task_id = ?`).run(taskId);
   if (userIds.length === 0) return;
   const stmt = db.prepare(
     `INSERT INTO task_assignees (task_id, user_id, sort_order) VALUES (?, ?, ?)`,
   );
   for (let i = 0; i < userIds.length; i++) {
-    stmt.run(taskId, userIds[i], i);
+    await stmt.run(taskId, userIds[i], i);
   }
 }
 
-function listAssigneesForTasks(
-  db: DatabaseSync,
+async function listAssigneesForTasks(
+  db: DatabaseClient,
   taskIds: string[],
-): Map<string, { userId: string; userName: string | null }[]> {
+): Promise<Map<string, { userId: string; userName: string | null }[]>> {
   const result = new Map<
     string,
     { userId: string; userName: string | null }[]
   >();
   if (taskIds.length === 0) return result;
   const placeholders = taskIds.map(() => "?").join(",");
-  const rows = db
+  const rows = await db
     .prepare(
       `
         SELECT ta.task_id,
@@ -913,12 +959,7 @@ function listAssigneesForTasks(
       ORDER BY ta.task_id ASC, ta.sort_order ASC, ta.user_id ASC
       `,
     )
-    .all(...taskIds) as Array<{
-    task_id: string;
-    user_id: string;
-    user_name: string | null;
-    sort_order: number;
-  }>;
+    .all(...taskIds);
   for (const row of rows) {
     const list = result.get(row.task_id) ?? [];
     list.push({ userId: row.user_id, userName: row.user_name });

@@ -1,21 +1,16 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
 import {
   getNotionFeedFromStore,
   setNotionFeedInStore,
 } from "@libs/dashboard-db";
 import { emptyNotionFeed } from "@libs/work-tracking";
-import { getDatabase } from "@libs/sqlite-db";
+import { getDatabase } from "@libs/postgres-db";
 import { emitFeedUpdate } from "@libs/feed-events";
 
 const NOTION_WEBHOOK_VERIFICATION_TOKEN =
   process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN || "";
 const NOTION_API_TOKEN = process.env.NOTION_API_TOKEN || "";
 const NOTION_API_VERSION = process.env.NOTION_API_VERSION || "2022-06-28";
-
-const DATA_DIR = path.join(__dirname, "..", "..", "data");
-const WEBHOOK_STATUS_PATH = path.join(DATA_DIR, "notion-webhook-status.json");
 
 const MAX_FEED_ITEMS = 20;
 
@@ -116,7 +111,7 @@ export async function handleNotionWebhook(
   }
 
   if (payload.verification_token) {
-    await writeJsonSafe(WEBHOOK_STATUS_PATH, {
+    await saveVerificationStatus({
       lastVerificationTokenReceivedAt: new Date().toISOString(),
       verificationToken: payload.verification_token,
       note: "Copy this token into your Notion integration verification modal and into NOTION_WEBHOOK_VERIFICATION_TOKEN for signature checks.",
@@ -160,7 +155,7 @@ export async function handleNotionWebhook(
   }
 
   const item = await buildUpdateItem(payload);
-  upsertUpdateFeed(item);
+  await upsertUpdateFeed(item);
 
   return {
     status: 200,
@@ -225,7 +220,9 @@ async function buildUpdateItem(
 
 const MAX_BREADCRUMB_DEPTH = 6;
 
-async function buildBreadcrumb(start: NotionParent | undefined): Promise<string[]> {
+async function buildBreadcrumb(
+  start: NotionParent | undefined,
+): Promise<string[]> {
   const segments: string[] = [];
   const seen = new Set<string>();
   let cursor = start;
@@ -375,8 +372,8 @@ function extractRichTitle(list?: NotionRichText[]) {
     .trim();
 }
 
-function upsertUpdateFeed(item: UpdateFeedItem) {
-  const current = getNotionFeedFromStore() ?? emptyNotionFeed();
+async function upsertUpdateFeed(item: UpdateFeedItem): Promise<void> {
+  const current = (await getNotionFeedFromStore()) ?? emptyNotionFeed();
   const db = getDatabase();
 
   const nextItems = [
@@ -384,13 +381,14 @@ function upsertUpdateFeed(item: UpdateFeedItem) {
     ...current.items.filter((entry) => entry.eventId !== item.eventId),
   ].slice(0, MAX_FEED_ITEMS);
 
-  setNotionFeedInStore({
+  await setNotionFeedInStore({
     lastSyncedAt: new Date().toISOString(),
     items: nextItems,
   });
 
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
       INSERT INTO notion_update_events (
         event_id, event_type, page_url, page_link, title, edited_at,
         section_title, parent_title, editor_name, summary, processed_at
@@ -408,20 +406,21 @@ function upsertUpdateFeed(item: UpdateFeedItem) {
         summary = excluded.summary,
         processed_at = excluded.processed_at
     `,
-  ).run(
-    item.eventId,
-    item.type,
-    item.url,
-    item.link,
-    item.title,
-    item.editedAt,
-    item.section,
-    item.parent,
-    item.editor,
-    item.summary,
-  );
+    )
+    .run(
+      item.eventId,
+      item.type,
+      item.url,
+      item.link,
+      item.title,
+      item.editedAt,
+      item.section,
+      item.parent,
+      item.editor,
+      item.summary,
+    );
 
-  emitFeedUpdate("notion");
+  await emitFeedUpdate("notion");
 }
 
 function humanizeEventType(type: string) {
@@ -452,6 +451,17 @@ function cryptoSafeId(entityId: string, timestamp?: string) {
     .slice(0, 16);
 }
 
-async function writeJsonSafe(filePath: string, value: unknown) {
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+async function saveVerificationStatus(value: unknown): Promise<void> {
+  const db = getDatabase();
+  await db
+    .prepare(
+      `
+        INSERT INTO app_settings (key, value_json, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET
+          value_json = excluded.value_json,
+          updated_at = excluded.updated_at
+      `,
+    )
+    .run("notion_webhook_verification", JSON.stringify(value));
 }

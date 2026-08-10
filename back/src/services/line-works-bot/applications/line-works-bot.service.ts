@@ -10,7 +10,7 @@ import {
   type BotConfig,
 } from "@libs/line-works-bot";
 import {
-  attachmentS3KeyExists,
+  attachmentStoragePathExists,
   findAttachmentByFileId,
   getChannelMeta,
   insertAttachment,
@@ -21,11 +21,11 @@ import {
 import { getUser, upsertUserName } from "@libs/users-db";
 import { emitFeedUpdate } from "@libs/feed-events";
 import {
-  buildAttachmentObjectKey,
-  loadS3Config,
+  buildAttachmentObjectPath,
+  loadStorageConfig,
   putAttachmentObject,
-  resolveUniqueAttachmentKey,
-} from "@libs/s3";
+  resolveUniqueAttachmentPath,
+} from "@libs/supabase-storage";
 
 interface CallbackSource {
   userId?: string;
@@ -80,7 +80,10 @@ export class LineWorksBotService {
     }
 
     if (event.type !== "message") {
-      return { status: 200, body: { ok: true, ignored: true, reason: "non-message event" } };
+      return {
+        status: 200,
+        body: { ok: true, ignored: true, reason: "non-message event" },
+      };
     }
 
     const channelId = resolveChannelId(event);
@@ -105,12 +108,20 @@ export class LineWorksBotService {
     }
 
     try {
-      const stored = await this.persistEvent(botConfig, rawBody, event, channelId);
-      emitFeedUpdate("line-works");
+      const stored = await this.persistEvent(
+        botConfig,
+        rawBody,
+        event,
+        channelId,
+      );
+      await emitFeedUpdate("line-works");
       return { status: 200, body: { ok: true, ...stored } };
     } catch (err) {
       this.logger.error("Failed to persist LINE WORKS event", err as Error);
-      return { status: 500, body: { ok: false, error: "Failed to persist event" } };
+      return {
+        status: 500,
+        body: { ok: false, error: "Failed to persist event" },
+      };
     }
   }
 
@@ -118,11 +129,11 @@ export class LineWorksBotService {
     botConfig: BotConfig,
     userId: string,
   ): Promise<void> {
-    const existing = getUser(userId);
+    const existing = await getUser(userId);
     if (existing?.userName) return;
     const name = await fetchBotScopedUserName(botConfig, userId);
     if (name) {
-      upsertUserName(userId, name);
+      await upsertUserName(userId, name);
     }
   }
 
@@ -131,7 +142,7 @@ export class LineWorksBotService {
     channelId: string,
     event: LineWorksCallbackEvent,
   ): Promise<void> {
-    const existing = getChannelMeta(channelId);
+    const existing = await getChannelMeta(channelId);
     if (existing?.title) {
       return;
     }
@@ -139,7 +150,7 @@ export class LineWorksBotService {
     if (channelId.startsWith("dm:")) {
       const userId = channelId.slice(3);
       const name = await fetchBotScopedUserName(botConfig, userId);
-      upsertChannelMeta({
+      await upsertChannelMeta({
         channelId,
         title: name,
         channelType: "SINGLE_USER",
@@ -149,7 +160,7 @@ export class LineWorksBotService {
     }
 
     const info = await fetchChannelInfo(botConfig, channelId);
-    upsertChannelMeta({
+    await upsertChannelMeta({
       channelId,
       title: info?.title ?? existing?.title ?? null,
       channelType: info?.channelType ?? existing?.channelType ?? null,
@@ -167,12 +178,14 @@ export class LineWorksBotService {
     const contentType = event.content?.type ?? "unknown";
     const text = event.content?.text ?? null;
 
-    upsertMessage({
+    await upsertMessage({
       messageId,
       channelId,
       userId: event.source?.userId ?? null,
       domainId:
-        event.source?.domainId !== undefined ? String(event.source.domainId) : null,
+        event.source?.domainId !== undefined
+          ? String(event.source.domainId)
+          : null,
       contentType,
       text,
       issuedAt: event.issuedTime ?? null,
@@ -182,7 +195,7 @@ export class LineWorksBotService {
     let linkCount = 0;
     if (text) {
       const urls = extractLinksFromText(text);
-      insertLinks(messageId, urls);
+      await insertLinks(messageId, urls);
       linkCount = urls.length;
     }
 
@@ -219,53 +232,44 @@ export class LineWorksBotService {
     fileId: string,
     channelId: string,
   ): Promise<{ id: number } | null> {
-    const s3Config = loadS3Config();
-    if (!s3Config) {
-      this.logger.warn("S3 is not configured; skipping attachment download");
-      return null;
-    }
+    const storageConfig = loadStorageConfig();
 
     // 멱등: 같은 (fileId, messageId) 로 이미 업로드한 이력이 있으면 재업로드 skip
-    const existing = findAttachmentByFileId(fileId, messageId);
+    const existing = await findAttachmentByFileId(fileId, messageId);
     if (existing) {
       return { id: existing.id };
     }
 
     const stream = await fetchAttachmentStream(botConfig, fileId);
-    const fileName = event.content?.fileName ?? stream.fileName ?? `${fileId}.bin`;
-    const channelMeta = getChannelMeta(channelId);
-    const baseKey = buildAttachmentObjectKey({
-      prefix: s3Config.prefix,
+    const fileName =
+      event.content?.fileName ?? stream.fileName ?? `${fileId}.bin`;
+    const channelMeta = await getChannelMeta(channelId);
+    const basePath = buildAttachmentObjectPath({
+      prefix: storageConfig.prefix,
       channelId,
       channelName: channelMeta?.title ?? null,
       issuedAt: event.issuedTime,
       fileName,
     });
     // 같은 날짜·같은 파일명 충돌 시 "(1)", "(2)" 접미사
-    const key = resolveUniqueAttachmentKey(baseKey, (candidate) =>
-      attachmentS3KeyExists(s3Config.bucket, candidate),
+    const path = await resolveUniqueAttachmentPath(basePath, (candidate) =>
+      attachmentStoragePathExists(storageConfig.bucket, candidate),
     );
 
-    const { bucket, key: savedKey } = await putAttachmentObject({
-      key,
+    const { bucket, path: savedPath } = await putAttachmentObject({
+      path,
       body: stream.body,
       contentType: stream.contentType ?? undefined,
-      contentLength:
-        event.content?.fileSize ?? stream.contentLength ?? undefined,
-      metadata: {
-        messageId,
-        fileId,
-      },
     });
 
-    const inserted = insertAttachment({
+    const inserted = await insertAttachment({
       messageId,
       fileId,
       fileName,
       fileSize: event.content?.fileSize ?? stream.contentLength ?? null,
       mimeType: stream.contentType,
-      s3Bucket: bucket,
-      s3Key: savedKey,
+      storageBucket: bucket,
+      storagePath: savedPath,
     });
 
     return { id: inserted.id };

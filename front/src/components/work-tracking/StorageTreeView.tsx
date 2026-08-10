@@ -17,24 +17,6 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
-function channelDisplay(
-  channelId: string | null | undefined,
-  channelLabels: ChannelLabelMap,
-): string {
-  if (!channelId) return "";
-  const info = channelLabels[channelId];
-  if (info?.title) {
-    return info.channelType === "SINGLE_USER" ? `DM · ${info.title}` : info.title;
-  }
-  return channelId;
-}
-
-function channelIdFromKey(s3Key: string): string | null {
-  // line-works/<channelId>/<date>/<fileId>-<fileName>
-  const parts = s3Key.split("/");
-  return parts[1] ?? null;
-}
-
 /**
  * 한국어 파일명 검색을 위해 NFC 정규화 + 소문자화.
  * macOS 업로드 파일명은 NFD 로 저장되는 경우가 있어 검색어(NFC)와 매칭 실패할 수 있음.
@@ -78,7 +60,7 @@ export function StorageTreeView({
       if (!matchesName && !matchesExt) continue;
 
       ids.add(file.id);
-      const parts = file.s3Key.split("/").filter(Boolean);
+      const parts = file.storagePath.split("/").filter(Boolean);
       parts.pop();
       let accumulated = "";
       for (const segment of parts) {
@@ -253,7 +235,7 @@ function FileRow({
         type="button"
         className="storage-file-main"
         onClick={() => onOpen(file.id)}
-        title={file.s3Key}
+        title={file.storagePath}
       >
         <span className="storage-file-icon">📄</span>
         <span className="storage-file-name">{file.fileName ?? "파일"}</span>

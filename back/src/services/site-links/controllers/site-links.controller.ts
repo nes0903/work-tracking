@@ -61,45 +61,48 @@ function assertString(value: unknown, field: string): string {
 @UseGuards(AuthGuard)
 export class SiteLinksController {
   @Get()
-  list() {
-    return { ok: true, items: listSiteLinks() };
+  async list() {
+    return { ok: true, items: await listSiteLinks() };
   }
 
   @Get("categories")
-  listCategories() {
-    return { ok: true, items: listSiteLinkCategories() };
+  async listCategories() {
+    return { ok: true, items: await listSiteLinkCategories() };
   }
 
   @Post()
-  create(@Body() payload: CreatePayload) {
+  async create(@Body() payload: CreatePayload) {
     const label = assertString(payload.label, "label");
     const url = assertString(payload.url, "url");
     const category =
       typeof payload.category === "string" && payload.category.trim()
         ? payload.category.trim()
         : null;
-    const link = createSiteLink({ label, url, category });
+    const link = await createSiteLink({ label, url, category });
     return { ok: true, item: link };
   }
 
   @Post("categories")
-  createCategory(@Body() payload: CategoryPayload) {
+  async createCategory(@Body() payload: CategoryPayload) {
     const name = assertString(payload.name, "name");
-    return { ok: true, items: createSiteLinkCategory(name) };
+    return { ok: true, items: await createSiteLinkCategory(name) };
   }
 
   @Patch("categories/:name")
-  renameCategory(
+  async renameCategory(
     @Param("name") nameParam: string,
     @Body() payload: CategoryPayload,
   ) {
     const oldName = assertString(nameParam, "name");
     const newName = assertString(payload.name, "name");
-    return { ok: true, items: renameSiteLinkCategory(oldName, newName) };
+    return {
+      ok: true,
+      items: await renameSiteLinkCategory(oldName, newName),
+    };
   }
 
   @Patch("reorder")
-  reorder(@Body() payload: ReorderPayload) {
+  async reorder(@Body() payload: ReorderPayload) {
     const items = Array.isArray(payload.items)
       ? payload.items
           .filter((item) => Number.isInteger(item.id) && item.id! > 0)
@@ -116,11 +119,11 @@ export class SiteLinksController {
                 : index,
           }))
       : [];
-    return { ok: true, items: reorderSiteLinks(items) };
+    return { ok: true, items: await reorderSiteLinks(items) };
   }
 
   @Patch(":id")
-  update(@Param("id") idParam: string, @Body() payload: UpdatePayload) {
+  async update(@Param("id") idParam: string, @Body() payload: UpdatePayload) {
     const id = Number(idParam);
     if (!Number.isInteger(id) || id <= 0) {
       throw new HttpException(
@@ -146,10 +149,13 @@ export class SiteLinksController {
       const trimmed = payload.category.trim();
       patch.category = trimmed ? trimmed : null;
     }
-    if (typeof payload.sortOrder === "number" && Number.isFinite(payload.sortOrder)) {
+    if (
+      typeof payload.sortOrder === "number" &&
+      Number.isFinite(payload.sortOrder)
+    ) {
       patch.sortOrder = Math.floor(payload.sortOrder);
     }
-    const link = updateSiteLink(id, patch);
+    const link = await updateSiteLink(id, patch);
     if (!link) {
       throw new HttpException(
         { ok: false, error: "Site link not found" },
@@ -160,7 +166,7 @@ export class SiteLinksController {
   }
 
   @Delete(":id")
-  remove(@Param("id") idParam: string) {
+  async remove(@Param("id") idParam: string) {
     const id = Number(idParam);
     if (!Number.isInteger(id) || id <= 0) {
       throw new HttpException(
@@ -168,7 +174,7 @@ export class SiteLinksController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const ok = deleteSiteLink(id);
+    const ok = await deleteSiteLink(id);
     if (!ok) {
       throw new HttpException(
         { ok: false, error: "Site link not found" },

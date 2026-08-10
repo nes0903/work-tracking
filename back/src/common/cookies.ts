@@ -1,4 +1,6 @@
-export function parseCookies(header: string | undefined | null): Record<string, string> {
+export function parseCookies(
+  header: string | undefined | null,
+): Record<string, string> {
   const result: Record<string, string> = {};
   if (!header) {
     return result;
@@ -32,7 +34,11 @@ export interface CookieOptions {
   expires?: Date;
 }
 
-export function serializeCookie(name: string, value: string, options: CookieOptions = {}): string {
+export function serializeCookie(
+  name: string,
+  value: string,
+  options: CookieOptions = {},
+): string {
   const parts = [`${name}=${encodeURIComponent(value)}`];
   if (options.maxAge !== undefined) {
     parts.push(`Max-Age=${Math.max(0, Math.floor(options.maxAge))}`);
