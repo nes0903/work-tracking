@@ -10,7 +10,7 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import {
   createSiteLinkCategory,
   createSiteLink,
@@ -20,7 +20,7 @@ import {
   renameSiteLinkCategory,
   reorderSiteLinks,
   updateSiteLink,
-} from "@libs/site-links-db";
+} from "../../../libs/site-links-db";
 
 interface CreatePayload {
   label?: string;

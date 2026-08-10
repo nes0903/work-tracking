@@ -7,10 +7,10 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
-import { getLineWorksLinkById } from "@libs/line-works-bot-db";
-import { getOrFetchLinkPreview } from "@libs/line-works-link-preview";
-import { createSiteLink, findSiteLinkByUrl } from "@libs/site-links-db";
+import { AuthGuard } from "../../../common/auth.guard";
+import { getLineWorksLinkById } from "../../../libs/line-works-bot-db";
+import { getOrFetchLinkPreview } from "../../../libs/line-works-link-preview";
+import { createSiteLink, findSiteLinkByUrl } from "../../../libs/site-links-db";
 
 function parseId(idParam: string): number {
   const id = Number(idParam);

@@ -7,8 +7,8 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { AuthGuard } from "@common/auth.guard";
-import { getDatabase } from "@libs/postgres-db";
+import { AuthGuard } from "../../../common/auth.guard";
+import { getDatabase } from "../../../libs/postgres-db";
 
 @Controller("api/admin")
 @UseGuards(AuthGuard)

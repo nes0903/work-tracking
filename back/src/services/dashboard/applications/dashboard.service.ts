@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { normalizeState, type TaskStatus } from "@libs/work-tracking";
+import { normalizeState, type TaskStatus } from "../../../libs/work-tracking";
 import { DashboardRepository } from "../repository/dashboard.repository";
 
 /**

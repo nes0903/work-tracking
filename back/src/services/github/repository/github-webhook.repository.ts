@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   handleGithubWebhook,
   type GithubWebhookHeaders,
-} from "@libs/github-webhook";
+} from "../../../libs/github-webhook";
 
 @Injectable()
 export class GithubWebhookRepository {

@@ -9,9 +9,12 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import { Observable } from "rxjs";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import { FeedsService } from "../applications/feeds.service";
-import { getLatestFeedEventId, listFeedEventsAfter } from "@libs/feed-events";
+import {
+  getLatestFeedEventId,
+  listFeedEventsAfter,
+} from "../../../libs/feed-events";
 
 @Controller("api")
 export class FeedsController {

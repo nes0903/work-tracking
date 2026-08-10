@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { NotionFeedQuery } from "@libs/feed-store";
+import type { NotionFeedQuery } from "../../../libs/feed-store";
 import { FeedsRepository } from "../repository/feeds.repository";
 
 @Injectable()

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { handleNotionWebhook } from "@libs/notion-webhook";
+import { handleNotionWebhook } from "../../../libs/notion-webhook";
 
 @Injectable()
 export class NotionWebhookRepository {

@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
-import { listArchive } from "@libs/line-works-bot-db";
+import { AuthGuard } from "../../../common/auth.guard";
+import { listArchive } from "../../../libs/line-works-bot-db";
 
 @Controller("api/line-works-archive")
 @UseGuards(AuthGuard)

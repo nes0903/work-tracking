@@ -8,7 +8,7 @@ import {
   loadBotConfig,
   verifyCallbackSignature,
   type BotConfig,
-} from "@libs/line-works-bot";
+} from "../../../libs/line-works-bot";
 import {
   attachmentStoragePathExists,
   findAttachmentByFileId,
@@ -17,15 +17,15 @@ import {
   insertLinks,
   upsertChannelMeta,
   upsertMessage,
-} from "@libs/line-works-bot-db";
-import { getUser, upsertUserName } from "@libs/users-db";
-import { emitFeedUpdate } from "@libs/feed-events";
+} from "../../../libs/line-works-bot-db";
+import { getUser, upsertUserName } from "../../../libs/users-db";
+import { emitFeedUpdate } from "../../../libs/feed-events";
 import {
   buildAttachmentObjectPath,
   loadStorageConfig,
   putAttachmentObject,
   resolveUniqueAttachmentPath,
-} from "@libs/supabase-storage";
+} from "../../../libs/supabase-storage";
 
 interface CallbackSource {
   userId?: string;

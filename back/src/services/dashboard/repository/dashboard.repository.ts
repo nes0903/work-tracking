@@ -13,8 +13,8 @@ import {
   type CreateTaskInput,
   type DashboardState,
   type UpdateTaskInput,
-} from "@libs/dashboard-db";
-import { type TaskStatus, type WorkDayMap } from "@libs/work-tracking";
+} from "../../../libs/dashboard-db";
+import { type TaskStatus, type WorkDayMap } from "../../../libs/work-tracking";
 
 @Injectable()
 export class DashboardRepository {

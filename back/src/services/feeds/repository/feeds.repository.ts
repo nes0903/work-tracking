@@ -3,7 +3,7 @@ import {
   getGithubFeed,
   getNotionFeed,
   type NotionFeedQuery,
-} from "@libs/feed-store";
+} from "../../../libs/feed-store";
 
 @Injectable()
 export class FeedsRepository {

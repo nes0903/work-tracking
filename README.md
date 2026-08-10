@@ -97,18 +97,26 @@ npx supabase db push
 ### Vercel backend project
 
 - Root Directory: `back`
-- Framework Preset: Other
+- Framework Preset: NestJS
 - 필수 env: `SUPABASE_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
 - 추가 env: LINE WORKS, GitHub, Notion secrets와 `CORS_ALLOWED_ORIGINS`
-- `back/vercel.json`이 NestJS를 단일 Function으로 라우팅하고 최대 실행 시간을 설정합니다.
+- `back/server.ts`가 NestJS 진입점이며 `back/vercel.json`은 NestJS 프레임워크를 명시합니다.
 
 ### Vercel frontend project
 
 - Root Directory: `front`
 - Framework Preset: Next.js
 - 필수 env: `BACKEND_BASE_URL=https://<backend-project>.vercel.app`
+- `front/vercel.json`이 Next.js 프레임워크를 명시합니다.
 - LINE WORKS callback은 `https://<frontend-project>.vercel.app/api/auth/line-works/callback`로 등록해야 로그인 쿠키가 프런트 도메인에 설정됩니다.
 - 외부 Webhook URL은 백엔드 프로젝트의 `/api/github/webhook`, `/api/notion/webhook`, `/api/line-works-bot/callback`을 사용합니다.
+
+### Current production
+
+- Frontend: `https://work-tracking-three.vercel.app`
+- Backend: `https://work-tracking-api-nine.vercel.app`
+- Supabase: 기존 `portfolio` 프로젝트를 공유하되 `work_tracking_app` DB role과 Work Tracking 전용 RLS/grant로 격리합니다.
+- 기존 `portfolio_documents` 테이블과 해당 권한은 Work Tracking migration에서 변경하지 않습니다.
 
 ## Existing Data Migration
 
@@ -161,8 +169,9 @@ SUPABASE_URL='<url>' SUPABASE_SECRET_KEY='<secret>' npm --workspace back run mig
 ```text
 work-tracking/
 ├── front/                  # Next.js App Router Vercel project
+│   └── vercel.json         # Next.js framework preset
 ├── back/
-│   ├── api/index.ts        # Vercel Function entry
+│   ├── server.ts           # Vercel NestJS entry
 │   ├── src/                # NestJS application
 │   ├── scripts/            # one-time data migration
 │   └── vercel.json
@@ -177,6 +186,6 @@ work-tracking/
 ```bash
 npm run lint
 npm run build
-npm --workspace back run test
+npm --workspace back run test -- --passWithNoTests
 npx supabase db reset
 ```

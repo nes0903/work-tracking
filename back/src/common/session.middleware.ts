@@ -1,8 +1,8 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import type { NextFunction, Request, Response } from "express";
-import { parseCookies } from "@common/cookies";
-import { SESSION_COOKIE_NAME } from "@common/auth-context";
-import { getSession } from "@libs/auth-db";
+import { parseCookies } from "./cookies";
+import { SESSION_COOKIE_NAME } from "./auth-context";
+import { getSession } from "../libs/auth-db";
 
 @Injectable()
 export class SessionMiddleware implements NestMiddleware {

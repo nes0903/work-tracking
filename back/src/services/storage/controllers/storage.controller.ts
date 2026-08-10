@@ -7,17 +7,17 @@ import {
   Param,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import {
   deleteAttachmentRow,
   getAttachmentById,
   listAllAttachments,
   listChannelMeta,
-} from "@libs/line-works-bot-db";
+} from "../../../libs/line-works-bot-db";
 import {
   deleteStorageObject,
   sanitizeChannelSegment,
-} from "@libs/supabase-storage";
+} from "../../../libs/supabase-storage";
 
 interface ChannelLabel {
   channelId: string;

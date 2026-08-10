@@ -12,14 +12,14 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import {
   createReference,
   deleteReference,
   listReferencesByTaskIds,
   listReferencesForTask,
   type ReferenceSource,
-} from "@libs/task-references-db";
+} from "../../../libs/task-references-db";
 
 const ALLOWED_SOURCES: ReferenceSource[] = [
   "line_works_message",

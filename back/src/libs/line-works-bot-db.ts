@@ -1,5 +1,5 @@
-import { getDatabase } from "@libs/postgres-db";
-import { extractLinksFromText } from "@libs/line-works-bot";
+import { getDatabase } from "./postgres-db";
+import { extractLinksFromText } from "./line-works-bot";
 
 export interface InsertMessageInput {
   messageId: string;

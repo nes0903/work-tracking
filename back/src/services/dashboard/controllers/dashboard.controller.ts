@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import { DashboardService } from "../applications/dashboard.service";
 
 @Controller("api/dashboard")

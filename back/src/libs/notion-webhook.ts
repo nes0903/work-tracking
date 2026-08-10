@@ -1,11 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import {
-  getNotionFeedFromStore,
-  setNotionFeedInStore,
-} from "@libs/dashboard-db";
-import { emptyNotionFeed } from "@libs/work-tracking";
-import { getDatabase } from "@libs/postgres-db";
-import { emitFeedUpdate } from "@libs/feed-events";
+import { getNotionFeedFromStore, setNotionFeedInStore } from "./dashboard-db";
+import { emptyNotionFeed } from "./work-tracking";
+import { getDatabase } from "./postgres-db";
+import { emitFeedUpdate } from "./feed-events";
 
 const NOTION_WEBHOOK_VERIFICATION_TOKEN =
   process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN || "";

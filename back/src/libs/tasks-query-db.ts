@@ -1,5 +1,5 @@
-import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
-import { listUsers } from "@libs/users-db";
+import { getDatabase, type DatabaseClient } from "./postgres-db";
+import { listUsers } from "./users-db";
 
 export type TaskStatus = "todo" | "doing" | "done";
 export type TaskPriority = "high" | "medium" | "low";

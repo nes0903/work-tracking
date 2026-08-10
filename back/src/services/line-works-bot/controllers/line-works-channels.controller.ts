@@ -5,14 +5,14 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
-import { getDatabase } from "@libs/postgres-db";
+import { AuthGuard } from "../../../common/auth.guard";
+import { getDatabase } from "../../../libs/postgres-db";
 import {
   fetchBotScopedUserName,
   fetchChannelInfo,
   loadBotConfig,
-} from "@libs/line-works-bot";
-import { upsertChannelMeta } from "@libs/line-works-bot-db";
+} from "../../../libs/line-works-bot";
+import { upsertChannelMeta } from "../../../libs/line-works-bot-db";
 
 @Controller("api/line-works-channels")
 @UseGuards(AuthGuard)

@@ -9,23 +9,23 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { SESSION_COOKIE_NAME } from "@common/auth-context";
-import { serializeCookie } from "@common/cookies";
+import { SESSION_COOKIE_NAME } from "../../../common/auth-context";
+import { serializeCookie } from "../../../common/cookies";
 import {
   consumeOAuthState,
   createOAuthState,
   createSession,
   deleteSession,
   SESSION_TTL_SECONDS,
-} from "@libs/auth-db";
-import { upsertUser } from "@libs/users-db";
+} from "../../../libs/auth-db";
+import { upsertUser } from "../../../libs/users-db";
 import {
   buildAuthorizeUrl,
   exchangeCodeForToken,
   fetchUserInfo,
   formatUserName,
   loadLineWorksConfig,
-} from "@libs/line-works-auth";
+} from "../../../libs/line-works-auth";
 
 function isProduction() {
   return process.env.NODE_ENV === "production";

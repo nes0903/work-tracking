@@ -1,12 +1,12 @@
 import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import {
   queryTasks,
   type SortKey,
   type TaskPriority,
   type TaskStatus,
-} from "@libs/tasks-query-db";
+} from "../../../libs/tasks-query-db";
 
 function parseList(value: string | undefined): string[] {
   if (!value) return [];

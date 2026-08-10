@@ -9,12 +9,12 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { AuthGuard } from "@common/auth.guard";
+import { AuthGuard } from "../../../common/auth.guard";
 import {
   getLastSeenMap,
   markNotionRead,
   setLastSeen,
-} from "@libs/last-seen-db";
+} from "../../../libs/last-seen-db";
 
 const ALLOWED_SOURCES = new Set(["notion", "line-works", "github"]);
 

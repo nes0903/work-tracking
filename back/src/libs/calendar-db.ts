@@ -1,4 +1,4 @@
-import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
+import { getDatabase, type DatabaseClient } from "./postgres-db";
 
 export interface CalendarTaskSummary {
   id: string;

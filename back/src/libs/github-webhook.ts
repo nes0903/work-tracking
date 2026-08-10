@@ -1,16 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import {
-  getGithubFeedFromStore,
-  setGithubFeedInStore,
-} from "@libs/dashboard-db";
+import { getGithubFeedFromStore, setGithubFeedInStore } from "./dashboard-db";
 import {
   emptyGithubFeed,
   type GithubEvent,
   type GithubFeed,
   type GithubRepo,
-} from "@libs/work-tracking";
-import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
-import { emitFeedUpdate } from "@libs/feed-events";
+} from "./work-tracking";
+import { getDatabase, type DatabaseClient } from "./postgres-db";
+import { emitFeedUpdate } from "./feed-events";
 
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "";
 const MAX_FEED_ITEMS = 20;

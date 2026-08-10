@@ -3,9 +3,9 @@ import {
   getGithubFeedFromStore,
   listNotionUpdateEvents,
   type NotionFeedPage,
-} from "@libs/dashboard-db";
-import { emptyGithubFeed } from "@libs/work-tracking";
-import { getNotionReadSet } from "@libs/last-seen-db";
+} from "./dashboard-db";
+import { emptyGithubFeed } from "./work-tracking";
+import { getNotionReadSet } from "./last-seen-db";
 
 export interface NotionFeedQuery {
   page?: number;

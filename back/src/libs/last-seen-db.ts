@@ -1,4 +1,4 @@
-import { getDatabase } from "@libs/postgres-db";
+import { getDatabase } from "./postgres-db";
 
 export async function getLastSeenMap(
   userId: string,

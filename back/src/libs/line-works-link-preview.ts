@@ -1,6 +1,6 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { getDatabase } from "@libs/postgres-db";
+import { getDatabase } from "./postgres-db";
 
 export interface LinkPreview {
   url: string;

@@ -12,8 +12,8 @@ import {
   type TaskPriority,
   type TaskStatus,
   type WorkDayMap,
-} from "@libs/work-tracking";
-import { getDatabase, type DatabaseClient } from "@libs/postgres-db";
+} from "./work-tracking";
+import { getDatabase, type DatabaseClient } from "./postgres-db";
 
 interface NotionEventRow {
   event_id: string;

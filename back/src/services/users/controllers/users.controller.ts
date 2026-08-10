@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
-import { listUsers } from "@libs/users-db";
+import { AuthGuard } from "../../../common/auth.guard";
+import { listUsers } from "../../../libs/users-db";
 
 @Controller("api/users")
 @UseGuards(AuthGuard)

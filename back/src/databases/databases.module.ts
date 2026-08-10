@@ -1,5 +1,5 @@
 import { Module, OnModuleInit } from "@nestjs/common";
-import { getDatabase } from "@libs/postgres-db";
+import { getDatabase } from "../libs/postgres-db";
 
 class PostgresBootstrapService implements OnModuleInit {
   async onModuleInit() {

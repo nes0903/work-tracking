@@ -6,9 +6,9 @@ import {
   Param,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@common/auth.guard";
-import { getAttachmentById } from "@libs/line-works-bot-db";
-import { createSignedDownloadUrl } from "@libs/supabase-storage";
+import { AuthGuard } from "../../../common/auth.guard";
+import { getAttachmentById } from "../../../libs/line-works-bot-db";
+import { createSignedDownloadUrl } from "../../../libs/supabase-storage";
 
 @Controller("api/line-works-attachments")
 @UseGuards(AuthGuard)
